@@ -990,8 +990,11 @@
           <div class="title-block">
             <h2 id="pageTitle">交友清單</h2>
             <p id="pageSubtitle">設定年齡範圍，查看符合條件的新對象。</p>
+            <div class="principle-strip">
+              <strong>不多聊，不滑照。</strong>
+              <span>合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
+            </div>
           </div>
-          <div class="status-pill" id="completionText">資料尚未完成</div>
         </div>
 
         <div class="layout">
@@ -1184,10 +1187,6 @@
             </section>
 
             <section class="section page" id="digestPage">
-              <div class="principle-strip">
-                <strong>不多聊，不滑照。</strong>
-                <span>合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
-              </div>
               <form id="listFilterForm" class="compact-filter">
                 <div class="field">
                   <label for="minAge">最小年齡</label>
@@ -1212,7 +1211,7 @@
                     <h4>有人想讓你注意她</h4>
                     <p>她沒有直接發出邀約，只是希望你先看看她的資料。如果你也有興趣，可以請她喝杯咖啡。</p>
                   </div>
-                  <button class="btn primary" type="button" data-focus-candidate="a">查看她的資料</button>
+                  <button class="btn primary" type="button" data-focus-candidate="girl-01">查看她的資料</button>
                 </div>
                 <div class="email-note">女生每天最多使用 1 次「讓他注意我」。這不是正式邀約，不會鎖定男生，也不會消耗男生的邀約額度。</div>
               </div>
@@ -1240,9 +1239,6 @@
               <div class="candidate-toolbar">
                 <h3 style="margin: 0">Email 範本</h3>
                 <span class="candidate-count">建議 7 種</span>
-              </div>
-              <div class="empty-state" style="margin-bottom: 14px">
-                Email 原則：除「注意提示」只寄給男生外，其餘信件男女共用，避免 MVP 文案和流程過度複雜。
               </div>
               <div class="tabs" id="emailTabs">
                 <button class="tab-button active" type="button" data-email-filter="daily">每日媒合</button>
@@ -1367,6 +1363,9 @@
                   </div>
                 </article>
               </div>
+              <div class="empty-state" style="margin-top: 14px">
+                Email 原則：除「注意提示」只寄給男生外，其餘信件男女共用，避免 MVP 文案和流程過度複雜。
+              </div>
             </section>
           </div>
         </div>
@@ -1387,7 +1386,7 @@
 
       const candidates = [
         {
-          id: "a",
+          id: "girl-01",
           name: "Mika",
           age: "32-34",
           area: "台北・大安",
@@ -1399,7 +1398,7 @@
           photo: "picture/girl/LINE_NOTE_260618_1.jpg",
         },
         {
-          id: "b",
+          id: "girl-02",
           name: "Rin",
           age: "35-37",
           area: "台北・信義",
@@ -1411,7 +1410,7 @@
           photo: "picture/girl/LINE_NOTE_260618_2.jpg",
         },
         {
-          id: "c",
+          id: "girl-03",
           name: "Nora",
           age: "29-31",
           area: "新北・板橋",
@@ -1423,7 +1422,7 @@
           photo: "picture/girl/LINE_NOTE_260618_3.jpg",
         },
         {
-          id: "d",
+          id: "girl-04",
           name: "Ivy",
           age: "38-40",
           area: "台北・中山",
@@ -1433,6 +1432,270 @@
           place: "全家便利商店 中山捷運店",
           openingQuestion: "第一次見面你喜歡輕鬆聊還是認真聊？",
           photo: "picture/girl/LINE_NOTE_260618_4.jpg",
+        },
+        {
+          id: "girl-05",
+          name: "Yuna",
+          age: "27-29",
+          area: "台北・松山",
+          looking: "先認識朋友",
+          intro: "平面設計師，喜歡攝影、老屋咖啡和週末市集。希望先從自在的聊天開始，慢慢確認彼此節奏。",
+          time: "週六上午",
+          place: "Fika Fika Cafe",
+          openingQuestion: "你最近拍過最喜歡的一張照片是什麼？",
+          photo: "picture/girl/718938065_4506374059651527_2809670152340173533_n.jpg",
+        },
+        {
+          id: "girl-06",
+          name: "Amber",
+          age: "30-32",
+          area: "台北・內湖",
+          looking: "穩定交往",
+          intro: "軟體產品企劃，工作理性但生活喜歡保留一點任性。咖啡偏拿鐵，聊天偏真誠。",
+          time: "平日晚上",
+          place: "興波咖啡 內湖店",
+          openingQuestion: "你下班後最常用什麼方式切換心情？",
+          photo: "picture/girl/718965084_27419780194376924_8184886142030401083_n.jpg",
+        },
+        {
+          id: "girl-07",
+          name: "Claire",
+          age: "33-35",
+          area: "新北・永和",
+          looking: "曖昧看看",
+          intro: "國中老師，生活規律，喜歡慢跑和看舞台劇。重視說到做到，也欣賞能好好溝通的人。",
+          time: "週日下午",
+          place: "路易莎 永安市場店",
+          openingQuestion: "你有沒有一件一直想學但還沒開始的事？",
+          photo: "picture/girl/722336996_2091322278930494_8916992041496379532_n.jpg",
+        },
+        {
+          id: "girl-08",
+          name: "Luna",
+          age: "26-28",
+          area: "台北・士林",
+          looking: "先認識朋友",
+          intro: "護理師，排班不固定但很珍惜休假。喜歡簡單、乾淨的約會，不太需要華麗安排。",
+          time: "週日晚上",
+          place: "星巴克 士林文林門市",
+          openingQuestion: "你覺得一段舒服關係最重要的是什麼？",
+          photo: "picture/girl/724731718_26908545772181640_382116525476335468_n.jpg",
+        },
+        {
+          id: "girl-09",
+          name: "Sora",
+          age: "34-36",
+          area: "台北・中正",
+          looking: "穩定交往",
+          intro: "財務分析工作，喜歡旅行前做功課，也喜歡沒有行程的午後。希望認識成熟、穩定的人。",
+          time: "週六下午",
+          place: "Cama Cafe 台大門市",
+          openingQuestion: "如果只有三天假，你會想去哪裡？",
+          photo: "picture/girl/724770753_992192533782411_9148779012501509811_n.jpg",
+        },
+        {
+          id: "girl-10",
+          name: "Tina",
+          age: "31-33",
+          area: "新北・三重",
+          looking: "還不確定",
+          intro: "電商營運，個性直接，喜歡效率也喜歡幽默感。希望第一次見面就是喝杯咖啡，不用太有壓力。",
+          time: "平日晚上",
+          place: "客美多咖啡 三重店",
+          openingQuestion: "你覺得自己最加分的生活習慣是什麼？",
+          photo: "picture/girl/724804880_27472528949007200_4722442651955057576_n.jpg",
+        },
+        {
+          id: "girl-11",
+          name: "Hana",
+          age: "28-30",
+          area: "台北・南港",
+          looking: "先認識朋友",
+          intro: "研究助理，喜歡書店、紀錄片和清淡的甜點。慢熟，但熟了以後很願意分享生活。",
+          time: "週六上午",
+          place: "成真咖啡 南港店",
+          openingQuestion: "最近有沒有一本書或一部片讓你想很久？",
+          photo: "picture/girl/724912737_10164762230563464_847615824580723035_n.jpg",
+        },
+        {
+          id: "girl-12",
+          name: "Jasmine",
+          age: "36-38",
+          area: "台北・文山",
+          looking: "穩定交往",
+          intro: "自由接案文字工作者，生活彈性但自律。喜歡安靜的咖啡店，也喜歡能聊價值觀的對話。",
+          time: "週日下午",
+          place: "小公寓咖啡",
+          openingQuestion: "你心中理想的一天會怎麼安排？",
+          photo: "picture/girl/725258241_122116811066922222_4467689015614101532_n.jpg",
+        },
+        {
+          id: "girl-13",
+          name: "Eve",
+          age: "29-31",
+          area: "桃園・中壢",
+          looking: "曖昧看看",
+          intro: "航空業地勤，習慣照顧細節。喜歡有禮貌、有時間觀念的人，見面希望簡單舒服。",
+          time: "週日晚上",
+          place: "星巴克 中壢海華門市",
+          openingQuestion: "你最喜歡哪一種旅行節奏？",
+          photo: "picture/girl/725616005_992192440449087_5456117744340104636_n.jpg",
+        },
+        {
+          id: "girl-14",
+          name: "Phoebe",
+          age: "39-41",
+          area: "台北・大同",
+          looking: "穩定交往",
+          intro: "品牌顧問，生活圈單純，喜歡成熟坦白的互動。比起聊天很熱，更在意相處是否安心。",
+          time: "週六下午",
+          place: "森高砂咖啡館",
+          openingQuestion: "你會怎麼形容現在的生活重心？",
+          photo: "picture/girl/727051632_992023880465943_8869690554137199309_n.jpg",
+        },
+        {
+          id: "girl-15",
+          name: "Molly",
+          age: "25-27",
+          area: "新北・新店",
+          looking: "先認識朋友",
+          intro: "行銷助理，喜歡爬小山、看展和找好吃早餐。希望遇到能一起探索城市的人。",
+          time: "週日上午",
+          place: "路易莎 新店七張店",
+          openingQuestion: "你最近收藏的一家口袋店是哪裡？",
+          photo: "picture/girl/S__48627804.jpg",
+        },
+        {
+          id: "boy-01",
+          name: "Leo",
+          age: "31-33",
+          area: "台北・信義",
+          looking: "穩定交往",
+          intro: "資料工程師，平日工作專注，假日喜歡騎車到河濱或找咖啡店放空。重視承諾和穩定陪伴。",
+          time: "週六下午",
+          place: "Simple Kaffa 興波咖啡",
+          openingQuestion: "你最近最期待的一件小事是什麼？",
+          photo: "picture/boy/684234000_1680975416563946_1023672137249206495_n.jpg",
+        },
+        {
+          id: "boy-02",
+          name: "Ethan",
+          age: "34-36",
+          area: "台北・大安",
+          looking: "先認識朋友",
+          intro: "產品經理，喜歡登山、黑咖啡和整理生活清單。聊天不太尬聊，喜歡有來有往。",
+          time: "平日晚上",
+          place: "The Lobby of Simple Kaffa",
+          openingQuestion: "你最近一次覺得被理解，是因為什麼？",
+          photo: "picture/boy/716210058_2828420420857279_1452165888581221263_n.jpg",
+        },
+        {
+          id: "boy-03",
+          name: "Ryan",
+          age: "28-30",
+          area: "新北・板橋",
+          looking: "曖昧看看",
+          intro: "影像剪輯師，作息偶爾晚，但會為重要的人留時間。喜歡電影、散步和不趕時間的晚餐。",
+          time: "週日晚上",
+          place: "Merci Cafe 板橋",
+          openingQuestion: "最近看過哪部電影讓你印象深刻？",
+          photo: "picture/boy/717270244_10226023470412478_4883509485426912438_n.jpg",
+        },
+        {
+          id: "boy-04",
+          name: "Aaron",
+          age: "37-39",
+          area: "台北・松山",
+          looking: "穩定交往",
+          intro: "金融業，生活穩定，喜歡規律運動和週末下廚。希望認識願意一起經營日常的人。",
+          time: "週六上午",
+          place: "星巴克 民生社區門市",
+          openingQuestion: "你最喜歡的日常儀式感是什麼？",
+          photo: "picture/boy/722117011_122127559395178548_5264100785362877648_n.jpg",
+        },
+        {
+          id: "boy-05",
+          name: "Jay",
+          age: "30-32",
+          area: "台北・中山",
+          looking: "還不確定",
+          intro: "室內設計師，喜歡城市散步和觀察店面細節。第一次見面希望輕鬆聊生活，不急著定義關係。",
+          time: "週日下午",
+          place: "卜卜商店",
+          openingQuestion: "你喜歡熱鬧的店，還是安靜的小店？",
+          photo: "picture/boy/723527692_26897156349984626_3687745646004749304_n.jpg",
+        },
+        {
+          id: "boy-06",
+          name: "Chris",
+          age: "35-37",
+          area: "新北・中和",
+          looking: "穩定交往",
+          intro: "後端工程師，個性溫和，喜歡游泳和研究咖啡豆。希望對方也願意慢慢建立信任。",
+          time: "平日晚上",
+          place: "路易莎 中和環球店",
+          openingQuestion: "你覺得信任感通常從哪裡開始？",
+          photo: "picture/boy/724752603_26897155399984721_4065294702314581524_n.jpg",
+        },
+        {
+          id: "boy-07",
+          name: "Howard",
+          age: "40-42",
+          area: "台北・內湖",
+          looking: "先認識朋友",
+          intro: "科技業主管，工作忙但下班會把時間留給生活。喜歡成熟、有界線的相處。",
+          time: "週六下午",
+          place: "覺旅咖啡 陽光店",
+          openingQuestion: "你現在最想把時間留給什麼？",
+          photo: "picture/boy/726391734_1529808785407981_5783978447919193233_n.jpg",
+        },
+        {
+          id: "boy-08",
+          name: "Nick",
+          age: "27-29",
+          area: "桃園・桃園",
+          looking: "曖昧看看",
+          intro: "健身教練，生活單純，喜歡開朗但不吵的相處。咖啡見面希望有笑點也有真心話。",
+          time: "週日上午",
+          place: "成真咖啡 桃園藝文町",
+          openingQuestion: "你最能被哪一種幽默感打動？",
+          photo: "picture/boy/726575098_27212256955109092_8060569820353239014_n.jpg",
+        },
+        {
+          id: "boy-09",
+          name: "Will",
+          age: "33-35",
+          area: "台北・中正",
+          looking: "穩定交往",
+          intro: "法律相關工作，說話慢但想得多。喜歡真誠交換觀點，也尊重彼此的生活空間。",
+          time: "週日晚上",
+          place: "Cama Cafe 台北車站店",
+          openingQuestion: "你覺得兩個人保有空間重要嗎？",
+          photo: "picture/boy/S__7053325_0.jpg",
+        },
+        {
+          id: "boy-10",
+          name: "Sean",
+          age: "29-31",
+          area: "台北・萬華",
+          looking: "先認識朋友",
+          intro: "音樂企劃，喜歡現場演出、黑膠和深夜散步。希望遇到願意分享生活品味的人。",
+          time: "平日晚上",
+          place: "Sugar Man Cafe",
+          openingQuestion: "最近哪首歌最像你的心情？",
+          photo: "picture/boy/S__7053326_0.jpg",
+        },
+        {
+          id: "boy-11",
+          name: "Daniel",
+          age: "36-38",
+          area: "新北・新莊",
+          looking: "還不確定",
+          intro: "業務管理，外向但不強迫熱絡。喜歡把第一次見面安排得簡單，彼此舒服最重要。",
+          time: "週六上午",
+          place: "星巴克 新莊幸福門市",
+          openingQuestion: "你第一次見面最在意對方哪個細節？",
+          photo: "picture/boy/S__7053327_0.jpg",
         },
       ];
 
@@ -1446,19 +1709,19 @@
       const invites = [
         {
           id: "seed-active",
-          candidateId: "b",
+          candidateId: "girl-02",
           status: "active",
           note: "等待對方確認咖啡時間",
         },
         {
           id: "seed-done",
-          candidateId: "c",
+          candidateId: "girl-03",
           status: "done",
           note: "上週日已完成咖啡見面",
         },
         {
           id: "seed-cancelled",
-          candidateId: "d",
+          candidateId: "girl-04",
           status: "cancelled",
           note: "這次沒有成立",
         },
@@ -1605,27 +1868,11 @@
       }
 
       function updateSummary() {
-        const profileReady =
-          state.photos.length > 0 &&
-          state.profile.nickname &&
-          state.profile.email &&
-          state.profile.occupation &&
-          state.profile.education &&
-          state.profile.school &&
-          state.profile.relationshipStatus &&
-          state.profile.hasChildren &&
-          state.profile.coffeeGoal &&
-          state.profile.smoking &&
-          state.profile.drinking &&
-          state.profile.intro &&
-          state.profile.availabilityNote &&
-          state.profile.meetingArea;
-        document.getElementById("completionText").textContent = profileReady ? "資料已完成" : "資料尚未完成";
-
       }
 
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
+        document.getElementById("candidateCount").textContent = `${candidates.length} 位符合條件`;
         grid.innerHTML = candidates
           .map((candidate) => {
             const invited = state.invited.has(candidate.id);
