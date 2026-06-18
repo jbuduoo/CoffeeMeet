@@ -611,6 +611,80 @@
         gap: 12px;
       }
 
+      .detail-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        box-shadow: 0 12px 28px rgba(43, 36, 27, 0.08);
+        padding: 18px;
+        margin-bottom: 14px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .detail-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .detail-head h3 {
+        margin: 0;
+      }
+
+      .detail-layout {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .detail-photo {
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #eadfce;
+      }
+
+      .detail-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(4px);
+        transform: scale(1.03);
+      }
+
+      .detail-copy {
+        display: grid;
+        gap: 12px;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .detail-item {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #faf7ef;
+        padding: 10px;
+      }
+
+      .detail-item span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .detail-item strong {
+        font-size: 14px;
+      }
+
       .email-list {
         display: grid;
         gap: 14px;
@@ -851,6 +925,14 @@
 
         .invite-card {
           grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .detail-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .detail-grid {
+          grid-template-columns: 1fr;
         }
 
         .invite-card .btn {
@@ -1134,6 +1216,7 @@
                 </div>
                 <div class="email-note">女生每天最多使用 1 次「讓他注意我」。這不是正式邀約，不會鎖定男生，也不會消耗男生的邀約額度。</div>
               </div>
+              <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
 
@@ -1149,6 +1232,7 @@
                 <button class="tab-button" type="button" data-invite-filter="done">已完成</button>
                 <button class="tab-button" type="button" data-invite-filter="cancelled">已取消</button>
               </div>
+              <div class="detail-panel hidden" id="inviteDetail"></div>
               <div class="invite-list" id="inviteList"></div>
             </section>
 
@@ -1311,6 +1395,7 @@
           intro: "大學商管背景，平日做品牌企劃，收入穩定。週末常去咖啡店看書，喜歡舒服、有邊界感的對話。",
           time: "週六下午",
           place: "REC COFFEE 台中勤美店",
+          openingQuestion: "你週末通常怎麼過？",
           photo: "picture/girl/LINE_NOTE_260618_1.jpg",
         },
         {
@@ -1322,6 +1407,7 @@
           intro: "研究所畢業，在外商做行銷。喜歡散步、展覽和簡單料理，第一次見面希望輕鬆聊，不急著下結論。",
           time: "平日晚上",
           place: "Starbucks 台北信義新天地",
+          openingQuestion: "你最近最常去的放鬆地點是哪裡？",
           photo: "picture/girl/LINE_NOTE_260618_2.jpg",
         },
         {
@@ -1333,6 +1419,7 @@
           intro: "科技業專案管理，工作忙但生活規律。喜歡週末找一間安靜咖啡店補電，重視準時和禮貌。",
           time: "週日下午",
           place: "路易莎 板橋車站店",
+          openingQuestion: "你理想中的穩定關係是什麼樣子？",
           photo: "picture/girl/LINE_NOTE_260618_3.jpg",
         },
         {
@@ -1344,6 +1431,7 @@
           intro: "醫療相關行政工作，生活圈穩定但想認識新朋友。喜歡真誠、直接，也喜歡大約 1 小時剛剛好的見面。",
           time: "週日晚上",
           place: "全家便利商店 中山捷運店",
+          openingQuestion: "第一次見面你喜歡輕鬆聊還是認真聊？",
           photo: "picture/girl/LINE_NOTE_260618_4.jpg",
         },
       ];
@@ -1559,6 +1647,7 @@
                     <span class="chip">方便時間：${candidate.time}</span>
                     <span class="chip">咖啡店：${candidate.place}</span>
                   </div>
+                  <button class="btn secondary" type="button" data-candidate-detail="${candidate.id}">查看詳情</button>
                   <button class="btn ${invited ? "warning" : "primary"}" type="button" data-invite="${candidate.id}" ${dailyLimitReached ? "disabled" : ""}>
                     ${buttonLabel}
                   </button>
@@ -1585,7 +1674,7 @@
             const candidate = candidates.find((item) => item.id === invite.candidateId);
             const meta = inviteStatusMeta[invite.status];
             return `
-              <article class="invite-card">
+              <article class="invite-card" data-invite-detail="${invite.id}">
                 <div class="invite-thumb"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
                 <div class="invite-info">
                   <h4>${candidate.name}</h4>
@@ -1604,6 +1693,82 @@
             `;
           })
           .join("");
+      }
+
+      function renderCandidateDetail(candidateId) {
+        const candidate = candidates.find((item) => item.id === candidateId);
+        if (!candidate) return;
+        const panel = document.getElementById("candidateDetail");
+        panel.innerHTML = `
+          <div class="detail-head">
+            <div>
+              <h3>${candidate.name}</h3>
+              <div class="candidate-meta" style="margin-top: 8px">
+                <span class="chip">${candidate.age} 歲</span>
+                <span class="chip">柔焦照片</span>
+              </div>
+            </div>
+            <button class="btn secondary" type="button" data-close-detail="candidate">關閉</button>
+          </div>
+          <div class="detail-layout">
+            <div class="detail-photo"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
+            <div class="detail-copy">
+              <p>${candidate.intro}</p>
+              <div class="detail-grid">
+                <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
+                <div class="detail-item"><span>咖啡店</span><strong>${candidate.place}</strong></div>
+                <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+                <div class="detail-item"><span>邀約規則</span><strong>每天 1 次，收到邀約會保留 24 小時</strong></div>
+              </div>
+              <div class="email-note">第一次見面請選公開場所，不要透露住家或公司地址。</div>
+              <div class="email-actions">
+                <button class="btn primary" type="button" data-invite="${candidate.id}">請對方喝杯咖啡</button>
+                <button class="btn secondary" type="button">讓他注意我</button>
+              </div>
+            </div>
+          </div>
+        `;
+        panel.classList.remove("hidden");
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function renderInviteDetail(inviteId) {
+        const invite = invites.find((item) => item.id === inviteId);
+        if (!invite) return;
+        const candidate = candidates.find((item) => item.id === invite.candidateId);
+        const meta = inviteStatusMeta[invite.status];
+        const panel = document.getElementById("inviteDetail");
+        panel.innerHTML = `
+          <div class="detail-head">
+            <div>
+              <h3>與 ${candidate.name} 的咖啡邀約</h3>
+              <div class="candidate-meta" style="margin-top: 8px">
+                <span class="status-label ${meta.className}">${meta.label}</span>
+                <span class="chip">${candidate.age} 歲</span>
+              </div>
+            </div>
+            <button class="btn secondary" type="button" data-close-detail="invite">關閉</button>
+          </div>
+          <div class="detail-layout">
+            <div class="detail-photo"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
+            <div class="detail-copy">
+              <p>${invite.note}</p>
+              <div class="detail-grid">
+                <div class="detail-item"><span>目前狀態</span><strong>${meta.label}</strong></div>
+                <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
+                <div class="detail-item"><span>見面地點</span><strong>${candidate.place}</strong></div>
+                <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+              </div>
+              <div class="email-note">收到邀約後保留 24 小時；期間其他人無法邀約你，但你仍可主動邀約其他人。</div>
+              <div class="email-actions">
+                <button class="btn primary" type="button">${meta.action}</button>
+                <button class="btn secondary" type="button">討論時間地點</button>
+              </div>
+            </div>
+          </div>
+        `;
+        panel.classList.remove("hidden");
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
       document.querySelectorAll("[data-step], [data-go]").forEach((button) => {
@@ -1727,6 +1892,11 @@
       });
 
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
+        const detailButton = event.target.closest("[data-candidate-detail]");
+        if (detailButton) {
+          renderCandidateDetail(detailButton.dataset.candidateDetail);
+          return;
+        }
         const button = event.target.closest("[data-invite]");
         if (!button) return;
         const candidateId = button.dataset.invite;
@@ -1747,6 +1917,44 @@
         renderCandidates();
         renderInvites();
         showToast("已送出咖啡邀請");
+      });
+
+      document.getElementById("candidateDetail").addEventListener("click", (event) => {
+        if (event.target.closest("[data-close-detail='candidate']")) {
+          document.getElementById("candidateDetail").classList.add("hidden");
+          return;
+        }
+        const button = event.target.closest("[data-invite]");
+        if (!button) return;
+        if (state.dailyInviteUsed && !state.invited.has(button.dataset.invite)) {
+          showToast("今天已經送出 1 個邀約");
+          return;
+        }
+        state.invited.add(button.dataset.invite);
+        state.dailyInviteUsed = true;
+        if (!invites.some((invite) => invite.candidateId === button.dataset.invite && invite.status === "sent")) {
+          invites.unshift({
+            id: `sent-${button.dataset.invite}`,
+            candidateId: button.dataset.invite,
+            status: "sent",
+            note: "等待對方回應邀約",
+          });
+        }
+        renderCandidates();
+        renderInvites();
+        showToast("已送出咖啡邀請");
+      });
+
+      document.getElementById("inviteList").addEventListener("click", (event) => {
+        const card = event.target.closest("[data-invite-detail]");
+        if (!card) return;
+        renderInviteDetail(card.dataset.inviteDetail);
+      });
+
+      document.getElementById("inviteDetail").addEventListener("click", (event) => {
+        if (event.target.closest("[data-close-detail='invite']")) {
+          document.getElementById("inviteDetail").classList.add("hidden");
+        }
       });
 
       document.getElementById("inviteTabs").addEventListener("click", (event) => {
