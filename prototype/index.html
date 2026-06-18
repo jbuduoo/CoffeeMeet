@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>等一個人的咖啡 MVP Prototype</title>
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --panel: #fffdf8;
+        --panel-strong: #ffffff;
+        --ink: #25211c;
+        --muted: #746c62;
+        --line: #ddd5c9;
+        --accent: #0f766e;
+        --accent-dark: #0b5f59;
+        --amber: #b7791f;
+        --rose: #b42318;
+        --blue: #2563eb;
+        --shadow: 0 10px 30px rgba(43, 36, 27, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.5;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+      }
+
+      .sidebar {
+        background: #29231d;
+        color: #f9f4ea;
+        padding: 24px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #f7c873;
+        color: #29231d;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.2;
+      }
+
+      .brand p {
+        margin: 3px 0 0;
+        color: #cfbfaa;
+        font-size: 13px;
+      }
+
+      .step-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .step-button {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.11);
+        background: rgba(255, 255, 255, 0.05);
+        color: #f9f4ea;
+        border-radius: 8px;
+        min-height: 46px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+      }
+
+      .step-button.active {
+        background: #f9f4ea;
+        color: #29231d;
+      }
+
+      .step-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.14);
+        flex: 0 0 auto;
+        font-size: 13px;
+      }
+
+      .step-button.active .step-icon {
+        background: #0f766e;
+        color: white;
+      }
+
+      .sidebar-note {
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding-top: 18px;
+        color: #d9cdbd;
+        font-size: 13px;
+      }
+
+      .main {
+        padding: 28px;
+        display: grid;
+        gap: 20px;
+        align-content: start;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .title-block h2 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      .title-block p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .status-pill {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 8px 12px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .layout {
+        max-width: 980px;
+      }
+
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .section h3 {
+        margin: 0 0 16px;
+        font-size: 18px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .form-section-title {
+        grid-column: 1 / -1;
+        margin: 10px 0 2px;
+        color: #2f2922;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .form-section-title:first-child {
+        margin-top: 0;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field.full {
+        grid-column: 1 / -1;
+      }
+
+      .inline-selects {
+        display: grid;
+        grid-template-columns: 1fr 0.75fr 0.75fr;
+        gap: 8px;
+      }
+
+      .place-picker {
+        display: grid;
+        gap: 10px;
+      }
+
+      .map-shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .choice-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .choice-chip {
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fffdf8;
+        color: var(--ink);
+        padding: 7px 12px;
+        font-weight: 700;
+      }
+
+      .choice-chip.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .inline-action {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .verify-status {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .map-link {
+        min-height: 38px;
+        border: 1px solid #1d4ed8;
+        border-radius: 999px;
+        background: #2563eb;
+        color: white;
+        padding: 7px 11px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .map-link:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+      }
+
+      label {
+        color: #51483d;
+        font-weight: 650;
+        font-size: 14px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #cfc6b8;
+        border-radius: 8px;
+        background: var(--panel-strong);
+        color: var(--ink);
+        min-height: 44px;
+        padding: 10px 12px;
+      }
+
+      textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 3px solid rgba(15, 118, 110, 0.16);
+        border-color: var(--accent);
+      }
+
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        border: 1px solid transparent;
+        min-height: 42px;
+        border-radius: 8px;
+        padding: 9px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .btn.primary:hover {
+        background: var(--accent-dark);
+      }
+
+      .btn.secondary {
+        background: var(--panel-strong);
+        color: var(--ink);
+        border-color: var(--line);
+      }
+
+      .btn.warning {
+        background: #fff8e8;
+        border-color: #e7c375;
+        color: #7c4a03;
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        background: #eee7dc;
+        border-color: #ddd5c9;
+        color: #8a8074;
+      }
+
+      .photo-zone {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .photo-slot {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #f4eee3;
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+        position: relative;
+        display: grid;
+        place-items: center;
+        color: #8a8074;
+        font-size: 13px;
+      }
+
+      .photo-slot.main {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+
+      .photo-slot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .photo-slot.main::after {
+        content: "本人預覽";
+        position: absolute;
+        left: 12px;
+        bottom: 12px;
+        background: rgba(37, 33, 28, 0.78);
+        color: white;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      .hint-list {
+        display: grid;
+        gap: 10px;
+        color: var(--muted);
+      }
+
+      .candidate-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .candidate-count {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .candidate-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .candidate-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      .candidate-photo {
+        aspect-ratio: 16 / 10;
+        background: #eadfce;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .candidate-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(4px);
+        transform: scale(1.03);
+      }
+
+      .badge {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(37, 33, 28, 0.12);
+        border-radius: 999px;
+        padding: 4px 9px;
+        font-size: 12px;
+        color: #51483d;
+      }
+
+      .candidate-body {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .candidate-body h4 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .candidate-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        background: #faf7ef;
+        border-radius: 999px;
+        padding: 4px 8px;
+        color: #62594e;
+        font-size: 12px;
+      }
+
+      .candidate-body p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .tab-button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fffdf8;
+        color: var(--ink);
+        padding: 7px 12px;
+        font-weight: 700;
+      }
+
+      .tab-button.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .invite-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .email-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .email-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        overflow: hidden;
+      }
+
+      .email-head {
+        border-bottom: 1px solid var(--line);
+        background: #faf7ef;
+        padding: 14px 16px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .email-subject {
+        font-weight: 800;
+        color: var(--ink);
+      }
+
+      .email-meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .email-body {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        color: #3d362f;
+      }
+
+      .email-body p {
+        margin: 0;
+      }
+
+      .email-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .email-note {
+        border-left: 3px solid var(--accent);
+        background: #f1faf8;
+        padding: 10px 12px;
+        color: #31544e;
+        font-size: 14px;
+      }
+
+      .empty-state {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        color: var(--muted);
+        padding: 18px;
+      }
+
+      .invite-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 78px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+      }
+
+      .invite-thumb {
+        width: 78px;
+        height: 78px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .invite-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(4px);
+        transform: scale(1.03);
+      }
+
+      .invite-info {
+        display: grid;
+        gap: 7px;
+      }
+
+      .invite-info h4 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .status-label {
+        border-radius: 999px;
+        padding: 5px 9px;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .status-sent {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+
+      .status-active {
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .status-done {
+        background: #f5f3ff;
+        color: #6d28d9;
+      }
+
+      .status-cancelled {
+        background: #fff1f2;
+        color: #be123c;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .toast {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        background: #25211c;
+        color: white;
+        border-radius: 8px;
+        padding: 12px 14px;
+        box-shadow: var(--shadow);
+        opacity: 0;
+        transform: translateY(8px);
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+        }
+
+        .step-list {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .step-button {
+          justify-content: center;
+        }
+
+        .step-label {
+          display: none;
+        }
+
+        .photo-zone {
+          grid-template-columns: 1fr;
+        }
+
+        .candidate-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .photo-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .main {
+          padding: 18px;
+        }
+
+        .topbar {
+          display: grid;
+        }
+
+        .title-block h2 {
+          font-size: 23px;
+        }
+
+        .form-grid,
+        .step-list {
+          grid-template-columns: 1fr;
+        }
+
+        .candidate-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .invite-card {
+          grid-template-columns: 64px minmax(0, 1fr);
+        }
+
+        .invite-card .btn {
+          grid-column: 1 / -1;
+          justify-content: center;
+        }
+
+        .step-button {
+          justify-content: flex-start;
+        }
+
+        .step-label {
+          display: inline;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">等你</div>
+          <div>
+            <h1>等一個人的咖啡</h1>
+            <p>最小可行原型</p>
+          </div>
+        </div>
+
+        <nav class="step-list" aria-label="MVP steps">
+          <button class="step-button active" data-step="digest" type="button">
+            <span class="step-icon">1</span>
+            <span class="step-label">交友清單</span>
+          </button>
+          <button class="step-button" data-step="invites" type="button">
+            <span class="step-icon">2</span>
+            <span class="step-label">我的邀約</span>
+          </button>
+          <button class="step-button" data-step="emails" type="button">
+            <span class="step-icon">3</span>
+            <span class="step-label">Email 範本</span>
+          </button>
+          <button class="step-button" data-step="profile" type="button">
+            <span class="step-icon">4</span>
+            <span class="step-label">使用者資料</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          這版只驗證一件事：使用者是否願意建立資料，並透過交友清單做出下一步選擇。
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="title-block">
+            <h2 id="pageTitle">交友清單</h2>
+            <p id="pageSubtitle">設定年齡範圍，查看符合條件的新對象。</p>
+          </div>
+          <div class="status-pill" id="completionText">資料尚未完成</div>
+        </div>
+
+        <div class="layout">
+          <div>
+            <section class="section page hidden" id="profilePage">
+              <h3>建立個人資料</h3>
+              <form id="profileForm">
+                <div class="form-grid">
+                  <div class="form-section-title">照片</div>
+                  <div class="field full">
+                    <div class="photo-zone">
+                      <div class="photo-grid" id="photoGrid">
+                        <div class="photo-slot main">主照片</div>
+                        <div class="photo-slot">2</div>
+                        <div class="photo-slot">3</div>
+                        <div class="photo-slot">4</div>
+                        <div class="photo-slot">5</div>
+                      </div>
+                      <div>
+                        <div class="field">
+                          <label for="photoInput">匯入照片</label>
+                          <input id="photoInput" type="file" accept="image/*" multiple />
+                        </div>
+                        <div class="hint-list" style="margin-top: 14px">
+                          <div>最多可以放 5 張照片，第一張會作為主照片。</div>
+                          <div>這裡顯示你上傳的原圖，方便確認照片是否正確。</div>
+                          <div>出現在交友清單裡時，系統會顯示柔焦版本。</div>
+                          <div>原圖未來可供平台審核，不直接公開。</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section-title">基本資料</div>
+                  <div class="field">
+                    <label for="nickname">暱稱</label>
+                    <input id="nickname" name="nickname" autocomplete="nickname" placeholder="例如：Kai" />
+                  </div>
+                  <div class="field">
+                    <label for="email">Email</label>
+                    <div class="inline-action">
+                      <input id="email" name="email" type="email" placeholder="you@example.com" />
+                      <button class="btn secondary" id="verifyEmail" type="button">寄送認證信</button>
+                    </div>
+                    <div class="verify-status" id="emailVerifyStatus">尚未認證</div>
+                  </div>
+                  <div class="field">
+                    <label for="gender">性別</label>
+                    <select id="gender" name="gender">
+                      <option value="">請選擇</option>
+                      <option>女性</option>
+                      <option>男性</option>
+                      <option>非二元 / 其他</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="birthYear">出生年月日</label>
+                    <div class="inline-selects">
+                      <select id="birthYear" name="birthYear" aria-label="出生年"></select>
+                      <select id="birthMonth" name="birthMonth" aria-label="出生月"></select>
+                      <select id="birthDay" name="birthDay" aria-label="出生日"></select>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="city">城市</label>
+                    <select id="city" name="city">
+                      <option>台北市</option>
+                      <option>新北市</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="district">行政區</label>
+                    <select id="district" name="district"></select>
+                  </div>
+
+                  <div class="form-section-title">背景與期待</div>
+                  <div class="field">
+                    <label for="occupation">職業</label>
+                    <input id="occupation" name="occupation" placeholder="例如：品牌企劃、工程師、行政" />
+                  </div>
+                  <div class="field">
+                    <label for="education">學歷</label>
+                    <select id="education" name="education">
+                      <option value="">請選擇</option>
+                      <option>高中職</option>
+                      <option>專科</option>
+                      <option>大學</option>
+                      <option>研究所以上</option>
+                      <option>其他</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="school">學校</label>
+                    <input id="school" name="school" placeholder="例如：政治大學、台灣大學" />
+                  </div>
+                  <div class="field">
+                    <label for="relationshipStatus">感情狀態</label>
+                    <select id="relationshipStatus" name="relationshipStatus">
+                      <option value="">請選擇</option>
+                      <option>單身</option>
+                      <option>離婚</option>
+                      <option>分居</option>
+                      <option>其他</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="hasChildren">是否有小孩</label>
+                    <select id="hasChildren" name="hasChildren">
+                      <option value="">請選擇</option>
+                      <option>沒有</option>
+                      <option>有，未同住</option>
+                      <option>有，同住</option>
+                      <option>之後再聊</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="coffeeGoal">交友目的</label>
+                    <select id="coffeeGoal" name="coffeeGoal">
+                      <option value="">請選擇</option>
+                      <option>以結婚為前提</option>
+                      <option>長期交往</option>
+                      <option>陪伴</option>
+                      <option>男女朋友</option>
+                      <option>先認識朋友</option>
+                      <option>開放看看</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="smoking">是否抽菸</label>
+                    <select id="smoking" name="smoking">
+                      <option value="">請選擇</option>
+                      <option>不抽菸</option>
+                      <option>偶爾</option>
+                      <option>會抽菸</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="drinking">是否喝酒</label>
+                    <select id="drinking" name="drinking">
+                      <option value="">請選擇</option>
+                      <option>不喝酒</option>
+                      <option>偶爾小酌</option>
+                      <option>會喝酒</option>
+                    </select>
+                  </div>
+
+                  <div class="form-section-title">自我介紹</div>
+                  <div class="field full">
+                    <label for="intro">簡短自介</label>
+                    <textarea id="intro" name="intro" maxlength="300" placeholder="最多 300 字，簡單說明你的生活感、想認識的人與第一次見面的期待。"></textarea>
+                  </div>
+
+                  <div class="form-section-title">方便的時間地點</div>
+                  <div class="field full">
+                    <label for="availableTime">通常方便時間</label>
+                    <div class="choice-chips" id="availableTimeChoices">
+                      <button class="choice-chip" type="button" data-time-choice="平日晚上">平日晚上</button>
+                      <button class="choice-chip" type="button" data-time-choice="平日午休">平日午休</button>
+                      <button class="choice-chip" type="button" data-time-choice="週六下午">週六下午</button>
+                      <button class="choice-chip" type="button" data-time-choice="週六晚上">週六晚上</button>
+                      <button class="choice-chip" type="button" data-time-choice="週日下午">週日下午</button>
+                      <button class="choice-chip" type="button" data-time-choice="週日晚上">週日晚上</button>
+                      <button class="choice-chip" type="button" data-time-choice="時間可討論">時間可討論</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="availabilityNote">時間補充</label>
+                    <input id="availabilityNote" name="availabilityNote" placeholder="例如：平日 19:30 後比較穩" />
+                  </div>
+                  <div class="field full">
+                    <label for="meetingArea">方便見面地點：（按鈕會開啟 Google 地圖，選好地點後，把店名貼在這一欄。）</label>
+                    <div class="place-picker">
+                      <input id="meetingArea" name="meetingArea" placeholder="例：全家便利商店 中和中環店" required />
+                      <div class="map-shortcuts">
+                        <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
+                        <a class="map-link" data-map-query="7-11" href="https://www.google.com/maps/search/7-11/" target="_blank" rel="noreferrer">↗ 7-11</a>
+                        <a class="map-link" data-map-query="Starbucks" href="https://www.google.com/maps/search/Starbucks/" target="_blank" rel="noreferrer">↗ Starbucks</a>
+                        <a class="map-link" data-map-query="Louisa" href="https://www.google.com/maps/search/Louisa/" target="_blank" rel="noreferrer">↗ Louisa</a>
+                        <a class="map-link" data-map-query="咖啡店" href="https://www.google.com/maps/search/%E5%92%96%E5%95%A1%E5%BA%97/" target="_blank" rel="noreferrer">↗ 咖啡店</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="btn primary" type="submit">✓ 儲存並下一步</button>
+                  <button class="btn secondary" type="button" id="fillProfile">↺ 填入範例</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="section page" id="digestPage">
+              <form id="listFilterForm" style="margin-bottom: 18px">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="minAge">最小年齡</label>
+                    <input id="minAge" name="minAge" inputmode="numeric" value="28" />
+                  </div>
+                  <div class="field">
+                    <label for="maxAge">最大年齡</label>
+                    <input id="maxAge" name="maxAge" inputmode="numeric" value="42" />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="btn primary" type="submit">✓ 儲存篩選</button>
+                </div>
+              </form>
+              <div class="candidate-toolbar">
+                <h3 style="margin: 0">交友清單</h3>
+                <span class="candidate-count" id="candidateCount">4 位符合條件</span>
+              </div>
+              <div class="empty-state" style="margin-bottom: 14px">
+                每人每天最多發出 1 個咖啡邀約。當你被邀約時，其他人 24 小時內無法再邀約你；但你仍然可以主動邀約其他人。
+              </div>
+              <div class="candidate-grid" id="candidateGrid"></div>
+            </section>
+
+            <section class="section page hidden" id="invitesPage">
+              <div class="candidate-toolbar">
+                <h3 style="margin: 0">我的咖啡邀約</h3>
+                <span class="candidate-count" id="inviteCount">0 筆邀約</span>
+              </div>
+              <div class="tabs" id="inviteTabs">
+                <button class="tab-button active" type="button" data-invite-filter="all">全部</button>
+                <button class="tab-button" type="button" data-invite-filter="sent">已邀約</button>
+                <button class="tab-button" type="button" data-invite-filter="active">邀約中</button>
+                <button class="tab-button" type="button" data-invite-filter="done">已完成</button>
+                <button class="tab-button" type="button" data-invite-filter="cancelled">已取消</button>
+              </div>
+              <div class="invite-list" id="inviteList"></div>
+            </section>
+
+            <section class="section page hidden" id="emailsPage">
+              <div class="candidate-toolbar">
+                <h3 style="margin: 0">Email 範本</h3>
+                <span class="candidate-count">建議 6 種</span>
+              </div>
+              <div class="tabs" id="emailTabs">
+                <button class="tab-button active" type="button" data-email-filter="daily">每日媒合</button>
+                <button class="tab-button" type="button" data-email-filter="incoming">有人邀約</button>
+                <button class="tab-button" type="button" data-email-filter="confirm">確認時間地點</button>
+                <button class="tab-button" type="button" data-email-filter="reminder">見面提醒</button>
+                <button class="tab-button" type="button" data-email-filter="result">結果通知</button>
+                <button class="tab-button" type="button" data-email-filter="profile">資料提醒</button>
+              </div>
+              <div class="email-list">
+                <article class="email-card" data-email-template="daily">
+                  <div class="email-head">
+                    <div class="email-subject">今天有 3 位新對象，符合你的交友條件</div>
+                    <div class="email-meta">寄送時機：每天一次，有新增符合條件的人才寄出。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>Hi Kai，今天系統幫你整理了 3 位新的推薦對象。</p>
+                    <p>她們都符合你設定的年齡範圍，也都有填寫方便見面的咖啡店與時間。照片會先以柔焦呈現，讓你先看生活感與自我介紹。</p>
+                    <p>你可以進入交友清單，選擇是否「請對方喝杯咖啡」。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">查看今日交友清單</button>
+                      <button class="btn secondary" type="button">調整年齡條件</button>
+                    </div>
+                    <div class="email-note">重點：這封信不要每天硬寄。沒有新對象就不寄，避免變成打擾。</div>
+                  </div>
+                </article>
+
+                <article class="email-card hidden" data-email-template="incoming">
+                  <div class="email-head">
+                    <div class="email-subject">Mika 想請你喝杯咖啡</div>
+                    <div class="email-meta">寄送時機：有人送出邀約時立即寄出。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>Hi Kai，Mika 對你的資料有興趣，想請你喝杯咖啡。</p>
+                    <p>她方便的時間是週六下午，建議地點是 REC COFFEE 台中勤美店。你可以接受、婉拒，或提出其他時間討論。</p>
+                    <p>這個邀約會為你保留 24 小時。保留期間，其他人無法再邀約你；但你仍然可以主動邀約其他人。</p>
+                    <p>第一次見面建議約 1 小時，在公開、明亮、交通方便的地點。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">查看邀約</button>
+                      <button class="btn secondary" type="button">婉拒邀約</button>
+                    </div>
+                    <div class="email-note">重點：這封信要讓被邀約的人有主控感，不要有壓迫感。</div>
+                  </div>
+                </article>
+
+                <article class="email-card hidden" data-email-template="confirm">
+                  <div class="email-head">
+                    <div class="email-subject">咖啡邀約已成立，請確認時間與地點</div>
+                    <div class="email-meta">寄送時機：對方接受邀約後，雙方都收到。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>你和 Mika 的咖啡邀約已成立。</p>
+                    <p>目前暫定：週六下午，REC COFFEE 台中勤美店。若時間或地點需要微調，可以在邀約頁提出討論。</p>
+                    <p>成立後，你可以再次收到新的邀約；你也一直可以主動邀約其他人。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">確認邀約詳情</button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="email-card hidden" data-email-template="reminder">
+                  <div class="email-head">
+                    <div class="email-subject">明天有一場咖啡邀約</div>
+                    <div class="email-meta">寄送時機：見面前一天，必要時當天早上再提醒一次。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>提醒你，明天下午有一場咖啡邀約。</p>
+                    <p>地點：REC COFFEE 台中勤美店。建議準時抵達，若臨時需要調整，請盡早在邀約頁通知對方。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">查看地點與時間</button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="email-card hidden" data-email-template="result">
+                  <div class="email-head">
+                    <div class="email-subject">這次咖啡聊得如何？</div>
+                    <div class="email-meta">寄送時機：邀約時間結束後 2-4 小時。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>希望你今天的咖啡見面順利。</p>
+                    <p>你可以回報是否已完成、是否想再見面，或是否需要封鎖 / 檢舉。這些回饋不會直接公開給對方。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">填寫簡短回饋</button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="email-card hidden" data-email-template="profile">
+                  <div class="email-head">
+                    <div class="email-subject">你的資料還差一點，就可以開始被推薦</div>
+                    <div class="email-meta">寄送時機：註冊後尚未完成照片、Email 認證或必要資料。</div>
+                  </div>
+                  <div class="email-body">
+                    <p>你已經建立帳號，但目前資料還沒有完成。</p>
+                    <p>補上照片、交友目的、方便時間與咖啡店後，系統才能把你推薦給符合條件的人。</p>
+                    <div class="email-actions">
+                      <button class="btn primary" type="button">完成使用者資料</button>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast">已儲存</div>
+
+    <script>
+      const state = {
+        profile: {},
+        listFilter: { minAge: "28", maxAge: "42" },
+        photos: [],
+        invited: new Set(),
+        inviteFilter: "all",
+        dailyInviteUsed: false,
+      };
+
+      const candidates = [
+        {
+          id: "a",
+          name: "Mika",
+          age: "32-34",
+          area: "台北・大安",
+          looking: "先認識朋友",
+          intro: "大學商管背景，平日做品牌企劃，收入穩定。週末常去咖啡店看書，喜歡舒服、有邊界感的對話。",
+          time: "週六下午",
+          place: "REC COFFEE 台中勤美店",
+          photo: "../picture/girl/LINE_NOTE_260618_1.jpg",
+        },
+        {
+          id: "b",
+          name: "Rin",
+          age: "35-37",
+          area: "台北・信義",
+          looking: "穩定交往",
+          intro: "研究所畢業，在外商做行銷。喜歡散步、展覽和簡單料理，第一次見面希望輕鬆聊，不急著下結論。",
+          time: "平日晚上",
+          place: "Starbucks 台北信義新天地",
+          photo: "../picture/girl/LINE_NOTE_260618_2.jpg",
+        },
+        {
+          id: "c",
+          name: "Nora",
+          age: "29-31",
+          area: "新北・板橋",
+          looking: "曖昧看看",
+          intro: "科技業專案管理，工作忙但生活規律。喜歡週末找一間安靜咖啡店補電，重視準時和禮貌。",
+          time: "週日下午",
+          place: "路易莎 板橋車站店",
+          photo: "../picture/girl/LINE_NOTE_260618_3.jpg",
+        },
+        {
+          id: "d",
+          name: "Ivy",
+          age: "38-40",
+          area: "台北・中山",
+          looking: "還不確定",
+          intro: "醫療相關行政工作，生活圈穩定但想認識新朋友。喜歡真誠、直接，也喜歡大約 1 小時剛剛好的見面。",
+          time: "週日晚上",
+          place: "全家便利商店 中山捷運店",
+          photo: "../picture/girl/LINE_NOTE_260618_4.jpg",
+        },
+      ];
+
+      const inviteStatusMeta = {
+        sent: { label: "已邀約", className: "status-sent", action: "查看邀約" },
+        active: { label: "邀約中", className: "status-active", action: "查看進度" },
+        done: { label: "已完成", className: "status-done", action: "填寫回饋" },
+        cancelled: { label: "已取消", className: "status-cancelled", action: "查看結果" },
+      };
+
+      const invites = [
+        {
+          id: "seed-active",
+          candidateId: "b",
+          status: "active",
+          note: "等待對方確認咖啡時間",
+        },
+        {
+          id: "seed-done",
+          candidateId: "c",
+          status: "done",
+          note: "上週日已完成咖啡見面",
+        },
+        {
+          id: "seed-cancelled",
+          candidateId: "d",
+          status: "cancelled",
+          note: "這次沒有成立",
+        },
+      ];
+
+      const districtsByCity = {
+        台北市: [
+          "中正區",
+          "大同區",
+          "中山區",
+          "松山區",
+          "大安區",
+          "萬華區",
+          "信義區",
+          "士林區",
+          "北投區",
+          "內湖區",
+          "南港區",
+          "文山區",
+        ],
+        新北市: [
+          "板橋區",
+          "三重區",
+          "中和區",
+          "永和區",
+          "新莊區",
+          "新店區",
+          "土城區",
+          "蘆洲區",
+          "樹林區",
+          "汐止區",
+          "鶯歌區",
+          "三峽區",
+          "淡水區",
+          "瑞芳區",
+          "五股區",
+          "泰山區",
+          "林口區",
+          "深坑區",
+          "石碇區",
+          "坪林區",
+          "三芝區",
+          "石門區",
+          "八里區",
+          "平溪區",
+          "雙溪區",
+          "貢寮區",
+          "金山區",
+          "萬里區",
+          "烏來區",
+        ],
+      };
+
+      const pages = {
+        profile: {
+          title: "使用者資料",
+          subtitle: "先用最少欄位建立可被推薦的基本資料。",
+          el: document.getElementById("profilePage"),
+        },
+        digest: {
+          title: "交友清單",
+          subtitle: "設定年齡範圍，查看符合條件的新對象。",
+          el: document.getElementById("digestPage"),
+        },
+        invites: {
+          title: "我的咖啡邀約",
+          subtitle: "追蹤已邀約、進行中、完成與取消的咖啡邀約。",
+          el: document.getElementById("invitesPage"),
+        },
+        emails: {
+          title: "Email 範本",
+          subtitle: "檢查系統會寄出的關鍵通知信，確認流程是否順。",
+          el: document.getElementById("emailsPage"),
+        },
+      };
+
+      function go(step) {
+        Object.entries(pages).forEach(([key, page]) => {
+          page.el.classList.toggle("hidden", key !== step);
+        });
+        document.querySelectorAll(".step-button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.step === step);
+        });
+        document.getElementById("pageTitle").textContent = pages[step].title;
+        document.getElementById("pageSubtitle").textContent = pages[step].subtitle;
+      }
+
+      function formToObject(form) {
+        return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      function fillSelect(select, values, placeholder) {
+        select.innerHTML = [`<option value="">${placeholder}</option>`]
+          .concat(values.map((value) => `<option value="${value}">${value}</option>`))
+          .join("");
+      }
+
+      function updateDistrictOptions(selectedDistrict = "") {
+        const city = document.getElementById("city").value;
+        const district = document.getElementById("district");
+        fillSelect(district, districtsByCity[city] || [], "請選擇");
+        if (selectedDistrict) district.value = selectedDistrict;
+      }
+
+      function initBirthdayOptions() {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 70 }, (_, index) => String(currentYear - 18 - index));
+        const months = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0"));
+        const days = Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0"));
+        fillSelect(document.getElementById("birthYear"), years, "年");
+        fillSelect(document.getElementById("birthMonth"), months, "月");
+        fillSelect(document.getElementById("birthDay"), days, "日");
+      }
+
+      function updateMapLinks() {
+        document.querySelectorAll(".place-picker").forEach((picker) => {
+          const area = picker.querySelector("input").value.trim();
+          picker.querySelectorAll("[data-map-query]").forEach((link) => {
+            const query = [link.dataset.mapQuery, area].filter(Boolean).join(" ");
+            link.href = `https://www.google.com/maps/search/${encodeURIComponent(query)}/`;
+          });
+        });
+      }
+
+      function updateAvailabilityNoteFromChoices() {
+        const values = Array.from(document.querySelectorAll("[data-time-choice].active")).map(
+          (button) => button.dataset.timeChoice,
+        );
+        document.getElementById("availabilityNote").value = values.join("、");
+      }
+
+      function setAvailableTimes(values) {
+        document.querySelectorAll("[data-time-choice]").forEach((button) => {
+          button.classList.toggle("active", values.includes(button.dataset.timeChoice));
+        });
+        updateAvailabilityNoteFromChoices();
+      }
+
+      function updateSummary() {
+        const profileReady =
+          state.photos.length > 0 &&
+          state.profile.nickname &&
+          state.profile.email &&
+          state.profile.occupation &&
+          state.profile.education &&
+          state.profile.school &&
+          state.profile.relationshipStatus &&
+          state.profile.hasChildren &&
+          state.profile.coffeeGoal &&
+          state.profile.smoking &&
+          state.profile.drinking &&
+          state.profile.intro &&
+          state.profile.availabilityNote &&
+          state.profile.meetingArea;
+        document.getElementById("completionText").textContent = profileReady ? "資料已完成" : "資料尚未完成";
+
+      }
+
+      function renderCandidates() {
+        const grid = document.getElementById("candidateGrid");
+        grid.innerHTML = candidates
+          .map((candidate) => {
+            const invited = state.invited.has(candidate.id);
+            const dailyLimitReached = state.dailyInviteUsed && !invited;
+            const buttonLabel = invited ? "✓ 已送出邀請" : dailyLimitReached ? "今日邀約已用完" : "☕ 這時段我去請咖啡";
+            return `
+              <article class="candidate-card">
+                <div class="candidate-photo">
+                  <img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" />
+                  <span class="badge">柔焦</span>
+                </div>
+                <div class="candidate-body">
+                  <h4>${candidate.name}</h4>
+                  <div class="candidate-meta">
+                    <span class="chip">${candidate.age} 歲</span>
+                  </div>
+                  <p>${candidate.intro}</p>
+                  <div class="candidate-meta">
+                    <span class="chip">方便時間：${candidate.time}</span>
+                    <span class="chip">咖啡店：${candidate.place}</span>
+                  </div>
+                  <button class="btn ${invited ? "warning" : "primary"}" type="button" data-invite="${candidate.id}" ${dailyLimitReached ? "disabled" : ""}>
+                    ${buttonLabel}
+                  </button>
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderInvites() {
+        const list = document.getElementById("inviteList");
+        const visibleInvites =
+          state.inviteFilter === "all"
+            ? invites
+            : invites.filter((invite) => invite.status === state.inviteFilter);
+        document.getElementById("inviteCount").textContent = `${visibleInvites.length} 筆邀約`;
+        if (!visibleInvites.length) {
+          list.innerHTML = `<div class="empty-state">目前沒有這個狀態的邀約。</div>`;
+          return;
+        }
+        list.innerHTML = visibleInvites
+          .map((invite) => {
+            const candidate = candidates.find((item) => item.id === invite.candidateId);
+            const meta = inviteStatusMeta[invite.status];
+            return `
+              <article class="invite-card">
+                <div class="invite-thumb"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
+                <div class="invite-info">
+                  <h4>${candidate.name}</h4>
+                  <div class="candidate-meta">
+                    <span class="chip">${candidate.age} 歲</span>
+                    <span class="chip">方便時間：${candidate.time}</span>
+                    <span class="chip">咖啡店：${candidate.place}</span>
+                  </div>
+                  <p>${invite.note}</p>
+                </div>
+                <div style="display: grid; gap: 8px; justify-items: end">
+                  <span class="status-label ${meta.className}">${meta.label}</span>
+                  <button class="btn secondary" type="button">${meta.action}</button>
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      document.querySelectorAll("[data-step], [data-go]").forEach((button) => {
+        button.addEventListener("click", () => go(button.dataset.step || button.dataset.go));
+      });
+
+      document.getElementById("fillProfile").addEventListener("click", () => {
+        document.getElementById("nickname").value = "Kai";
+        document.getElementById("email").value = "kai@example.com";
+        document.getElementById("gender").value = "男性";
+        document.getElementById("birthYear").value = "1991";
+        document.getElementById("birthMonth").value = "08";
+        document.getElementById("birthDay").value = "16";
+        document.getElementById("city").value = "台北市";
+        updateDistrictOptions("大安區");
+        document.getElementById("occupation").value = "品牌企劃";
+        document.getElementById("education").value = "大學";
+        document.getElementById("school").value = "政治大學";
+        document.getElementById("relationshipStatus").value = "單身";
+        document.getElementById("hasChildren").value = "沒有";
+        document.getElementById("coffeeGoal").value = "長期交往";
+        document.getElementById("smoking").value = "不抽菸";
+        document.getElementById("drinking").value = "偶爾小酌";
+        document.getElementById("intro").value = "平日工作穩定，週末喜歡咖啡、散步和看展。想用輕鬆但真誠的方式認識新朋友。";
+        setAvailableTimes(["平日晚上", "週六下午", "週日下午"]);
+        document.getElementById("availabilityNote").value = "平日晚上、週六下午、週日下午，平日 19:30 後比較穩。";
+        document.getElementById("meetingArea").value = "Louisa 忠孝復興門市";
+        updateMapLinks();
+      });
+
+      document.getElementById("city").addEventListener("change", () => updateDistrictOptions());
+      document.getElementById("verifyEmail").addEventListener("click", () => {
+        const email = document.getElementById("email").value.trim();
+        const status = document.getElementById("emailVerifyStatus");
+        if (!email) {
+          showToast("請先輸入 Email");
+          return;
+        }
+        status.textContent = "認證信已寄出，請到信箱確認";
+        showToast("認證信已寄出");
+      });
+      document.getElementById("meetingArea").addEventListener("input", updateMapLinks);
+      document.getElementById("availableTimeChoices").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-time-choice]");
+        if (!button) return;
+        button.classList.toggle("active");
+        updateAvailabilityNoteFromChoices();
+      });
+
+      document.getElementById("profileForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        state.profile = formToObject(event.currentTarget);
+        updateSummary();
+        showToast("使用者資料已儲存");
+        go("digest");
+      });
+
+      document.getElementById("listFilterForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        state.listFilter = formToObject(event.currentTarget);
+        updateSummary();
+        showToast("交友清單篩選已儲存");
+      });
+
+      document.getElementById("emailTabs").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-email-filter]");
+        if (!button) return;
+        document.querySelectorAll("[data-email-filter]").forEach((tab) => {
+          tab.classList.toggle("active", tab === button);
+        });
+        document.querySelectorAll("[data-email-template]").forEach((template) => {
+          template.classList.toggle("hidden", template.dataset.emailTemplate !== button.dataset.emailFilter);
+        });
+      });
+
+      function renderPhotoGrid() {
+        const grid = document.getElementById("photoGrid");
+        grid.innerHTML = Array.from({ length: 5 })
+          .map((_, index) => {
+            const src = state.photos[index];
+            const mainClass = index === 0 ? " main" : "";
+            const label = index === 0 ? "主照片" : `${index + 1}`;
+            return `<div class="photo-slot${mainClass}">${src ? `<img alt="照片 ${index + 1}" src="${src}" />` : label}</div>`;
+          })
+          .join("");
+      }
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      document.getElementById("photoInput").addEventListener("change", async (event) => {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) return;
+        const remainingSlots = 5 - state.photos.length;
+        const selected = files.slice(0, Math.max(remainingSlots, 0));
+        if (!selected.length) {
+          showToast("最多只能放 5 張照片");
+          return;
+        }
+        const urls = await Promise.all(selected.map(readFileAsDataUrl));
+        state.photos = state.photos.concat(urls).slice(0, 5);
+        renderPhotoGrid();
+        updateSummary();
+        showToast(files.length > selected.length ? "已匯入前 5 張照片" : "照片已匯入");
+        event.target.value = "";
+      });
+
+      document.getElementById("candidateGrid").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-invite]");
+        if (!button) return;
+        const candidateId = button.dataset.invite;
+        if (state.dailyInviteUsed && !state.invited.has(candidateId)) {
+          showToast("今天已經送出 1 個邀約");
+          return;
+        }
+        state.invited.add(candidateId);
+        state.dailyInviteUsed = true;
+        if (!invites.some((invite) => invite.candidateId === candidateId && invite.status === "sent")) {
+          invites.unshift({
+            id: `sent-${candidateId}`,
+            candidateId,
+            status: "sent",
+            note: "等待對方回應邀約",
+          });
+        }
+        renderCandidates();
+        renderInvites();
+        showToast("已送出咖啡邀請");
+      });
+
+      document.getElementById("inviteTabs").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-invite-filter]");
+        if (!button) return;
+        state.inviteFilter = button.dataset.inviteFilter;
+        document.querySelectorAll("[data-invite-filter]").forEach((tab) => {
+          tab.classList.toggle("active", tab === button);
+        });
+        renderInvites();
+      });
+
+      renderCandidates();
+      renderInvites();
+      renderPhotoGrid();
+      initBirthdayOptions();
+      updateDistrictOptions();
+      updateMapLinks();
+      updateSummary();
+    </script>
+  </body>
+</html>
