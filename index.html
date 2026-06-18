@@ -6,18 +6,18 @@
     <title>等一個人的咖啡 MVP Prototype</title>
     <style>
       :root {
-        --bg: #f6f4ef;
-        --panel: #fffdf8;
+        --bg: #f4f1eb;
+        --panel: #fffaf2;
         --panel-strong: #ffffff;
         --ink: #25211c;
         --muted: #746c62;
-        --line: #ddd5c9;
+        --line: #d9d0c2;
         --accent: #0f766e;
         --accent-dark: #0b5f59;
         --amber: #b7791f;
         --rose: #b42318;
         --blue: #2563eb;
-        --shadow: 0 10px 30px rgba(43, 36, 27, 0.08);
+        --shadow: 0 14px 36px rgba(43, 36, 27, 0.09);
       }
 
       * {
@@ -26,7 +26,9 @@
 
       body {
         margin: 0;
-        background: var(--bg);
+        background:
+          linear-gradient(180deg, #fbf8f1 0, var(--bg) 260px),
+          var(--bg);
         color: var(--ink);
         font-family:
           system-ui,
@@ -55,9 +57,9 @@
       }
 
       .sidebar {
-        background: #29231d;
+        background: #2b251f;
         color: #f9f4ea;
-        padding: 24px 18px;
+        padding: 26px 18px;
         display: flex;
         flex-direction: column;
         gap: 24px;
@@ -70,10 +72,10 @@
       }
 
       .brand-mark {
-        width: 42px;
-        height: 42px;
+        width: 46px;
+        height: 46px;
         border-radius: 8px;
-        background: #f7c873;
+        background: #ffd37a;
         color: #29231d;
         display: grid;
         place-items: center;
@@ -100,7 +102,7 @@
       .step-button {
         width: 100%;
         border: 1px solid rgba(255, 255, 255, 0.11);
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.045);
         color: #f9f4ea;
         border-radius: 8px;
         min-height: 46px;
@@ -109,11 +111,20 @@
         align-items: center;
         gap: 10px;
         text-align: left;
+        transition:
+          background 160ms ease,
+          border-color 160ms ease,
+          transform 160ms ease;
       }
 
       .step-button.active {
         background: #f9f4ea;
         color: #29231d;
+      }
+
+      .step-button:hover {
+        border-color: rgba(255, 255, 255, 0.25);
+        transform: translateY(-1px);
       }
 
       .step-icon {
@@ -141,7 +152,7 @@
       }
 
       .main {
-        padding: 28px;
+        padding: 32px;
         display: grid;
         gap: 20px;
         align-content: start;
@@ -183,7 +194,7 @@
         border: 1px solid var(--line);
         border-radius: 8px;
         box-shadow: var(--shadow);
-        padding: 22px;
+        padding: 24px;
       }
 
       .section h3 {
@@ -448,6 +459,14 @@
         overflow: hidden;
         display: grid;
         grid-template-rows: auto 1fr;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .candidate-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(43, 36, 27, 0.1);
       }
 
       .candidate-photo {
@@ -547,6 +566,7 @@
         border-radius: 8px;
         background: var(--panel-strong);
         overflow: hidden;
+        box-shadow: 0 8px 20px rgba(43, 36, 27, 0.05);
       }
 
       .email-head {
@@ -785,13 +805,13 @@
             <span class="step-icon">2</span>
             <span class="step-label">我的邀約</span>
           </button>
-          <button class="step-button" data-step="emails" type="button">
-            <span class="step-icon">3</span>
-            <span class="step-label">Email 範本</span>
-          </button>
           <button class="step-button" data-step="profile" type="button">
-            <span class="step-icon">4</span>
+            <span class="step-icon">3</span>
             <span class="step-label">使用者資料</span>
+          </button>
+          <button class="step-button" data-step="emails" type="button">
+            <span class="step-icon">4</span>
+            <span class="step-label">Email 範本</span>
           </button>
         </nav>
 
