@@ -185,6 +185,25 @@
         white-space: nowrap;
       }
 
+      .principle-strip {
+        border: 1px solid #ead6aa;
+        border-radius: 8px;
+        background: #fff7e6;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .principle-strip strong {
+        color: #5f3b05;
+      }
+
+      .principle-strip span {
+        color: #7a5a27;
+        font-size: 14px;
+      }
+
       .layout {
         max-width: 980px;
       }
@@ -457,6 +476,11 @@
         display: grid;
         gap: 10px;
         color: var(--muted);
+      }
+
+      .field-hint {
+        color: var(--muted);
+        font-size: 13px;
       }
 
       .candidate-toolbar {
@@ -1036,6 +1060,7 @@
                   <div class="field full">
                     <label for="intro">簡短自介</label>
                     <textarea id="intro" name="intro" maxlength="300" placeholder="最多 300 字，簡單說明你的生活感、想認識的人與第一次見面的期待。"></textarea>
+                    <div class="field-hint">建議包含：工作型態、生活習慣、週末活動、想認識的關係。</div>
                   </div>
 
                   <div class="form-section-title">方便的時間地點</div>
@@ -1077,6 +1102,10 @@
             </section>
 
             <section class="section page" id="digestPage">
+              <div class="principle-strip">
+                <strong>不多聊，不滑照。</strong>
+                <span>合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
+              </div>
               <form id="listFilterForm" class="compact-filter">
                 <div class="field">
                   <label for="minAge">最小年齡</label>
@@ -1185,6 +1214,7 @@
                     <p>對方方便的時間是週六下午，建議地點是 REC COFFEE 台中勤美店。你可以接受、婉拒，或提出其他時間討論。</p>
                     <p>這個邀約會為你保留 24 小時。保留期間，其他人無法再邀約你；但你仍然可以主動邀約其他人。</p>
                     <p>第一次見面建議約 1 小時，在公開、明亮、交通方便的地點。</p>
+                    <p>安全提醒：第一次見面請選公開場所，不要透露住家或公司地址。</p>
                     <div class="email-actions">
                       <button class="btn primary" type="button">查看邀約</button>
                       <button class="btn secondary" type="button">婉拒邀約</button>
@@ -1202,6 +1232,7 @@
                     <p>你和 Mika 的咖啡邀約已成立。</p>
                     <p>目前暫定：週六下午，REC COFFEE 台中勤美店。若時間或地點需要微調，可以在邀約頁提出討論。</p>
                     <p>成立後，你可以再次收到新的邀約；你也一直可以主動邀約其他人。</p>
+                    <p>安全提醒：第一次見面請選公開場所，不要透露住家或公司地址。</p>
                     <div class="email-actions">
                       <button class="btn primary" type="button">確認邀約詳情</button>
                     </div>
