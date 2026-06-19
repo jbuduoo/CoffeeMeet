@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>等一個人的咖啡 MVP Prototype</title>
+    <title>等一個人的咖啡</title>
     <style>
       :root {
         --bg: #f4f1eb;
@@ -981,7 +981,7 @@
           <div class="brand-mark">等你</div>
           <div>
             <h1>等一個人的咖啡</h1>
-            <p>最小可行原型</p>
+            <p>用一杯咖啡，認識一個人</p>
           </div>
         </div>
 
@@ -1212,33 +1212,9 @@
             </section>
 
             <section class="section page" id="digestPage">
-              <form id="listFilterForm" class="compact-filter">
-                <div class="field">
-                  <label for="minAge">最小年齡</label>
-                  <input id="minAge" name="minAge" inputmode="numeric" value="28" />
-                </div>
-                <div class="field">
-                  <label for="maxAge">最大年齡</label>
-                  <input id="maxAge" name="maxAge" inputmode="numeric" value="42" />
-                </div>
-                <button class="btn primary" type="submit">✓ 儲存篩選</button>
-              </form>
               <div class="candidate-toolbar">
                 <h3 style="margin: 0">交友清單</h3>
                 <span class="candidate-count" id="candidateCount">4 位符合條件</span>
-              </div>
-              <div class="empty-state" style="margin-bottom: 14px">
-                每人每天最多發出 1 個咖啡邀約。當你被邀約時，其他人 24 小時內無法再邀約你；但你仍然可以主動邀約其他人。
-              </div>
-              <div class="attention-card">
-                <div class="attention-row">
-                  <div>
-                    <h4>有人想讓你注意她</h4>
-                    <p>她沒有直接發出邀約，只是希望你先看看她的資料。如果你也有興趣，可以請她喝杯咖啡。</p>
-                  </div>
-                  <button class="btn primary" type="button" data-focus-candidate="girl-01">查看她的資料</button>
-                </div>
-                <div class="email-note">女生每天最多使用 1 次「讓他注意我」。這不是正式邀約，不會鎖定男生，也不會消耗男生的邀約額度。</div>
               </div>
               <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
@@ -1851,6 +1827,7 @@
         });
         document.getElementById("pageTitle").textContent = pages[step].title;
         document.getElementById("pageSubtitle").textContent = pages[step].subtitle;
+        document.querySelector(".principle-strip").classList.toggle("hidden", step === "digest");
       }
 
       function formToObject(form) {
@@ -2126,13 +2103,6 @@
         go("digest");
       });
 
-      document.getElementById("listFilterForm").addEventListener("submit", (event) => {
-        event.preventDefault();
-        state.listFilter = formToObject(event.currentTarget);
-        updateSummary();
-        showToast("交友清單篩選已儲存");
-      });
-
       document.getElementById("emailTabs").addEventListener("click", (event) => {
         const button = event.target.closest("[data-email-filter]");
         if (!button) return;
@@ -2141,16 +2111,6 @@
         });
         document.querySelectorAll("[data-email-template]").forEach((template) => {
           template.classList.toggle("hidden", template.dataset.emailTemplate !== button.dataset.emailFilter);
-        });
-      });
-
-      document.querySelectorAll("[data-focus-candidate]").forEach((button) => {
-        button.addEventListener("click", () => {
-          const card = document.querySelector(`[data-candidate-card="${button.dataset.focusCandidate}"]`);
-          if (!card) return;
-          card.scrollIntoView({ behavior: "smooth", block: "center" });
-          card.classList.add("is-focused");
-          window.setTimeout(() => card.classList.remove("is-focused"), 1600);
         });
       });
 
@@ -2281,6 +2241,7 @@
       updateDistrictOptions();
       updateMapLinks();
       updateSummary();
+      go("digest");
     </script>
   </body>
 </html>
