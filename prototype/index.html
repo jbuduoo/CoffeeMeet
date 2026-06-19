@@ -689,6 +689,11 @@
         align-items: start;
       }
 
+      .detail-media {
+        display: grid;
+        gap: 10px;
+      }
+
       .detail-photo {
         width: 100%;
         aspect-ratio: 4 / 5;
@@ -707,24 +712,20 @@
       }
 
       .photo-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
         width: 34px;
         height: 34px;
         border: 1px solid rgba(37, 33, 28, 0.16);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.86);
+        background: #fffdf8;
         color: var(--ink);
         font-weight: 800;
       }
 
-      .photo-nav.prev {
-        left: 10px;
-      }
-
-      .photo-nav.next {
-        right: 10px;
+      .photo-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        min-height: 34px;
       }
 
       .detail-copy {
@@ -1450,7 +1451,7 @@
         {
           id: "girl-01",
           name: "Mika",
-          age: "32-34",
+          age: "33",
           area: "台北・大安",
           looking: "先認識朋友",
           intro: "大學商管背景，平日做品牌企劃，收入穩定。週末常去咖啡店看書，喜歡舒服、有邊界感的對話。",
@@ -1462,7 +1463,7 @@
         {
           id: "girl-02",
           name: "Rin",
-          age: "35-37",
+          age: "36",
           area: "台北・信義",
           looking: "穩定交往",
           intro: "研究所畢業，在外商做行銷。喜歡散步、展覽和簡單料理，第一次見面希望輕鬆聊，不急著下結論。",
@@ -1474,7 +1475,7 @@
         {
           id: "girl-03",
           name: "Nora",
-          age: "29-31",
+          age: "30",
           area: "新北・板橋",
           looking: "曖昧看看",
           intro: "科技業專案管理，工作忙但生活規律。喜歡週末找一間安靜咖啡店補電，重視準時和禮貌。",
@@ -1486,7 +1487,7 @@
         {
           id: "girl-04",
           name: "Ivy",
-          age: "38-40",
+          age: "39",
           area: "台北・中山",
           looking: "還不確定",
           intro: "醫療相關行政工作，生活圈穩定但想認識新朋友。喜歡真誠、直接，也喜歡大約 1 小時剛剛好的見面。",
@@ -1498,7 +1499,7 @@
         {
           id: "girl-05",
           name: "Yuna",
-          age: "27-29",
+          age: "28",
           area: "台北・松山",
           looking: "先認識朋友",
           intro: "平面設計師，喜歡攝影、老屋咖啡和週末市集。希望先從自在的聊天開始，慢慢確認彼此節奏。",
@@ -1510,7 +1511,7 @@
         {
           id: "girl-06",
           name: "Amber",
-          age: "30-32",
+          age: "31",
           area: "台北・內湖",
           looking: "穩定交往",
           intro: "軟體產品企劃，工作理性但生活喜歡保留一點任性。咖啡偏拿鐵，聊天偏真誠。",
@@ -1522,7 +1523,7 @@
         {
           id: "girl-07",
           name: "Claire",
-          age: "33-35",
+          age: "34",
           area: "新北・永和",
           looking: "曖昧看看",
           intro: "國中老師，生活規律，喜歡慢跑和看舞台劇。重視說到做到，也欣賞能好好溝通的人。",
@@ -1534,7 +1535,7 @@
         {
           id: "girl-08",
           name: "Luna",
-          age: "26-28",
+          age: "27",
           area: "台北・士林",
           looking: "先認識朋友",
           intro: "護理師，排班不固定但很珍惜休假。喜歡簡單、乾淨的約會，不太需要華麗安排。",
@@ -1546,7 +1547,7 @@
         {
           id: "girl-09",
           name: "Sora",
-          age: "34-36",
+          age: "35",
           area: "台北・中正",
           looking: "穩定交往",
           intro: "財務分析工作，喜歡旅行前做功課，也喜歡沒有行程的午後。希望認識成熟、穩定的人。",
@@ -1558,7 +1559,7 @@
         {
           id: "girl-10",
           name: "Tina",
-          age: "31-33",
+          age: "32",
           area: "新北・三重",
           looking: "還不確定",
           intro: "電商營運，個性直接，喜歡效率也喜歡幽默感。希望第一次見面就是喝杯咖啡，不用太有壓力。",
@@ -1570,7 +1571,7 @@
         {
           id: "girl-11",
           name: "Hana",
-          age: "28-30",
+          age: "29",
           area: "台北・南港",
           looking: "先認識朋友",
           intro: "研究助理，喜歡書店、紀錄片和清淡的甜點。慢熟，但熟了以後很願意分享生活。",
@@ -1582,7 +1583,7 @@
         {
           id: "girl-12",
           name: "Jasmine",
-          age: "36-38",
+          age: "37",
           area: "台北・文山",
           looking: "穩定交往",
           intro: "自由接案文字工作者，生活彈性但自律。喜歡安靜的咖啡店，也喜歡能聊價值觀的對話。",
@@ -1594,7 +1595,7 @@
         {
           id: "girl-13",
           name: "Eve",
-          age: "29-31",
+          age: "30",
           area: "桃園・中壢",
           looking: "曖昧看看",
           intro: "航空業地勤，習慣照顧細節。喜歡有禮貌、有時間觀念的人，見面希望簡單舒服。",
@@ -1606,7 +1607,7 @@
         {
           id: "girl-14",
           name: "Phoebe",
-          age: "39-41",
+          age: "40",
           area: "台北・大同",
           looking: "穩定交往",
           intro: "品牌顧問，生活圈單純，喜歡成熟坦白的互動。比起聊天很熱，更在意相處是否安心。",
@@ -1618,7 +1619,7 @@
         {
           id: "girl-15",
           name: "Molly",
-          age: "25-27",
+          age: "26",
           area: "新北・新店",
           looking: "先認識朋友",
           intro: "行銷助理，喜歡爬小山、看展和找好吃早餐。希望遇到能一起探索城市的人。",
@@ -1630,7 +1631,7 @@
         {
           id: "boy-01",
           name: "Leo",
-          age: "31-33",
+          age: "32",
           area: "台北・信義",
           looking: "穩定交往",
           intro: "資料工程師，平日工作專注，假日喜歡騎車到河濱或找咖啡店放空。重視承諾和穩定陪伴。",
@@ -1642,7 +1643,7 @@
         {
           id: "boy-02",
           name: "Ethan",
-          age: "34-36",
+          age: "35",
           area: "台北・大安",
           looking: "先認識朋友",
           intro: "產品經理，喜歡登山、黑咖啡和整理生活清單。聊天不太尬聊，喜歡有來有往。",
@@ -1654,7 +1655,7 @@
         {
           id: "boy-03",
           name: "Ryan",
-          age: "28-30",
+          age: "29",
           area: "新北・板橋",
           looking: "曖昧看看",
           intro: "影像剪輯師，作息偶爾晚，但會為重要的人留時間。喜歡電影、散步和不趕時間的晚餐。",
@@ -1666,7 +1667,7 @@
         {
           id: "boy-04",
           name: "Aaron",
-          age: "37-39",
+          age: "38",
           area: "台北・松山",
           looking: "穩定交往",
           intro: "金融業，生活穩定，喜歡規律運動和週末下廚。希望認識願意一起經營日常的人。",
@@ -1678,7 +1679,7 @@
         {
           id: "boy-05",
           name: "Jay",
-          age: "30-32",
+          age: "31",
           area: "台北・中山",
           looking: "還不確定",
           intro: "室內設計師，喜歡城市散步和觀察店面細節。第一次見面希望輕鬆聊生活，不急著定義關係。",
@@ -1690,7 +1691,7 @@
         {
           id: "boy-06",
           name: "Chris",
-          age: "35-37",
+          age: "36",
           area: "新北・中和",
           looking: "穩定交往",
           intro: "後端工程師，個性溫和，喜歡游泳和研究咖啡豆。希望對方也願意慢慢建立信任。",
@@ -1702,7 +1703,7 @@
         {
           id: "boy-07",
           name: "Howard",
-          age: "40-42",
+          age: "41",
           area: "台北・內湖",
           looking: "先認識朋友",
           intro: "科技業主管，工作忙但下班會把時間留給生活。喜歡成熟、有界線的相處。",
@@ -1714,7 +1715,7 @@
         {
           id: "boy-08",
           name: "Nick",
-          age: "27-29",
+          age: "28",
           area: "桃園・桃園",
           looking: "曖昧看看",
           intro: "健身教練，生活單純，喜歡開朗但不吵的相處。咖啡見面希望有笑點也有真心話。",
@@ -1726,7 +1727,7 @@
         {
           id: "boy-09",
           name: "Will",
-          age: "33-35",
+          age: "34",
           area: "台北・中正",
           looking: "穩定交往",
           intro: "法律相關工作，說話慢但想得多。喜歡真誠交換觀點，也尊重彼此的生活空間。",
@@ -1738,7 +1739,7 @@
         {
           id: "boy-10",
           name: "Sean",
-          age: "29-31",
+          age: "30",
           area: "台北・萬華",
           looking: "先認識朋友",
           intro: "音樂企劃，喜歡現場演出、黑膠和深夜散步。希望遇到願意分享生活品味的人。",
@@ -1750,7 +1751,7 @@
         {
           id: "boy-11",
           name: "Daniel",
-          age: "36-38",
+          age: "37",
           area: "新北・新莊",
           looking: "還不確定",
           intro: "業務管理，外向但不強迫熱絡。喜歡把第一次見面安排得簡單，彼此舒服最重要。",
@@ -2013,15 +2014,13 @@
                 <div class="candidate-body">
                   <div class="candidate-mainline">
                     <h4>${candidate.name}</h4>
-                    <span class="chip">${candidate.age} 歲</span>
-                    <span class="chip">${candidate.area}</span>
-                    <span class="chip">${candidate.looking}</span>
                   </div>
                   <div class="candidate-meta">
+                    <span class="chip">${candidate.age} 歲</span>
+                    <span class="chip">${candidate.area}</span>
                     <span class="chip">${candidate.time}</span>
                     <span class="chip">${candidate.place}</span>
                   </div>
-                  <p>${shortIntro(candidate.intro)}</p>
                 </div>
                 <div class="candidate-actions">
                   <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">看詳細資料</button>
@@ -2093,28 +2092,29 @@
           <div class="detail-head">
             <div>
               <h3>${candidate.name}</h3>
-              <div class="candidate-meta" style="margin-top: 8px">
-                <span class="chip">${candidate.age} 歲</span>
-                <span class="chip">${candidate.area}</span>
-                <span class="chip">咖啡店距離 ${distanceText}</span>
-                <span class="chip">${candidate.looking}</span>
-              </div>
             </div>
             <button class="btn secondary" type="button" data-close-detail="candidate">關閉</button>
           </div>
           <div class="detail-layout">
-            <div class="detail-photo">
-              <img alt="${candidate.name} 的照片" src="${photos[activePhotoIndex]}" />
+            <div class="detail-media">
+              <div class="detail-photo">
+                <img alt="${candidate.name} 的照片" src="${photos[activePhotoIndex]}" />
+              </div>
               ${
                 photos.length > 1
-                  ? `<button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="上一張">‹</button>
-                     <button class="photo-nav next" type="button" data-photo-step="1" aria-label="下一張">›</button>`
+                  ? `<div class="photo-controls">
+                       <button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="上一張">‹</button>
+                       <button class="photo-nav next" type="button" data-photo-step="1" aria-label="下一張">›</button>
+                     </div>`
                   : ""
               }
             </div>
             <div class="detail-copy">
               <p>${candidate.intro}</p>
               <div class="detail-grid">
+                <div class="detail-item"><span>年齡</span><strong>${candidate.age} 歲</strong></div>
+                <div class="detail-item"><span>地區</span><strong>${candidate.area}</strong></div>
+                <div class="detail-item"><span>交友目的</span><strong>${candidate.looking}</strong></div>
                 <div class="detail-item"><span>職業</span><strong>${detail.occupation}</strong></div>
                 <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
                 <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
