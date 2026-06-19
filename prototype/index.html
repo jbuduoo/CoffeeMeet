@@ -165,6 +165,10 @@
         gap: 16px;
       }
 
+      .title-block {
+        width: 100%;
+      }
+
       .title-block h2 {
         margin: 0;
         font-size: 28px;
@@ -190,9 +194,10 @@
         border-radius: 8px;
         background: #fff7e6;
         padding: 12px 14px;
-        margin-bottom: 14px;
+        margin-top: 16px;
         display: grid;
         gap: 4px;
+        min-height: 76px;
       }
 
       .principle-strip strong {
@@ -202,6 +207,25 @@
       .principle-strip span {
         color: #7a5a27;
         font-size: 14px;
+      }
+
+      .principle-dots {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+      }
+
+      .principle-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #d7bd82;
+        opacity: 0.45;
+      }
+
+      .principle-dot.active {
+        opacity: 1;
+        background: var(--accent);
       }
 
       .layout {
@@ -991,8 +1015,9 @@
             <h2 id="pageTitle">交友清單</h2>
             <p id="pageSubtitle">設定年齡範圍，查看符合條件的新對象。</p>
             <div class="principle-strip">
-              <strong>不多聊，不滑照。</strong>
-              <span>合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
+              <strong id="principleTitle">不多聊，不滑照。</strong>
+              <span id="principleBody">合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
+              <div class="principle-dots" id="principleDots" aria-hidden="true"></div>
             </div>
           </div>
         </div>
@@ -1727,6 +1752,25 @@
         },
       ];
 
+      const principles = [
+        {
+          title: "不多聊，不滑照。",
+          body: "合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。",
+        },
+        {
+          title: "先看生活感，再決定見面。",
+          body: "照片先柔焦呈現，清單優先讓你看自我介紹、方便時間和見面地點。",
+        },
+        {
+          title: "每天一個邀約就好。",
+          body: "少量、清楚、低壓力。被邀約時保留 24 小時，避免同時收到太多邀請。",
+        },
+        {
+          title: "第一次見面只約公開場所。",
+          body: "咖啡快聊建議約 1 小時，不透露住家或公司地址，讓雙方都安心。",
+        },
+      ];
+
       const districtsByCity = {
         台北市: [
           "中正區",
@@ -1939,6 +1983,15 @@
               </article>
             `;
           })
+          .join("");
+      }
+
+      function renderPrinciple(index) {
+        const current = principles[index % principles.length];
+        document.getElementById("principleTitle").textContent = current.title;
+        document.getElementById("principleBody").textContent = current.body;
+        document.getElementById("principleDots").innerHTML = principles
+          .map((_, dotIndex) => `<span class="principle-dot${dotIndex === index ? " active" : ""}"></span>`)
           .join("");
       }
 
@@ -2213,6 +2266,13 @@
         });
         renderInvites();
       });
+
+      let principleIndex = 0;
+      renderPrinciple(principleIndex);
+      window.setInterval(() => {
+        principleIndex = (principleIndex + 1) % principles.length;
+        renderPrinciple(principleIndex);
+      }, 4000);
 
       renderCandidates();
       renderInvites();
