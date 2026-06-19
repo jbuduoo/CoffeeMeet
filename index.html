@@ -564,18 +564,6 @@
         transform: scale(1.03);
       }
 
-      .badge {
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(37, 33, 28, 0.12);
-        border-radius: 999px;
-        padding: 4px 9px;
-        font-size: 12px;
-        color: #51483d;
-      }
-
       .candidate-body {
         padding: 14px;
         display: grid;
@@ -685,6 +673,7 @@
         border-radius: 8px;
         overflow: hidden;
         background: #eadfce;
+        position: relative;
       }
 
       .detail-photo img {
@@ -693,6 +682,27 @@
         object-fit: cover;
         filter: blur(4px);
         transform: scale(1.03);
+      }
+
+      .photo-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(37, 33, 28, 0.16);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .photo-nav.prev {
+        left: 10px;
+      }
+
+      .photo-nav.next {
+        right: 10px;
       }
 
       .detail-copy {
@@ -1035,7 +1045,7 @@
         <div class="topbar">
           <div class="title-block">
             <h2 id="pageTitle">交友清單</h2>
-            <p id="pageSubtitle">設定年齡範圍，查看符合條件的新對象。</p>
+            <p id="pageSubtitle" class="hidden"></p>
             <div class="principle-strip">
               <strong id="principleTitle">不多聊，不滑照。</strong>
               <span id="principleBody">合適的人出現時，用一杯咖啡見一次。發起邀約的人，建議主動請第一杯咖啡。</span>
@@ -1234,10 +1244,6 @@
             </section>
 
             <section class="section page" id="digestPage">
-              <div class="candidate-toolbar">
-                <h3 style="margin: 0">交友清單</h3>
-                <span class="candidate-count" id="candidateCount">4 位符合條件</span>
-              </div>
               <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
@@ -1825,7 +1831,7 @@
         },
         digest: {
           title: "交友清單",
-          subtitle: "設定年齡範圍，查看符合條件的新對象。",
+          subtitle: "",
           el: document.getElementById("digestPage"),
         },
         invites: {
@@ -1848,7 +1854,9 @@
           button.classList.toggle("active", button.dataset.step === step);
         });
         document.getElementById("pageTitle").textContent = pages[step].title;
-        document.getElementById("pageSubtitle").textContent = pages[step].subtitle;
+        const subtitle = document.getElementById("pageSubtitle");
+        subtitle.textContent = pages[step].subtitle;
+        subtitle.classList.toggle("hidden", !pages[step].subtitle);
         document.querySelector(".principle-strip").classList.toggle("hidden", step === "digest");
       }
 
@@ -1922,9 +1930,33 @@
         return `咖啡店距離約 ${distances[index % distances.length]} km`;
       }
 
+      function profileDetail(candidate, index) {
+        const occupations = ["品牌企劃", "行銷企劃", "專案管理", "行政管理", "設計師", "產品企劃", "教師", "護理師", "財務分析", "電商營運", "研究助理", "文字工作者", "地勤人員", "品牌顧問", "行銷助理", "資料工程師", "產品經理", "影像剪輯師", "金融業", "室內設計師", "後端工程師", "科技業主管", "健身教練", "法律相關", "音樂企劃", "業務管理"];
+        const educations = ["大學", "研究所以上", "大學", "專科"];
+        const relationships = ["單身", "單身", "離婚", "單身"];
+        const children = ["沒有", "沒有", "有，未同住", "沒有"];
+        const smoking = ["不抽菸", "不抽菸", "偶爾", "不抽菸"];
+        const drinking = ["偶爾小酌", "不喝酒", "偶爾小酌", "不喝酒"];
+        return {
+          occupation: candidate.occupation || occupations[index % occupations.length],
+          education: candidate.education || educations[index % educations.length],
+          relationshipStatus: candidate.relationshipStatus || relationships[index % relationships.length],
+          hasChildren: candidate.hasChildren || children[index % children.length],
+          smoking: candidate.smoking || smoking[index % smoking.length],
+          drinking: candidate.drinking || drinking[index % drinking.length],
+        };
+      }
+
+      function candidatePhotos(candidate, index) {
+        if (candidate.photos?.length) return candidate.photos;
+        const girlPhotos = candidates.filter((item) => item.id.startsWith("girl-")).map((item) => item.photo);
+        const boyPhotos = candidates.filter((item) => item.id.startsWith("boy-")).map((item) => item.photo);
+        const pool = candidate.id.startsWith("boy-") ? boyPhotos : girlPhotos;
+        return [0, 1, 2].map((offset) => pool[(index + offset) % pool.length]).filter(Boolean);
+      }
+
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
-        document.getElementById("candidateCount").textContent = `${candidates.length} 位符合條件`;
         grid.innerHTML = candidates
           .map((candidate, index) => {
             const invited = state.invited.has(candidate.id);
@@ -1935,7 +1967,6 @@
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
                   <img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" />
-                  <span class="badge">柔焦</span>
                 </div>
                 <div class="candidate-body">
                   <div class="candidate-mainline">
@@ -2007,11 +2038,14 @@
           .join("");
       }
 
-      function renderCandidateDetail(candidateId) {
+      function renderCandidateDetail(candidateId, anchorCard, photoIndex = 0) {
         const candidateIndex = candidates.findIndex((item) => item.id === candidateId);
         const candidate = candidates[candidateIndex];
         if (!candidate) return;
         const distance = mockDistance(candidateIndex);
+        const detail = profileDetail(candidate, candidateIndex);
+        const photos = candidatePhotos(candidate, candidateIndex);
+        const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -2022,23 +2056,35 @@
                 <span class="chip">${candidate.area}</span>
                 <span class="chip">${distance}</span>
                 <span class="chip">${candidate.looking}</span>
-                <span class="chip">柔焦照片</span>
               </div>
             </div>
             <button class="btn secondary" type="button" data-close-detail="candidate">關閉</button>
           </div>
           <div class="detail-layout">
-            <div class="detail-photo"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
+            <div class="detail-photo">
+              <img alt="${candidate.name} 的照片" src="${photos[activePhotoIndex]}" />
+              ${
+                photos.length > 1
+                  ? `<button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="上一張">‹</button>
+                     <button class="photo-nav next" type="button" data-photo-step="1" aria-label="下一張">›</button>`
+                  : ""
+              }
+            </div>
             <div class="detail-copy">
               <p>${candidate.intro}</p>
               <div class="detail-grid">
+                <div class="detail-item"><span>職業</span><strong>${detail.occupation}</strong></div>
+                <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
+                <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
+                <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
+                <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
+                <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                 <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
                 <div class="detail-item"><span>咖啡店</span><strong>${candidate.place}</strong></div>
                 <div class="detail-item"><span>兩人咖啡店直線距離</span><strong>${distance.replace("咖啡店距離", "")}</strong></div>
                 <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
                 <div class="detail-item"><span>邀約規則</span><strong>每天 1 次，收到邀約會保留 24 小時</strong></div>
               </div>
-              <div class="email-note">第一次見面請選公開場所，不要透露住家或公司地址。</div>
               <div class="email-actions">
                 <button class="btn primary" type="button" data-invite="${candidate.id}">請對方喝杯咖啡</button>
                 <button class="btn secondary" type="button">讓他注意我</button>
@@ -2046,8 +2092,10 @@
             </div>
           </div>
         `;
+        panel.dataset.candidateId = candidate.id;
+        panel.dataset.photoIndex = activePhotoIndex;
         panel.classList.remove("hidden");
-        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (anchorCard) anchorCard.insertAdjacentElement("afterend", panel);
       }
 
       function renderInviteDetail(inviteId) {
@@ -2195,7 +2243,7 @@
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
         const detailButton = event.target.closest("[data-candidate-detail]");
         if (detailButton) {
-          renderCandidateDetail(detailButton.dataset.candidateDetail);
+          renderCandidateDetail(detailButton.dataset.candidateDetail, detailButton.closest(".candidate-card"));
           return;
         }
         const button = event.target.closest("[data-invite]");
@@ -2223,6 +2271,18 @@
       document.getElementById("candidateDetail").addEventListener("click", (event) => {
         if (event.target.closest("[data-close-detail='candidate']")) {
           document.getElementById("candidateDetail").classList.add("hidden");
+          document.getElementById("digestPage").prepend(document.getElementById("candidateDetail"));
+          return;
+        }
+        const photoButton = event.target.closest("[data-photo-step]");
+        if (photoButton) {
+          const panel = document.getElementById("candidateDetail");
+          const currentCard = panel.previousElementSibling?.classList.contains("candidate-card") ? panel.previousElementSibling : null;
+          renderCandidateDetail(
+            panel.dataset.candidateId,
+            currentCard,
+            Number(panel.dataset.photoIndex || 0) + Number(photoButton.dataset.photoStep),
+          );
           return;
         }
         const button = event.target.closest("[data-invite]");
