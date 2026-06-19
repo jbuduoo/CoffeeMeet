@@ -337,6 +337,24 @@
         color: white;
       }
 
+      .interest-worlds {
+        display: grid;
+        gap: 12px;
+      }
+
+      .interest-world {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .interest-world strong {
+        font-size: 14px;
+      }
+
       .inline-action {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -1232,6 +1250,59 @@
                     </select>
                   </div>
 
+                  <div class="field full">
+                    <label>興趣關鍵字</label>
+                    <input id="interestKeywords" name="interestKeywords" type="hidden" />
+                    <div class="interest-worlds" id="interestWorlds">
+                      <div class="interest-world">
+                        <strong>數位與科技</strong>
+                        <div class="choice-chips">
+                          <button class="choice-chip" type="button" data-interest-keyword="AI">AI</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="創業">創業</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="科技趨勢">科技趨勢</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="產品">產品</button>
+                        </div>
+                      </div>
+                      <div class="interest-world">
+                        <strong>生活與體驗</strong>
+                        <div class="choice-chips">
+                          <button class="choice-chip" type="button" data-interest-keyword="美食">美食</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="咖啡廳">咖啡廳</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="烹飪">烹飪</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="旅行">旅行</button>
+                        </div>
+                      </div>
+                      <div class="interest-world">
+                        <strong>娛樂與文化</strong>
+                        <div class="choice-chips">
+                          <button class="choice-chip" type="button" data-interest-keyword="電影">電影</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="音樂">音樂</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="動漫">動漫</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="展覽">展覽</button>
+                        </div>
+                      </div>
+                      <div class="interest-world">
+                        <strong>心靈與成長</strong>
+                        <div class="choice-chips">
+                          <button class="choice-chip" type="button" data-interest-keyword="閱讀">閱讀</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="心理學">心理學</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="職涯">職涯</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="理財">理財</button>
+                        </div>
+                      </div>
+                      <div class="interest-world">
+                        <strong>戶外與運動</strong>
+                        <div class="choice-chips">
+                          <button class="choice-chip" type="button" data-interest-keyword="健身">健身</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="爬山">爬山</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="潛水">潛水</button>
+                          <button class="choice-chip" type="button" data-interest-keyword="寵物">寵物</button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="field-hint">點選關鍵字加入興趣；再次點選可取消。</div>
+                  </div>
+
                   <div class="form-section-title">自我介紹</div>
                   <div class="field full">
                     <label for="intro">簡短自介</label>
@@ -1955,6 +2026,20 @@
       function updateSummary() {
       }
 
+      function syncInterestKeywords() {
+        const selected = Array.from(document.querySelectorAll("[data-interest-keyword].active")).map(
+          (button) => button.dataset.interestKeyword,
+        );
+        document.getElementById("interestKeywords").value = selected.join(", ");
+      }
+
+      function setInterestKeywords(keywords) {
+        document.querySelectorAll("[data-interest-keyword]").forEach((button) => {
+          button.classList.toggle("active", keywords.includes(button.dataset.interestKeyword));
+        });
+        syncInterestKeywords();
+      }
+
       function shortIntro(intro, limit = 56) {
         return intro.length > limit ? `${intro.slice(0, limit)}...` : intro;
       }
@@ -2122,8 +2207,13 @@
                 <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
                 <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                 <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
-                <div class="detail-item"><span>咖啡店</span><strong>${candidate.place}</strong></div>
-                <div class="detail-item"><span>兩人咖啡店直線距離</span><strong>${distanceText}</strong></div>
+                <div class="detail-item">
+                  <span>咖啡店</span>
+                  <strong>${candidate.place}</strong>
+                  <div style="margin-top: 8px">
+                    <a class="map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">Google Map</a>
+                  </div>
+                </div>
                 <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
                 <div class="detail-item"><span>邀約規則</span><strong>每天 1 次，收到邀約會保留 24 小時</strong></div>
               </div>
@@ -2200,6 +2290,7 @@
         document.getElementById("coffeeGoal").value = "長期交往";
         document.getElementById("smoking").value = "不抽菸";
         document.getElementById("drinking").value = "偶爾小酌";
+        setInterestKeywords(["咖啡廳", "展覽", "閱讀"]);
         document.getElementById("intro").value = "平日工作穩定，週末喜歡咖啡、散步和看展。想用輕鬆但真誠的方式認識新朋友。";
         setAvailableTimes(["平日晚上", "週六下午", "週日下午"]);
         document.getElementById("availabilityNote").value = "平日晚上、週六下午、週日下午，平日 19:30 後比較穩。";
@@ -2226,8 +2317,16 @@
         updateAvailabilityNoteFromChoices();
       });
 
+      document.getElementById("interestWorlds").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-interest-keyword]");
+        if (!button) return;
+        button.classList.toggle("active");
+        syncInterestKeywords();
+      });
+
       document.getElementById("profileForm").addEventListener("submit", (event) => {
         event.preventDefault();
+        syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
         updateSummary();
         showToast("使用者資料已儲存");
