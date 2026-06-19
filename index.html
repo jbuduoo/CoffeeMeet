@@ -522,8 +522,7 @@
 
       .candidate-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
+        gap: 10px;
       }
 
       .candidate-card {
@@ -532,7 +531,8 @@
         background: var(--panel-strong);
         overflow: hidden;
         display: grid;
-        grid-template-rows: auto 1fr;
+        grid-template-columns: 104px minmax(0, 1fr) auto;
+        align-items: center;
         transition:
           transform 160ms ease,
           box-shadow 160ms ease;
@@ -549,7 +549,8 @@
       }
 
       .candidate-photo {
-        aspect-ratio: 16 / 10;
+        width: 104px;
+        height: 104px;
         background: #eadfce;
         position: relative;
         overflow: hidden;
@@ -578,7 +579,7 @@
       .candidate-body {
         padding: 14px;
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       .candidate-body h4 {
@@ -605,6 +606,20 @@
         margin: 0;
         color: var(--muted);
         font-size: 14px;
+      }
+
+      .candidate-mainline {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .candidate-actions {
+        padding: 14px;
+        display: grid;
+        gap: 8px;
+        justify-items: end;
       }
 
       .tabs {
@@ -916,10 +931,6 @@
           grid-template-columns: 1fr;
         }
 
-        .candidate-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
         .photo-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
@@ -943,8 +954,19 @@
           grid-template-columns: 1fr;
         }
 
-        .candidate-grid {
+        .candidate-card {
           grid-template-columns: 1fr;
+        }
+
+        .candidate-photo {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 16 / 9;
+        }
+
+        .candidate-actions {
+          padding-top: 0;
+          justify-items: stretch;
         }
 
         .invite-card {
@@ -1891,14 +1913,24 @@
       function updateSummary() {
       }
 
+      function shortIntro(intro, limit = 56) {
+        return intro.length > limit ? `${intro.slice(0, limit)}...` : intro;
+      }
+
+      function mockDistance(index) {
+        const distances = ["1.2", "2.4", "3.1", "4.8", "5.6", "6.3", "7.5", "8.2", "9.6", "10.8", "12.5", "14.2", "18.6"];
+        return `咖啡店距離約 ${distances[index % distances.length]} km`;
+      }
+
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
         document.getElementById("candidateCount").textContent = `${candidates.length} 位符合條件`;
         grid.innerHTML = candidates
-          .map((candidate) => {
+          .map((candidate, index) => {
             const invited = state.invited.has(candidate.id);
             const dailyLimitReached = state.dailyInviteUsed && !invited;
             const buttonLabel = invited ? "✓ 已送出邀請" : dailyLimitReached ? "今日邀約已用完" : "☕ 這時段我去請咖啡";
+            const distance = mockDistance(index);
             return `
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
@@ -1906,19 +1938,22 @@
                   <span class="badge">柔焦</span>
                 </div>
                 <div class="candidate-body">
-                  <h4>${candidate.name}</h4>
-                  <div class="candidate-meta">
+                  <div class="candidate-mainline">
+                    <h4>${candidate.name}</h4>
                     <span class="chip">${candidate.age} 歲</span>
+                    <span class="chip">${candidate.area}</span>
+                    <span class="chip">${distance}</span>
+                    <span class="chip">${candidate.looking}</span>
                   </div>
-                  <p>${candidate.intro}</p>
                   <div class="candidate-meta">
-                    <span class="chip">方便時間：${candidate.time}</span>
-                    <span class="chip">咖啡店：${candidate.place}</span>
+                    <span class="chip">${candidate.time}</span>
+                    <span class="chip">${candidate.place}</span>
                   </div>
-                  <button class="btn secondary" type="button" data-candidate-detail="${candidate.id}">查看詳情</button>
-                  <button class="btn ${invited ? "warning" : "primary"}" type="button" data-invite="${candidate.id}" ${dailyLimitReached ? "disabled" : ""}>
-                    ${buttonLabel}
-                  </button>
+                  <p>${shortIntro(candidate.intro)}</p>
+                </div>
+                <div class="candidate-actions">
+                  <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">看詳細資料</button>
+                  ${invited || dailyLimitReached ? `<span class="candidate-count">${buttonLabel}</span>` : ""}
                 </div>
               </article>
             `;
@@ -1973,8 +2008,10 @@
       }
 
       function renderCandidateDetail(candidateId) {
-        const candidate = candidates.find((item) => item.id === candidateId);
+        const candidateIndex = candidates.findIndex((item) => item.id === candidateId);
+        const candidate = candidates[candidateIndex];
         if (!candidate) return;
+        const distance = mockDistance(candidateIndex);
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -1982,6 +2019,9 @@
               <h3>${candidate.name}</h3>
               <div class="candidate-meta" style="margin-top: 8px">
                 <span class="chip">${candidate.age} 歲</span>
+                <span class="chip">${candidate.area}</span>
+                <span class="chip">${distance}</span>
+                <span class="chip">${candidate.looking}</span>
                 <span class="chip">柔焦照片</span>
               </div>
             </div>
@@ -1994,6 +2034,7 @@
               <div class="detail-grid">
                 <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
                 <div class="detail-item"><span>咖啡店</span><strong>${candidate.place}</strong></div>
+                <div class="detail-item"><span>兩人咖啡店直線距離</span><strong>${distance.replace("咖啡店距離", "")}</strong></div>
                 <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
                 <div class="detail-item"><span>邀約規則</span><strong>每天 1 次，收到邀約會保留 24 小時</strong></div>
               </div>
