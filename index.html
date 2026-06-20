@@ -1447,7 +1447,7 @@
                     <p>Hi Kai，有人對你的資料有興趣，想請你喝杯咖啡。</p>
                     <p>對方方便的時間是週六下午，建議地點是 REC COFFEE 台中勤美店。你可以接受、婉拒，或提出其他時間討論。</p>
                     <p>對方想在喝咖啡時了解你：你週末通常怎麼過？</p>
-                    <p>這個邀約會為你保留 24 小時。保留期間，其他人無法再邀約你；但你仍然可以主動邀約其他人。</p>
+                    <p>這個邀約會為你保留 24 小時。每人每天最多收到 3 個咖啡邀約；你仍然可以主動邀約其他人。</p>
                     <p>第一次見面建議約 1 小時，在公開、明亮、交通方便的地點。</p>
                     <p>安全提醒：第一次見面請選公開場所，不要透露住家或公司地址。</p>
                     <div class="email-actions">
@@ -1535,8 +1535,11 @@
         photos: [],
         invited: new Set(),
         inviteFilter: "all",
-        dailyInviteUsed: false,
+        dailyInviteCount: 0,
       };
+
+      const DAILY_SENT_INVITE_LIMIT = 3;
+      const DAILY_RECEIVED_INVITE_LIMIT = 3;
 
       const candidates = [
         {
@@ -1919,6 +1922,10 @@
         },
       ];
 
+      const receivedInviteCounts = Object.fromEntries(
+        candidates.map((candidate, index) => [candidate.id, index % 7 === 0 ? 3 : index % 3]),
+      );
+
       const inviteStatusMeta = {
         sent: { label: "已邀約", className: "status-sent", action: "查看邀約" },
         active: { label: "邀約中", className: "status-active", action: "查看進度" },
@@ -1957,8 +1964,8 @@
           body: "照片先柔焦呈現，清單優先讓你看自我介紹、方便時間和見面地點。",
         },
         {
-          title: "每天一個邀約就好。",
-          body: "少量、清楚、低壓力。被邀約時保留 24 小時，避免同時收到太多邀請。",
+          title: "每天最多三個邀約。",
+          body: "少量、清楚、低壓力。每人每天最多收到 3 個邀約，避免同時收到太多邀請。",
         },
         {
           title: "第一次見面只約公開場所。",
@@ -2171,8 +2178,16 @@
           .sort((a, b) => a.distance - b.distance)
           .map(({ candidate, index, distance }) => {
             const invited = state.invited.has(candidate.id);
-            const dailyLimitReached = state.dailyInviteUsed && !invited;
-            const buttonLabel = invited ? "✓ 已送出邀請" : dailyLimitReached ? "今日邀約已用完" : "☕ 這時段我去請咖啡";
+            const sentLimitReached = state.dailyInviteCount >= DAILY_SENT_INVITE_LIMIT && !invited;
+            const receivedLimitReached = receivedInviteCounts[candidate.id] >= DAILY_RECEIVED_INVITE_LIMIT && !invited;
+            const inviteDisabled = sentLimitReached || receivedLimitReached;
+            const buttonLabel = invited
+              ? "✓ 已送出邀請"
+              : sentLimitReached
+                ? "今日 3 個邀約已用完"
+                : receivedLimitReached
+                  ? "今日被邀約已滿"
+                  : "☕ 這時段我去請咖啡";
             return `
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
@@ -2195,7 +2210,7 @@
                 </div>
                 <div class="candidate-actions">
                   <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">看詳細資料</button>
-                  ${invited || dailyLimitReached ? `<span class="candidate-count">${buttonLabel}</span>` : ""}
+                  ${invited || inviteDisabled ? `<span class="candidate-count">${buttonLabel}</span>` : ""}
                 </div>
               </article>
             `;
@@ -2258,6 +2273,17 @@
         const detail = profileDetail(candidate, candidateIndex);
         const photos = candidatePhotos(candidate, candidateIndex);
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
+        const invited = state.invited.has(candidate.id);
+        const sentLimitReached = state.dailyInviteCount >= DAILY_SENT_INVITE_LIMIT && !invited;
+        const receivedLimitReached = receivedInviteCounts[candidate.id] >= DAILY_RECEIVED_INVITE_LIMIT && !invited;
+        const inviteDisabled = sentLimitReached || receivedLimitReached;
+        const inviteLabel = invited
+          ? "已送出邀請"
+          : sentLimitReached
+            ? "今日 3 個邀約已用完"
+            : receivedLimitReached
+              ? "今日被邀約已滿"
+              : "請對方喝杯咖啡";
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -2301,10 +2327,10 @@
                   </div>
                 </div>
                 <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
-                <div class="detail-item"><span>邀約規則</span><strong>每天 1 次，收到邀約會保留 24 小時</strong></div>
+                <div class="detail-item"><span>邀約規則</span><strong>每天最多主動邀約 3 人；每人每天最多收到 3 個邀約</strong></div>
               </div>
               <div class="email-actions">
-                <button class="btn primary" type="button" data-invite="${candidate.id}">請對方喝杯咖啡</button>
+                <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>
                 <button class="btn secondary" type="button">讓他注意我</button>
               </div>
             </div>
@@ -2343,7 +2369,7 @@
                 <div class="detail-item"><span>見面地點</span><strong>${candidate.place}</strong></div>
                 <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
               </div>
-              <div class="email-note">收到邀約後保留 24 小時；期間其他人無法邀約你，但你仍可主動邀約其他人。</div>
+              <div class="email-note">收到邀約後保留 24 小時；每人每天最多收到 3 個邀約，你仍可主動邀約其他人。</div>
               <div class="email-actions">
                 <button class="btn primary" type="button">${meta.action}</button>
                 <button class="btn secondary" type="button">討論時間地點</button>
@@ -2476,12 +2502,17 @@
         const button = event.target.closest("[data-invite]");
         if (!button) return;
         const candidateId = button.dataset.invite;
-        if (state.dailyInviteUsed && !state.invited.has(candidateId)) {
-          showToast("今天已經送出 1 個邀約");
+        if (state.dailyInviteCount >= DAILY_SENT_INVITE_LIMIT && !state.invited.has(candidateId)) {
+          showToast("今天已經送出 3 個邀約");
+          return;
+        }
+        if (receivedInviteCounts[candidateId] >= DAILY_RECEIVED_INVITE_LIMIT && !state.invited.has(candidateId)) {
+          showToast("對方今天已收到 3 個邀約");
           return;
         }
         state.invited.add(candidateId);
-        state.dailyInviteUsed = true;
+        state.dailyInviteCount += 1;
+        receivedInviteCounts[candidateId] = (receivedInviteCounts[candidateId] || 0) + 1;
         if (!invites.some((invite) => invite.candidateId === candidateId && invite.status === "sent")) {
           invites.unshift({
             id: `sent-${candidateId}`,
@@ -2514,12 +2545,17 @@
         }
         const button = event.target.closest("[data-invite]");
         if (!button) return;
-        if (state.dailyInviteUsed && !state.invited.has(button.dataset.invite)) {
-          showToast("今天已經送出 1 個邀約");
+        if (state.dailyInviteCount >= DAILY_SENT_INVITE_LIMIT && !state.invited.has(button.dataset.invite)) {
+          showToast("今天已經送出 3 個邀約");
+          return;
+        }
+        if (receivedInviteCounts[button.dataset.invite] >= DAILY_RECEIVED_INVITE_LIMIT && !state.invited.has(button.dataset.invite)) {
+          showToast("對方今天已收到 3 個邀約");
           return;
         }
         state.invited.add(button.dataset.invite);
-        state.dailyInviteUsed = true;
+        state.dailyInviteCount += 1;
+        receivedInviteCounts[button.dataset.invite] = (receivedInviteCounts[button.dataset.invite] || 0) + 1;
         if (!invites.some((invite) => invite.candidateId === button.dataset.invite && invite.status === "sent")) {
           invites.unshift({
             id: `sent-${button.dataset.invite}`,
