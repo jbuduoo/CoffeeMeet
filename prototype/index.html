@@ -181,45 +181,6 @@
         white-space: nowrap;
       }
 
-      .principle-strip {
-        border: 1px solid #ead6aa;
-        border-radius: 8px;
-        background: #fff7e6;
-        padding: 12px 14px;
-        margin-top: 16px;
-        display: grid;
-        gap: 4px;
-        min-height: 76px;
-      }
-
-      .principle-strip strong {
-        color: #5f3b05;
-      }
-
-      .principle-strip span {
-        color: #7a5a27;
-        font-size: 14px;
-      }
-
-      .principle-dots {
-        display: flex;
-        gap: 6px;
-        margin-top: 4px;
-      }
-
-      .principle-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background: #d7bd82;
-        opacity: 0.45;
-      }
-
-      .principle-dot.active {
-        opacity: 1;
-        background: var(--accent);
-      }
-
       .layout {
         max-width: 980px;
       }
@@ -370,6 +331,47 @@
         font-weight: 700;
       }
 
+      .availability-grid {
+        display: grid;
+        grid-template-columns: 58px repeat(3, minmax(78px, 1fr));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        max-width: 520px;
+        background: #fffdf8;
+      }
+
+      .availability-cell {
+        min-height: 40px;
+        border: 0;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: #fffdf8;
+        color: var(--ink);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .availability-cell:nth-child(4n) { border-right: 0; }
+
+      .availability-head,
+      .availability-day {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        background: #faf5eb;
+      }
+
+      .availability-slot { cursor: pointer; }
+
+      .availability-slot:hover,
+      .availability-slot.active {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
       .choice-chip.active {
         background: var(--accent);
         border-color: var(--accent);
@@ -423,6 +425,20 @@
       .map-link:hover {
         background: #1d4ed8;
         border-color: #1d4ed8;
+      }
+
+      .detail-map-link {
+        margin-left: 8px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .detail-map-link:hover {
+        color: var(--accent-dark);
+        text-decoration: underline;
       }
 
       label {
@@ -912,16 +928,17 @@
         background: var(--panel-strong);
         padding: 14px;
         display: grid;
-        grid-template-columns: 78px minmax(0, 1fr) auto;
+        grid-template-columns: 96px minmax(0, 1fr);
         gap: 14px;
-        align-items: center;
+        align-items: start;
       }
 
       .invite-thumb {
-        width: 78px;
-        height: 78px;
+        width: 96px;
+        height: 96px;
         border-radius: 8px;
         overflow: hidden;
+        background: #eadfce;
       }
 
       .invite-thumb img {
@@ -932,41 +949,79 @@
         transform: scale(1.03);
       }
 
-      .invite-info {
+      .invite-content {
         display: grid;
-        gap: 7px;
+        gap: 12px;
+        min-width: 0;
       }
 
-      .invite-info h4 {
+      .invite-main {
+        display: grid;
+        gap: 8px;
+      }
+
+      .invite-main h4 {
         margin: 0;
-        font-size: 17px;
+        font-size: 18px;
+      }
+
+      .invite-main p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .invite-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .invite-field {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        padding: 10px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .invite-field span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .invite-field strong {
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .invite-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       .status-label {
-        border-radius: 999px;
-        padding: 5px 9px;
+        padding: 0;
         font-size: 12px;
         font-weight: 800;
         white-space: nowrap;
       }
 
       .status-sent {
-        background: #eef2ff;
         color: #3730a3;
       }
 
       .status-active {
-        background: #ecfdf5;
         color: #047857;
       }
 
       .status-done {
-        background: #f5f3ff;
         color: #6d28d9;
       }
 
       .status-cancelled {
-        background: #fff1f2;
         color: #be123c;
       }
 
@@ -985,7 +1040,7 @@
       }
 
       .invite-modal {
-        width: min(520px, 100%);
+        width: min(760px, 100%);
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
@@ -1007,6 +1062,97 @@
       .invite-modal-fields {
         display: grid;
         gap: 14px;
+      }
+
+      .quick-time-row {
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .time-grid {
+        min-width: 620px;
+        display: grid;
+        grid-template-columns: 58px repeat(7, minmax(72px, 1fr));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fffdf8;
+      }
+
+      .time-grid-cell {
+        min-height: 40px;
+        border: 0;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: #f1ebe0;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .time-grid-cell:nth-child(8n) { border-right: 0; }
+
+      .time-grid-head,
+      .time-grid-time {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        background: #faf5eb;
+      }
+
+      .time-grid-head strong {
+        display: block;
+        color: var(--ink);
+        font-size: 13px;
+      }
+
+      .time-grid-slot { cursor: not-allowed; }
+
+      .time-grid-slot.is-available {
+        cursor: pointer;
+        background: #e7f4f1;
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .time-grid-slot.is-available:hover,
+      .time-grid-slot.is-selected {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .time-grid-slot.is-selected::after { content: "已選"; }
+
+      .manual-time-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .add-time-button {
+        width: 44px;
+        min-width: 44px;
+        justify-content: center;
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .invite-readonly-row {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        min-height: 44px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
       }
 
       .invite-modal-actions {
@@ -1176,11 +1322,6 @@
           <div class="title-block">
             <h2 id="pageTitle">交友清單</h2>
             <p id="pageSubtitle" class="hidden"></p>
-            <div class="principle-strip">
-              <strong id="principleTitle">不多聊，不滑照。</strong>
-              <span id="principleBody">合適的人出現時，用一小時好好認識彼此。發起邀約的人，建議主動請第一杯咖啡。</span>
-              <div class="principle-dots" id="principleDots" aria-hidden="true"></div>
-            </div>
           </div>
         </div>
 
@@ -1338,20 +1479,41 @@
                   <div class="form-section-title">方便的時間地點</div>
                   <div class="field full">
                     <label for="availableTime">通常方便時間</label>
-                    <div class="choice-chips" id="availableTimeChoices">
-                      <button class="choice-chip" type="button" data-time-choice="平日晚上">平日晚上</button>
-                      <button class="choice-chip" type="button" data-time-choice="平日午休">平日午休</button>
-                      <button class="choice-chip" type="button" data-time-choice="週六下午">週六下午</button>
-                      <button class="choice-chip" type="button" data-time-choice="週六晚上">週六晚上</button>
-                      <button class="choice-chip" type="button" data-time-choice="週日下午">週日下午</button>
-                      <button class="choice-chip" type="button" data-time-choice="週日晚上">週日晚上</button>
-                      <button class="choice-chip" type="button" data-time-choice="時間可討論">時間可討論</button>
+                    <div class="availability-grid" id="availableTimeChoices">
+                      <div class="availability-cell availability-head">星期</div>
+                      <div class="availability-cell availability-head">上午</div>
+                      <div class="availability-cell availability-head">下午</div>
+                      <div class="availability-cell availability-head">晚上</div>
+                      <div class="availability-cell availability-day">週一</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一晚上">晚上</button>
+                      <div class="availability-cell availability-day">週二</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二晚上">晚上</button>
+                      <div class="availability-cell availability-day">週三</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三晚上">晚上</button>
+                      <div class="availability-cell availability-day">週四</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四晚上">晚上</button>
+                      <div class="availability-cell availability-day">週五</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五晚上">晚上</button>
+                      <div class="availability-cell availability-day">週六</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六晚上">晚上</button>
+                      <div class="availability-cell availability-day">週日</div>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日上午">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日下午">下午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日晚上">晚上</button>
                     </div>
-                  </div>
-                  <div class="field">
-                    <label for="availabilityNote">時間補充</label>
-                    <input id="availabilityNote" name="availabilityNote" placeholder="例如：平日 19:30 後比較穩" />
-                  </div>
+                    <input id="availabilityNote" name="availabilityNote" type="hidden" />
                   <div class="field full">
                     <label for="meetingArea">方便見面地點：（按鈕會開啟 Google 地圖，選好地點後，把店名貼在這一欄。）</label>
                     <div class="place-picker">
@@ -1453,7 +1615,6 @@
 
             <section class="section page hidden" id="invitesPage">
               <div class="candidate-toolbar">
-                <h3 style="margin: 0">我的咖啡邀約</h3>
                 <span class="candidate-count" id="inviteCount">0 筆邀約</span>
               </div>
               <div class="tabs" id="inviteTabs">
@@ -1463,7 +1624,6 @@
                 <button class="tab-button" type="button" data-invite-filter="done">已完成</button>
                 <button class="tab-button" type="button" data-invite-filter="cancelled">已取消</button>
               </div>
-              <div class="detail-panel hidden" id="inviteDetail"></div>
               <div class="invite-list" id="inviteList"></div>
             </section>
 
@@ -1604,23 +1764,21 @@
       </main>
     </div>
 
-    <div class="invite-modal-backdrop hidden" id="inviteModal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
+                            <div class="invite-modal-backdrop hidden" id="inviteModal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
       <div class="invite-modal">
         <h3 id="inviteModalTitle">確認咖啡邀約</h3>
-        <p id="inviteModalSummary">選一個建議時間，確認咖啡店後再送出。</p>
+        <p id="inviteModalSummary">先看對方方便的時間，再選你要邀約的時段。</p>
         <div class="invite-modal-fields">
-          <label for="inviteTime">建議時間</label>
-          <select id="inviteTime">
-            <option value="週一晚上">週一晚上</option>
-            <option value="週二晚上">週二晚上</option>
-            <option value="週三晚上">週三晚上</option>
-            <option value="週四晚上">週四晚上</option>
-            <option value="週五晚上">週五晚上</option>
-            <option value="週六下午">週六下午</option>
-            <option value="週日下午">週日下午</option>
-          </select>
-          <label for="invitePlace">確認地點</label>
-          <input id="invitePlace" type="text" />
+          <label>女生方便的時間</label>
+          <div class="invite-readonly-row"><strong id="candidateAvailableTime">對方尚未填寫</strong></div>
+          <label>可選邀約時間</label>
+          <div class="quick-time-row" id="quickTimeChoices"></div>
+          <label>確認地點</label>
+          <div class="invite-readonly-row">
+            <strong id="invitePlaceDisplay"></strong>
+            <a class="detail-map-link" id="invitePlaceMapLink" href="https://www.google.com/maps/search/" target="_blank" rel="noreferrer">定位</a>
+          </div>
+          <input id="invitePlace" type="hidden" />
         </div>
         <div class="invite-modal-actions">
           <button class="btn secondary" type="button" data-close-invite-modal>取消</button>
@@ -1628,8 +1786,7 @@
         </div>
       </div>
     </div>
-
-    <div class="toast" id="toast">已儲存</div>
+<div class="toast" id="toast">已儲存</div>
 
     <script>
       const state = {
@@ -2170,7 +2327,6 @@
         const subtitle = document.getElementById("pageSubtitle");
         subtitle.textContent = pages[step].subtitle;
         subtitle.classList.toggle("hidden", !pages[step].subtitle);
-        document.querySelector(".principle-strip").classList.toggle("hidden", step === "digest");
       }
 
       function formToObject(form) {
@@ -2234,6 +2390,157 @@
         showToast("登入成功");
       }
 
+      function padTimePart(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function toDateTimeLocalValue(date) {
+        return date.getFullYear() + "-" + padTimePart(date.getMonth() + 1) + "-" + padTimePart(date.getDate()) + "T" + padTimePart(date.getHours()) + ":" + padTimePart(date.getMinutes());
+      }
+
+      function formatInviteTime(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.getFullYear() + "/" + padTimePart(date.getMonth() + 1) + "/" + padTimePart(date.getDate()) + " " + padTimePart(date.getHours()) + ":" + padTimePart(date.getMinutes());
+      }
+
+      function normalizeInviteTimeValue(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        const roundedMinutes = date.getMinutes() < 15 ? 0 : date.getMinutes() < 45 ? 30 : 60;
+        if (roundedMinutes === 60) {
+          date.setHours(date.getHours() + 1, 0, 0, 0);
+        } else {
+          date.setMinutes(roundedMinutes, 0, 0);
+        }
+        return toDateTimeLocalValue(date);
+      }
+
+      function nextWeekdayDate(weekday, hour) {
+        const date = new Date();
+        const diff = (weekday - date.getDay() + 7) % 7 || 7;
+        date.setDate(date.getDate() + diff);
+        date.setHours(hour, 0, 0, 0);
+        return date;
+      }
+
+      function labelToTimeRanges(label) {
+        const rules = {
+          "平日晚上": [
+            { weekday: 1, start: "19:00", end: "20:30" },
+            { weekday: 3, start: "19:00", end: "20:30" },
+            { weekday: 5, start: "19:00", end: "20:30" },
+          ],
+          "週六上午": [{ weekday: 6, start: "09:00", end: "11:30" }],
+          "週六下午": [{ weekday: 6, start: "13:00", end: "17:00" }],
+          "週日下午": [{ weekday: 0, start: "13:00", end: "17:00" }],
+          "週日晚上": [{ weekday: 0, start: "18:30", end: "20:30" }],
+          "週日上午": [{ weekday: 0, start: "09:00", end: "11:30" }],
+        };
+        return rules[label] || [{ weekday: 6, start: "14:00", end: "17:00" }];
+      }
+
+      function parseTimeParts(value) {
+        const [hour, minute] = value.split(":").map(Number);
+        return { hour, minute };
+      }
+
+      function nextWeekdayDate(weekday, hour, minute = 0) {
+        const date = new Date();
+        const diff = (weekday - date.getDay() + 7) % 7 || 7;
+        date.setDate(date.getDate() + diff);
+        date.setHours(hour, minute, 0, 0);
+        return date;
+      }
+
+      function weekStartDate() {
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+        return date;
+      }
+
+      function dateMatchesRange(date, range) {
+        if (date.getDay() !== range.weekday) return false;
+        const start = parseTimeParts(range.start);
+        const end = parseTimeParts(range.end);
+        const minutes = date.getHours() * 60 + date.getMinutes();
+        const startMinutes = start.hour * 60 + start.minute;
+        const endMinutes = end.hour * 60 + end.minute;
+        return minutes >= startMinutes && minutes <= endMinutes;
+      }
+
+      function buildInviteWeekDays() {
+        const today = weekStartDate();
+        return Array.from({ length: 7 }, (_, index) => {
+          const date = new Date(today);
+          date.setDate(today.getDate() + index);
+          return date;
+        });
+      }
+
+      function buildInviteHours() {
+        return Array.from({ length: 12 }, (_, index) => index + 9);
+      }
+
+      function renderInviteTimeChoices(candidate) {
+        const container = document.getElementById("quickTimeChoices");
+        const ranges = candidate.availableRanges || labelToTimeRanges(candidate.time);
+        const days = buildInviteWeekDays();
+        const hours = buildInviteHours();
+        const weekNames = ["日", "一", "二", "三", "四", "五", "六"];
+        container.innerHTML = "";
+
+        const grid = document.createElement("div");
+        grid.className = "time-grid";
+
+        const corner = document.createElement("div");
+        corner.className = "time-grid-cell time-grid-head";
+        corner.textContent = "時間";
+        grid.appendChild(corner);
+
+        days.forEach((date) => {
+          const head = document.createElement("div");
+          head.className = "time-grid-cell time-grid-head";
+          head.innerHTML = "<strong>" + (date.getMonth() + 1) + "/" + date.getDate() + "</strong>" + weekNames[date.getDay()];
+          grid.appendChild(head);
+        });
+
+        hours.forEach((hour) => {
+          const time = document.createElement("div");
+          time.className = "time-grid-cell time-grid-time";
+          time.textContent = String(hour).padStart(2, "0") + ":00";
+          grid.appendChild(time);
+
+          days.forEach((day) => {
+            const slotDate = new Date(day);
+            slotDate.setHours(hour, 0, 0, 0);
+            const available = ranges.some((range) => dateMatchesRange(slotDate, range));
+            const button = document.createElement("button");
+            button.className = "time-grid-cell time-grid-slot" + (available ? " is-available" : "");
+            button.type = "button";
+            button.disabled = !available;
+            if (available) {
+              button.dataset.timeValue = toDateTimeLocalValue(slotDate);
+              button.setAttribute("aria-label", formatInviteTime(button.dataset.timeValue));
+            }
+            grid.appendChild(button);
+          });
+        });
+
+        container.appendChild(grid);
+      }
+
+      function selectedInviteTimes() {
+        return Array.from(document.querySelectorAll("#quickTimeChoices .time-grid-slot.is-selected"))
+          .map((button) => button.dataset.timeValue)
+          .filter(Boolean);
+      }
+
+      function selectedInviteTimeLabels() {
+        return selectedInviteTimes().map(formatInviteTime);
+      }
+
       function openInviteModal(candidateId) {
         const candidate = candidates.find((item) => item.id === candidateId);
         if (!candidate) return;
@@ -2243,10 +2550,19 @@
         }
         state.pendingInviteId = candidateId;
         document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 見面`;
-        document.getElementById("inviteModalSummary").textContent = "先選一個你方便的時間，確認咖啡店後再送出邀約。";
-        document.getElementById("inviteTime").value = candidate.time || "週六下午";
+        document.getElementById("inviteModalSummary").textContent = "先選幾個你方便的時段，確認咖啡店後再送出邀約。";
+        renderInviteTimeChoices(candidate);
+        document.getElementById("candidateAvailableTime").textContent = candidate.time || "對方尚未填寫";
         document.getElementById("invitePlace").value = candidate.place || "";
+        document.getElementById("invitePlaceDisplay").textContent = candidate.place || "";
+        updateInvitePlaceMapLink();
         document.getElementById("inviteModal").classList.remove("hidden");
+      }
+
+      function updateInvitePlaceMapLink() {
+        const place = document.getElementById("invitePlace").value.trim();
+        const link = document.getElementById("invitePlaceMapLink");
+        link.href = "https://www.google.com/maps/search/" + encodeURIComponent(place || "???");
       }
 
       function closeInviteModal() {
@@ -2257,10 +2573,10 @@
       function confirmInvite() {
         const candidateId = state.pendingInviteId;
         if (!candidateId) return;
-        const time = document.getElementById("inviteTime").value.trim();
+        const times = selectedInviteTimeLabels();
         const place = document.getElementById("invitePlace").value.trim();
-        if (!time || !place) {
-          showToast("請先選時間並確認地點");
+        if (!times.length || !place) {
+          showToast("請至少選一個時段並確認地點");
           return;
         }
         state.invited.add(candidateId);
@@ -2271,7 +2587,7 @@
             id: `sent-${candidateId}`,
             candidateId,
             status: "sent",
-            note: `等待對方回應邀約：${time}，${place}`,
+            note: `可選時段：${times.join("、")}；地點：${place}`,
           });
         }
         closeInviteModal();
@@ -2279,7 +2595,6 @@
         renderInvites();
         showToast("已送出咖啡邀約");
       }
-
       function fillSelect(select, values, placeholder) {
         select.innerHTML = [`<option value="">${placeholder}</option>`]
           .concat(values.map((value) => `<option value="${value}">${value}</option>`))
@@ -2321,8 +2636,13 @@
       }
 
       function setAvailableTimes(values) {
+        const expanded = new Set(values.flatMap((value) => {
+          if (value === "平日晚上") return ["週一晚上", "週二晚上", "週三晚上", "週四晚上", "週五晚上"];
+          if (value === "週末下午") return ["週六下午", "週日下午"];
+          return [value];
+        }));
         document.querySelectorAll("[data-time-choice]").forEach((button) => {
-          button.classList.toggle("active", values.includes(button.dataset.timeChoice));
+          button.classList.toggle("active", expanded.has(button.dataset.timeChoice));
         });
         updateAvailabilityNoteFromChoices();
       }
@@ -2393,29 +2713,29 @@
           .sort((a, b) => a.distance - b.distance)
           .map(({ candidate, distance }) => {
             const invited = state.invited.has(candidate.id);
-            const buttonLabel = invited ? "? ?????" : "";
+            const buttonLabel = invited ? "✓ 已送出邀請" : "";
             return `
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
-                  <img alt="${candidate.name} ???" src="${candidate.photo}" />
+                  <img alt="${candidate.name} 的照片" src="${candidate.photo}" />
                 </div>
                 <div class="candidate-distance">
                   <strong>${formatDistance(distance)}</strong>
-                  <span>?????</span>
+                  <span>咖啡店距離</span>
                 </div>
                 <div class="candidate-body">
                   <div class="candidate-mainline">
                     <h4>${candidate.name}</h4>
                   </div>
                   <div class="candidate-meta">
-                    <span class="chip">${candidate.age} ?</span>
+                    <span class="chip">${candidate.age} 歲</span>
                     <span class="chip">${candidate.area}</span>
                     <span class="chip">${candidate.time}</span>
                     <span class="chip">${candidate.place}</span>
                   </div>
                 </div>
                 <div class="candidate-actions">
-                  <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">?????</button>
+                  <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">看詳細資料</button>
                   ${invited ? `<span class="candidate-count">${buttonLabel}</span>` : ""}
                 </div>
               </article>
@@ -2428,9 +2748,9 @@
         const list = document.getElementById("inviteList");
         const visibleInvites =
           state.inviteFilter === "all" ? invites : invites.filter((invite) => invite.status === state.inviteFilter);
-        document.getElementById("inviteCount").textContent = `${visibleInvites.length} ???`;
+        document.getElementById("inviteCount").textContent = `${visibleInvites.length} 筆邀約`;
         if (!visibleInvites.length) {
-          list.innerHTML = `<div class="empty-state">?1???????????</div>`;
+          list.innerHTML = `<div class="empty-state">目前沒有這個狀態的邀約。</div>`;
           return;
         }
         list.innerHTML = visibleInvites
@@ -2438,14 +2758,27 @@
             const candidate = candidates.find((item) => item.id === invite.candidateId);
             if (!candidate) return "";
             const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
+            const canCancel = ["sent", "active"].includes(invite.status);
             return `
-              <article class="invite-card" data-invite-detail="${invite.id}">
-                <div class="invite-main">
-                  <h4>${candidate.name}</h4>
-                  <p>${invite.note}</p>
-                  <span class="status-label ${meta.className}">${meta.label}</span>
+              <article class="invite-card">
+                <div class="invite-thumb">
+                  <img alt="${candidate.name} 的照片" src="${candidate.photo}" />
                 </div>
-                <button class="btn secondary" type="button">${meta.action}</button>
+                <div class="invite-content">
+                  <div class="invite-main">
+                    <h4>${candidate.name}<span class="status-label ${meta.className}">（${meta.label}）</span></h4>
+                  </div>
+                  <div class="invite-row">
+                    <div class="invite-field"><span>方便時間</span><strong>${candidate.time}</strong></div>
+                    <div class="invite-field"><span>見面地點</span><strong>${candidate.place}</strong></div>
+                    <div class="invite-field"><span>開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+                  </div>
+                  <div class="invite-actions">
+                    <button class="btn secondary" type="button">${meta.action}</button>
+                    <button class="btn secondary" type="button">討論時間地點</button>
+                    ${canCancel ? `<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">取消邀約</button>` : ""}
+                  </div>
+                </div>
               </article>
             `;
           })
@@ -2461,25 +2794,25 @@
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const invited = state.invited.has(candidate.id);
         const inviteDisabled = invited;
-        const inviteLabel = invited ? "?????" : "???????";
+        const inviteLabel = invited ? "已送出邀請" : "請對方喝杯咖啡";
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
             <div>
               <h3>${candidate.name}</h3>
             </div>
-            <button class="btn secondary" type="button" data-close-detail="candidate">??</button>
+            <button class="btn secondary" type="button" data-close-detail="candidate">關閉</button>
           </div>
           <div class="detail-layout">
             <div class="detail-media">
               <div class="detail-photo">
-                <img alt="${candidate.name} ???" src="${photos[activePhotoIndex]}" />
+                <img alt="${candidate.name} 的照片" src="${photos[activePhotoIndex]}" />
               </div>
               ${
                 photos.length > 1
                   ? `<div class="photo-controls">
-                       <button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="?????">?</button>
-                       <button class="photo-nav next" type="button" data-photo-step="1" aria-label="?????">?</button>
+                       <button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="上一張照片">&lsaquo;</button>
+                       <button class="photo-nav next" type="button" data-photo-step="1" aria-label="下一張照片">&rsaquo;</button>
                      </div>`
                   : ""
               }
@@ -2487,29 +2820,26 @@
             <div class="detail-copy">
               <p>${candidate.intro}</p>
               <div class="detail-grid">
-                <div class="detail-item"><span>??</span><strong>${candidate.age} ?</strong></div>
-                <div class="detail-item"><span>??</span><strong>${candidate.area}</strong></div>
-                <div class="detail-item"><span>????</span><strong>${candidate.looking}</strong></div>
-                <div class="detail-item"><span>??</span><strong>${detail.occupation}</strong></div>
-                <div class="detail-item"><span>??</span><strong>${detail.education}</strong></div>
-                <div class="detail-item"><span>????</span><strong>${detail.relationshipStatus}</strong></div>
-                <div class="detail-item"><span>?????</span><strong>${detail.hasChildren}</strong></div>
-                <div class="detail-item"><span>????</span><strong>${detail.smoking}</strong></div>
-                <div class="detail-item"><span>????</span><strong>${detail.drinking}</strong></div>
-                <div class="detail-item"><span>????</span><strong>${candidate.time}</strong></div>
+                <div class="detail-item"><span>年齡</span><strong>${candidate.age} 歲</strong></div>
+                <div class="detail-item"><span>地區</span><strong>${candidate.area}</strong></div>
+                <div class="detail-item"><span>交友方向</span><strong>${candidate.looking}</strong></div>
+                <div class="detail-item"><span>職業</span><strong>${detail.occupation}</strong></div>
+                <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
+                <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
+                <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
+                <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
+                <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
+                <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
                 <div class="detail-item">
-                  <span>???</span>
-                  <strong>${candidate.place}</strong>
-                  <div style="margin-top: 8px">
-                    <a class="map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">Google Map</a>
-                  </div>
+                  <span>咖啡店</span>
+                  <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
                 </div>
-                <div class="detail-item"><span>??????</span><strong>${candidate.openingQuestion}</strong></div>
-                <div class="detail-item"><span>????</span><strong>?1????????????????</strong></div>
+                <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+                <div class="detail-item"><span>測試階段</span><strong>目前不限制每日邀約數，方便測試流程</strong></div>
               </div>
               <div class="email-actions">
                 <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>
-                <button class="btn secondary" type="button">?????</button>
+                <button class="btn secondary" type="button">讓他注意我</button>
               </div>
             </div>
           </div>
@@ -2518,6 +2848,18 @@
         panel.dataset.photoIndex = activePhotoIndex;
         panel.classList.remove("hidden");
         if (anchorCard) anchorCard.insertAdjacentElement("afterend", panel);
+      }
+
+      function cancelInvite(inviteId) {
+        const invite = invites.find((item) => item.id === inviteId);
+        if (!invite || !["sent", "active"].includes(invite.status)) return;
+        invite.status = "cancelled";
+        invite.note = "發起者已取消這次咖啡邀約";
+        state.invited.delete(invite.candidateId);
+        document.getElementById("inviteDetail")?.classList.add("hidden");
+        renderCandidates();
+        renderInvites();
+        showToast("已取消邀約");
       }
 
       function renderInviteDetail(inviteId) {
@@ -2582,8 +2924,7 @@
         document.getElementById("drinking").value = "偶爾小酌";
         setInterestKeywords(["咖啡廳", "展覽", "閱讀"]);
         document.getElementById("intro").value = "平日工作穩定，週末喜歡咖啡、散步和看展。想用輕鬆但真誠的方式認識新朋友。";
-        setAvailableTimes(["平日晚上", "週六下午", "週日下午"]);
-        document.getElementById("availabilityNote").value = "平日晚上、週六下午、週日下午，平日 19:30 後比較穩。";
+        setAvailableTimes(["\u9031\u4e8c\u665a\u4e0a", "\u9031\u4e94\u665a\u4e0a", "\u9031\u65e5\u4e0b\u5348"]);
         document.getElementById("meetingArea").value = "Louisa 忠孝復興門市";
         updateMapLinks();
       });
@@ -2600,7 +2941,7 @@
         showToast("認證信已寄出");
       });
       document.getElementById("meetingArea").addEventListener("input", updateMapLinks);
-      document.getElementById("availableTimeChoices").addEventListener("click", (event) => {
+      document.getElementById("profileForm").addEventListener("click", (event) => {
         const button = event.target.closest("[data-time-choice]");
         if (!button) return;
         button.classList.toggle("active");
@@ -2711,6 +3052,12 @@
       });
 
       document.getElementById("confirmInviteButton").addEventListener("click", confirmInvite);
+      document.getElementById("invitePlace").addEventListener("input", updateInvitePlaceMapLink);
+      document.getElementById("quickTimeChoices").addEventListener("click", (event) => {
+        const button = event.target.closest(".time-grid-slot.is-available") || event.target.closest(".quick-time-button");
+        if (!button) return;
+        button.classList.toggle("is-selected");
+      });
 
       const loginPanel = document.getElementById("loginPanel");
       if (loginPanel) {
@@ -2723,15 +3070,8 @@
       }
 
       document.getElementById("inviteList").addEventListener("click", (event) => {
-        const card = event.target.closest("[data-invite-detail]");
-        if (!card) return;
-        renderInviteDetail(card.dataset.inviteDetail);
-      });
-
-      document.getElementById("inviteDetail").addEventListener("click", (event) => {
-        if (event.target.closest("[data-close-detail='invite']")) {
-          document.getElementById("inviteDetail").classList.add("hidden");
-        }
+        const cancelButton = event.target.closest("[data-cancel-invite]");
+        if (cancelButton) cancelInvite(cancelButton.dataset.cancelInvite);
       });
 
       document.getElementById("inviteTabs").addEventListener("click", (event) => {
@@ -2743,13 +3083,6 @@
         });
         renderInvites();
       });
-
-      let principleIndex = 0;
-      renderPrinciple(principleIndex);
-      window.setInterval(() => {
-        principleIndex = (principleIndex + 1) % principles.length;
-        renderPrinciple(principleIndex);
-      }, 4000);
 
       renderCandidates();
       renderInvites();
