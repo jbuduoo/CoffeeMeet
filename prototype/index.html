@@ -1447,23 +1447,6 @@
             </section>
 
             <section class="section page" id="digestPage">
-              <div class="login-panel" id="loginPanel">
-                <div>
-                  <p class="login-title">會員登入</p>
-                  <p class="login-copy">使用 Email 登入。測試階段密碼先用生日 8 碼，例如 19810412。</p>
-                </div>
-                <form class="login-form" id="loginForm">
-                  <div class="field">
-                    <label for="loginEmail">Email</label>
-                    <input id="loginEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-                  </div>
-                  <div class="field">
-                    <label for="loginPassword">生日密碼</label>
-                    <input id="loginPassword" name="password" inputmode="numeric" maxlength="8" placeholder="19810412" required />
-                  </div>
-                  <button class="btn primary" type="submit">登入</button>
-                </form>
-              </div>
               <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
@@ -2729,12 +2712,15 @@
 
       document.getElementById("confirmInviteButton").addEventListener("click", confirmInvite);
 
-      document.getElementById("loginPanel").addEventListener("submit", (event) => {
-        if (!event.target.matches("#loginForm")) return;
-        event.preventDefault();
-        const data = formToObject(event.target);
-        loginWithEmail(data.email, data.password);
-      });
+      const loginPanel = document.getElementById("loginPanel");
+      if (loginPanel) {
+        loginPanel.addEventListener("submit", (event) => {
+          if (!event.target.matches("#loginForm")) return;
+          event.preventDefault();
+          const data = formToObject(event.target);
+          loginWithEmail(data.email, data.password);
+        });
+      }
 
       document.getElementById("inviteList").addEventListener("click", (event) => {
         const card = event.target.closest("[data-invite-detail]");
