@@ -557,6 +557,21 @@
         object-fit: cover;
       }
 
+      .photo-remove {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 999px;
+        background: rgba(42, 35, 29, 0.78);
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
       .photo-slot.main::after {
         content: "本人預覽";
         position: absolute;
@@ -3355,6 +3370,14 @@
         return photoPath.startsWith("picture/") ? `../${photoPath}` : photoPath;
       }
 
+      function profilePhotos(user) {
+        return [user.photo, ...(user.photos || [])]
+          .map(normalizeSheetPhotoPath)
+          .filter(Boolean)
+          .filter((photo, index, photos) => photos.indexOf(photo) === index)
+          .slice(0, 5);
+      }
+
       async function loadSheetAppData() {
         try {
           const response = await fetch("/api/app-data");
@@ -3518,7 +3541,11 @@
             const src = state.photos[index];
             const mainClass = index === 0 ? " main" : "";
             const label = index === 0 ? "主照片" : `${index + 1}`;
-            return `<div class="photo-slot${mainClass}">${src ? `<img alt="照片 ${index + 1}" src="${src}" />` : label}</div>`;
+            return `<div class="photo-slot${mainClass}">${
+              src
+                ? `<img alt="照片 ${index + 1}" src="${src}" /><button class="photo-remove" type="button" data-remove-photo="${index}" aria-label="刪除照片">×</button>`
+                : label
+            }</div>`;
           })
           .join("");
       }
