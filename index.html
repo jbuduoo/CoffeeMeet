@@ -158,7 +158,7 @@
       }
 
       .title-block {
-        width: 100%;
+        min-width: 0;
       }
 
       .title-block h2 {
@@ -200,12 +200,12 @@
 
       .login-panel {
         display: grid;
-        gap: 14px;
-        margin-bottom: 16px;
+        gap: 10px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel-strong);
-        padding: 16px;
+        padding: 12px;
+        min-width: 340px;
       }
 
       .login-panel.is-logged-in {
@@ -215,20 +215,20 @@
 
       .login-title {
         margin: 0;
-        font-size: 17px;
+        font-size: 15px;
         font-weight: 800;
       }
 
       .login-copy {
         margin: 4px 0 0;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 12px;
         line-height: 1.6;
       }
 
       .login-form {
         display: grid;
-        grid-template-columns: minmax(220px, 1fr) auto;
+        grid-template-columns: minmax(170px, 1fr) auto;
         gap: 10px;
         align-items: end;
       }
@@ -1320,6 +1320,14 @@
           display: grid;
         }
 
+        .login-panel {
+          min-width: 0;
+        }
+
+        .login-form {
+          grid-template-columns: 1fr;
+        }
+
         .title-block h2 {
           font-size: 23px;
         }
@@ -1426,6 +1434,7 @@
             <h2 id="pageTitle">交友清單</h2>
             <p id="pageSubtitle" class="hidden"></p>
           </div>
+          <div class="login-panel" id="loginPanel"></div>
         </div>
 
         <div class="layout">
