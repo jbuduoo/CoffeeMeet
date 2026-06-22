@@ -2822,12 +2822,13 @@
 
       function initBirthdayOptions() {
         const currentYear = new Date().getFullYear();
-        const years = Array.from({ length: 70 }, (_, index) => String(currentYear - 18 - index));
+        const years = Array.from({ length: 43 }, (_, index) => String(currentYear - 18 - index));
         const months = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0"));
         const days = Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0"));
         fillSelect(document.getElementById("birthYear"), years, "年");
         fillSelect(document.getElementById("birthMonth"), months, "月");
         fillSelect(document.getElementById("birthDay"), days, "日");
+        document.getElementById("birthYear").value = String(currentYear - 45);
       }
 
       function updateMapLinks() {
