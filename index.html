@@ -744,6 +744,15 @@
         gap: 14px;
       }
 
+      .invite-detail-panel {
+        margin: 0;
+        border-top: 0;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        box-shadow: none;
+        background: #fffdf8;
+      }
+
       .detail-head {
         display: flex;
         justify-content: space-between;
@@ -753,6 +762,30 @@
 
       .detail-head h3 {
         margin: 0;
+      }
+
+      .invite-detail-panel .detail-head {
+        align-items: center;
+      }
+
+      .invite-detail-panel .detail-head h3 {
+        font-size: 18px;
+      }
+
+      .invite-detail-note-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .incoming-time-choice {
+        cursor: pointer;
+      }
+
+      .incoming-time-choice.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
       }
 
       .detail-layout {
@@ -949,7 +982,7 @@
         background: var(--panel-strong);
         padding: 14px;
         display: grid;
-        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-columns: 96px minmax(0, 1fr) auto;
         gap: 14px;
         align-items: start;
       }
@@ -1017,10 +1050,30 @@
         line-height: 1.5;
       }
 
+      .text-action-button {
+        border: 0;
+        border-radius: 6px;
+        background: var(--accent);
+        color: #fff;
+        padding: 2px 7px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .text-action-button:hover {
+        background: var(--accent-dark);
+      }
+
       .invite-actions {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+        justify-content: end;
+        min-width: 140px;
       }
 
       .status-label {
@@ -1306,6 +1359,13 @@
           grid-template-columns: 64px minmax(0, 1fr);
         }
 
+        .invite-actions {
+          grid-column: 2;
+          grid-row: auto;
+          justify-content: stretch;
+          min-width: 0;
+        }
+
         .detail-layout {
           grid-template-columns: 1fr;
         }
@@ -1333,11 +1393,11 @@
     <div class="app">
       <aside class="sidebar">
         <div class="brand">
-          <div class="brand-mark">等你</div>
-          <div>
-            <h1>等一個人的咖啡</h1>
-            <p>用1小時，認識一個人</p>
-          </div>
+              <div class="brand-mark">附近</div>
+              <div>
+              <h1>一杯咖啡的時間</h1>
+              <p>用一小時，認識一個人</p>
+              </div>
         </div>
 
         <nav class="step-list" aria-label="MVP steps">
@@ -1520,7 +1580,7 @@
                   </div>
 
                   <div class="field full">
-                    <label for="availableTime">通常方便時段：（發起方選可配合時段，接受方再決定精確時間。）</label>
+                    <label for="availableTime">通常方便時段：（邀約發起人選可配合時段，被邀請的人再決定精確時間。）</label>
                     <div class="availability-grid" id="availableTimeChoices">
                       <div class="availability-cell availability-head">星期</div>
                       <div class="availability-cell availability-head">上午<br />09:00-12:00</div>
@@ -1672,11 +1732,11 @@
                 <button class="tab-button active" type="button" data-invite-filter="all">全部</button>
                 <button class="tab-button" type="button" data-invite-filter="sent">已邀約</button>
                 <button class="tab-button" type="button" data-invite-filter="incoming">被邀約</button>
-                <button class="tab-button" type="button" data-invite-filter="active">邀約中</button>
                 <button class="tab-button" type="button" data-invite-filter="confirmed">待見面</button>
                 <button class="tab-button" type="button" data-invite-filter="done">已完成</button>
                 <button class="tab-button" type="button" data-invite-filter="cancelled">已取消</button>
               </div>
+              <div class="detail-panel hidden" id="inviteDetail"></div>
               <div class="invite-list" id="inviteList"></div>
             </section>
 
@@ -1828,9 +1888,9 @@
                             <div class="invite-modal-backdrop hidden" id="inviteModal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
       <div class="invite-modal">
         <h3 id="inviteModalTitle">確認咖啡邀約</h3>
-        <div class="invite-modal-tip" id="inviteModalSummary">先選你可配合的時段；對方接受後，再由接受方決定精確時間。</div>
+        <div class="invite-modal-tip" id="inviteModalSummary">先選你可配合的時段；對方接受後，再由被邀請的人決定精確時間。</div>
         <div class="invite-modal-fields">
-          <label>女生方便的時間</label>
+          <label>對方通常方便的時段</label>
           <div class="invite-readonly-row"><strong id="candidateAvailableTime">對方尚未填寫</strong></div>
           <label>確認地點</label>
           <div class="invite-readonly-row">
@@ -1859,6 +1919,7 @@
         inviteFilter: "all",
         dailyInviteCount: 0,
         pendingInviteId: null,
+        selectedIncomingTimes: {},
         currentUser: null,
       };
 
@@ -2263,10 +2324,9 @@
       const inviteStatusMeta = {
         sent: { label: "已邀約", className: "status-sent", action: "查看邀約" },
         incoming: { label: "被邀約", className: "status-sent", action: "查看邀約" },
-        active: { label: "邀約中", className: "status-active", action: "查看進度" },
-        confirmed: { label: "待見面", className: "status-active", action: "查看見面資訊" },
+        confirmed: { label: "待見面", className: "status-active", action: "查看對方訊息" },
         done: { label: "已完成", className: "status-done", action: "填寫回饋" },
-        cancelled: { label: "已取消", className: "status-cancelled", action: "查看結果" },
+        cancelled: { label: "已取消", className: "status-cancelled", action: "查看對方訊息" },
       };
 
       const invites = [
@@ -2277,10 +2337,10 @@
           note: "對方想請你喝咖啡；可選時段：6/28 週日 午後 12:00-15:00；地點：南港軟體園區附近咖啡店",
         },
         {
-          id: "seed-active",
+          id: "seed-ready",
           candidateId: "girl-02",
-          status: "active",
-          note: "等待對方確認咖啡時間",
+          status: "confirmed",
+          note: "已確認：6/28 週日 晚上 19:00；地點：信義安和站附近咖啡店",
         },
         {
           id: "seed-confirmed",
@@ -2689,7 +2749,7 @@
         }
         state.pendingInviteId = candidateId;
         document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 見面`;
-        document.getElementById("inviteModalSummary").textContent = "先選你可配合的時段；對方接受後，再由接受方決定精確時間。";
+      document.getElementById("inviteModalSummary").textContent = "先選你可配合的時段；對方接受後，再由被邀請的人決定精確時間。";
         renderInviteTimeChoices(candidate);
         updateSelectedInviteTimeSummary();
         document.getElementById("candidateAvailableTime").textContent = candidate.time || "對方尚未填寫";
@@ -2901,34 +2961,65 @@
         return detailFromNote(invite.note, "地點") || candidate.place || "尚未確認";
       }
 
+      function inviteTimeOptions(invite, candidate) {
+        return inviteTimeText(invite, candidate)
+          .split("、")
+          .map((time) => time.trim())
+          .filter(Boolean);
+      }
+
+      function formatMinutesAsTime(minutes) {
+        const hour = Math.floor(minutes / 60);
+        const minute = minutes % 60;
+        return `${padTimePart(hour)}:${padTimePart(minute)}`;
+      }
+
+      function preciseInviteTimeOptions(invite, candidate) {
+        return inviteTimeOptions(invite, candidate).flatMap((option) => {
+          const match = option.match(/^(.*?)(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+          if (!match) return [option];
+          const prefix = match[1].replace(/\s*(上午|午後|傍晚|晚上)\s*$/, "").trim();
+          const start = minutesFromTime(match[2]);
+          const end = minutesFromTime(match[3]);
+          const slots = [];
+          for (let minute = start; minute + 60 <= end; minute += 60) {
+            slots.push(`${prefix} ${formatMinutesAsTime(minute)}-${formatMinutesAsTime(minute + 60)}`.trim());
+          }
+          return slots.length ? slots : [option];
+        });
+      }
+
       function inviteProgressText(invite) {
         const messages = {
           sent: "已送出邀約，等待對方回覆。對方接受前先不討論時間地點。",
           incoming: "對方邀請你喝咖啡。你可以同意，也可以婉拒；這 24 小時內其他人不能再邀約你。",
-          active: "雙方已同意，可以開始確認精確時間和地點。",
-          confirmed: "時間地點已確認，見面前仍可取消。",
-          done: "已完成見面，建議留下簡短回饋。",
+          confirmed: "對方已經答應，時間地點都已確認；見面前仍可取消。",
+          done: "已完成見面，請填寫問卷。",
           cancelled: "這次邀約已取消，保留紀錄方便回顧。",
         };
         return messages[invite.status] || "";
       }
 
+      function inviteProgressContent(invite) {
+        if (invite.status === "done") {
+          return `已完成見面，<button class="text-action-button" type="button">請填寫問卷</button>。`;
+        }
+        return inviteProgressText(invite);
+      }
+
       function inviteActionButtons(invite, meta) {
         const viewButton = `<button class="btn secondary" type="button" data-view-invite="${invite.id}">${meta.action}</button>`;
-        const profileButton = `<button class="btn secondary" type="button" data-view-candidate="${invite.candidateId}">查看對方資料</button>`;
-        const cancelButton = `<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">取消邀約</button>`;
-        if (invite.status === "sent") return `${viewButton}${profileButton}${cancelButton}`;
+        const profileButton = `<button class="btn secondary" type="button" data-view-invite="${invite.id}">查看對方訊息</button>`;
+        if (invite.status === "sent") return `${viewButton}${profileButton}`;
         if (invite.status === "incoming") {
-          return `<button class="btn primary" type="button" data-accept-invite="${invite.id}">同意邀約</button>${profileButton}<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">婉拒邀約</button>`;
-        }
-        if (invite.status === "active") {
-          return `<button class="btn primary" type="button">${meta.action}</button><button class="btn secondary" type="button">討論時間地點</button>${profileButton}${cancelButton}`;
+          return profileButton;
         }
         if (invite.status === "confirmed") {
-          return `<button class="btn primary" type="button">${meta.action}</button>${profileButton}${cancelButton}`;
+          return profileButton;
         }
-        if (invite.status === "done") return `<button class="btn primary" type="button">填寫問卷</button>${profileButton}`;
-        return `${viewButton}${profileButton}`;
+        if (invite.status === "done") return profileButton;
+        if (invite.status === "cancelled") return profileButton;
+        return profileButton;
       }
 
       function renderInvites() {
@@ -2946,7 +3037,7 @@
             if (!candidate) return "";
             const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
             return `
-              <article class="invite-card">
+              <article class="invite-card" data-invite-card="${invite.id}">
                 <div class="invite-thumb">
                   <img alt="${candidate.name} 的照片" src="${candidate.photo}" />
                 </div>
@@ -2955,7 +3046,7 @@
                     <h4>${candidate.name}<span class="status-label ${meta.className}">（${meta.label}）</span></h4>
                   </div>
                   <div class="invite-row">
-                    <div class="invite-field"><span>目前進度</span><strong>${inviteProgressText(invite)}</strong></div>
+                    <div class="invite-field"><span>目前進度</span><strong>${inviteProgressContent(invite)}</strong></div>
                     <div class="invite-field"><span>邀約時段</span><strong>${inviteTimeText(invite, candidate)}</strong></div>
                     <div class="invite-field"><span>見面地點</span><strong>${invitePlaceText(invite, candidate)}</strong></div>
                   </div>
@@ -3039,12 +3130,14 @@
 
       function cancelInvite(inviteId) {
         const invite = invites.find((item) => item.id === inviteId);
-        if (!invite || !["sent", "incoming", "active", "confirmed"].includes(invite.status)) return;
+        if (!invite || !["sent", "incoming", "confirmed"].includes(invite.status)) return;
         const previousStatus = invite.status;
         invite.status = "cancelled";
         invite.note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
         state.invited.delete(invite.candidateId);
-        document.getElementById("inviteDetail")?.classList.add("hidden");
+        const panel = document.getElementById("inviteDetail");
+        panel?.classList.add("hidden");
+        document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
         renderCandidates();
         renderInvites();
         showToast("已取消邀約");
@@ -3053,10 +3146,16 @@
       function acceptInvite(inviteId) {
         const invite = invites.find((item) => item.id === inviteId);
         if (!invite || invite.status !== "incoming") return;
-        invite.status = "active";
-        invite.note = `你已同意邀約；${invite.note}`;
+        const selectedTime = state.selectedIncomingTimes[inviteId];
+        if (!selectedTime) {
+          showToast("請先選擇這次見面的時間");
+          return;
+        }
+        invite.status = "confirmed";
+        invite.note = `你已同意邀約；被邀請的人選擇見面時間：${selectedTime}；${invite.note}`;
+        delete state.selectedIncomingTimes[inviteId];
         renderInvites();
-        renderInviteDetail(inviteId);
+        renderInviteDetail(inviteId, document.querySelector(`[data-invite-card="${inviteId}"]`));
         showToast("已同意邀約，接著確認精確時間地點");
       }
 
@@ -3066,11 +3165,16 @@
         renderCandidateDetail(candidateId, card || null);
       }
 
-      function renderInviteDetail(inviteId) {
+      function renderInviteDetail(inviteId, anchorCard = null) {
         const invite = invites.find((item) => item.id === inviteId);
         if (!invite) return;
-        const candidate = candidates.find((item) => item.id === invite.candidateId);
+        const candidateIndex = candidates.findIndex((item) => item.id === invite.candidateId);
+        const candidate = candidates[candidateIndex];
         const meta = inviteStatusMeta[invite.status];
+        const panel = document.getElementById("inviteDetail");
+        const currentPhotoIndex = panel.dataset.inviteId === inviteId ? Number(panel.dataset.photoIndex || 0) : 0;
+        const photos = candidatePhotos(candidate, candidateIndex);
+        const activePhotoIndex = ((currentPhotoIndex % photos.length) + photos.length) % photos.length;
         const feedback =
           invite.status === "done"
             ? `<div class="email-note"><strong>見面後問卷</strong><br />是否如約見面、聊天感受、是否願意再見面，以及有沒有安全疑慮。</div>`
@@ -3079,39 +3183,137 @@
           invite.status === "cancelled"
             ? `<div class="email-note">已取消的邀約保留紀錄即可，不需要再寄提醒信。之後可回到交友清單重新選擇。</div>`
             : "";
-        const panel = document.getElementById("inviteDetail");
+        const detail = profileDetail(candidate, candidates.findIndex((item) => item.id === candidate.id));
+        const personDetail =
+          ["incoming", "confirmed", "done", "cancelled"].includes(invite.status)
+            ? `<div class="detail-layout">
+                 <div class="detail-media">
+                   <div class="detail-photo">
+                     <img alt="${candidate.name} 的照片" src="${photos[activePhotoIndex]}" />
+                   </div>
+                   ${
+                     photos.length > 1
+                       ? `<div class="photo-controls">
+                            <button class="photo-nav prev" type="button" data-invite-photo-step="-1" aria-label="上一張照片">&lsaquo;</button>
+                            <button class="photo-nav next" type="button" data-invite-photo-step="1" aria-label="下一張照片">&rsaquo;</button>
+                          </div>`
+                       : ""
+                   }
+                 </div>
+                 <div class="detail-copy">
+                   <p>${candidate.intro}</p>
+                   <div class="detail-grid">
+                     <div class="detail-item"><span>年齡</span><strong>${candidate.age} 歲</strong></div>
+                     <div class="detail-item"><span>地區</span><strong>${candidate.area}</strong></div>
+                     <div class="detail-item"><span>交友方向</span><strong>${candidate.looking}</strong></div>
+                     <div class="detail-item"><span>職業</span><strong>${detail.occupation}</strong></div>
+                     <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
+                     <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
+                     <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
+                     <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
+                     <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
+                     <div class="detail-item">
+                       <span>咖啡店</span>
+                       <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
+                     </div>
+                     ${
+                       invite.status === "incoming"
+                         ? `<div class="detail-item full">
+                              <span>選擇這次見面的時間</span>
+                              <div class="mini-availability">
+                                ${preciseInviteTimeOptions(invite, candidate)
+                                  .map(
+                                    (time) =>
+                                      `<button class="mini-time-chip incoming-time-choice ${state.selectedIncomingTimes[invite.id] === time ? "active" : ""}" type="button" data-incoming-time="${time}">${time}</button>`,
+                                  )
+                                  .join("")}
+                              </div>
+                            </div>`
+                         : ""
+                     }
+                   </div>
+                   ${
+                     ["incoming", "confirmed"].includes(invite.status)
+                       ? `<div class="email-actions">
+                            ${invite.status === "incoming" ? `<button class="btn primary" type="button" data-accept-invite="${invite.id}">同意邀約</button>` : ""}
+                            <button class="btn secondary" type="button" data-cancel-invite="${invite.id}">${invite.status === "incoming" ? "婉拒邀約" : "取消邀約"}</button>
+                          </div>`
+                       : ""
+                   }
+                 </div>
+               </div>`
+            : "";
         panel.innerHTML = `
           <div class="detail-head">
             <div>
-              <h3>與 ${candidate.name} 的咖啡邀約</h3>
-              <div class="candidate-meta" style="margin-top: 8px">
-                <span class="status-label ${meta.className}">${meta.label}</span>
-                <span class="chip">${candidate.age} 歲</span>
-              </div>
+              <h3>${candidate.name} 的邀約補充</h3>
             </div>
             <button class="btn secondary" type="button" data-close-detail="invite">關閉</button>
           </div>
-          <div class="detail-layout">
-            <div class="detail-photo"><img alt="${candidate.name} 的柔焦照片" src="${candidate.photo}" /></div>
-            <div class="detail-copy">
-              <p>${invite.note}</p>
-              <div class="detail-grid">
-                <div class="detail-item"><span>目前狀態</span><strong>${meta.label}</strong></div>
-                <div class="detail-item"><span>狀態說明</span><strong>${inviteProgressText(invite)}</strong></div>
-                <div class="detail-item"><span>邀約時段</span><strong>${inviteTimeText(invite, candidate)}</strong></div>
-                <div class="detail-item"><span>見面地點</span><strong>${invitePlaceText(invite, candidate)}</strong></div>
-              </div>
-              <div class="email-note">收到邀約後保留 24 小時；每人每天最多收到 3 個邀約，你仍可主動邀約其他人。</div>
-              ${feedback}
-              ${cancelledNote}
-              <div class="email-actions">
-                ${inviteActionButtons(invite, meta)}
-              </div>
-            </div>
-          </div>
+          ${personDetail}
+          ${
+            invite.status === "incoming"
+              ? `<div class="email-note">收到邀約後保留 24 小時；這段時間其他人不能再邀約你，但你仍可主動邀約其他人。</div>`
+              : invite.status === "confirmed"
+                ? `<div class="email-note"><strong>待見面</strong><br />時間地點都已確認；見面前仍可取消。</div>`
+              : `<div class="invite-detail-note-grid">
+                  <div class="email-note"><strong>狀態說明</strong><br />${inviteProgressText(invite)}</div>
+                  <div class="email-note"><strong>系統紀錄</strong><br />${invite.note}</div>
+                </div>`
+          }
+          ${feedback}
+          ${cancelledNote}
         `;
+        panel.dataset.inviteId = inviteId;
+        panel.dataset.photoIndex = activePhotoIndex;
+        panel.classList.add("invite-detail-panel");
         panel.classList.remove("hidden");
-        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        const targetCard = anchorCard || document.querySelector(`[data-invite-card="${inviteId}"]`);
+        if (targetCard) targetCard.insertAdjacentElement("afterend", panel);
+        panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function normalizeSheetPhotoPath(photoPath) {
+        if (!photoPath) return "";
+        if (/^(https?:|data:|\/)/.test(photoPath)) return photoPath;
+        return photoPath;
+      }
+
+      async function loadSheetAppData() {
+        try {
+          const response = await fetch("/api/app-data");
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.error || "讀取試算表失敗");
+          if (Array.isArray(data.candidates) && data.candidates.length) {
+            candidates.splice(
+              0,
+              candidates.length,
+              ...data.candidates.map((candidate) => ({
+                ...candidate,
+                photo: normalizeSheetPhotoPath(candidate.photo),
+                photos: (candidate.photos || []).map(normalizeSheetPhotoPath),
+              })),
+            );
+          }
+          if (Array.isArray(data.invites) && data.invites.length) {
+            invites.splice(0, invites.length, ...data.invites);
+          }
+          showToast("已載入試算表資料");
+        } catch (error) {
+          console.warn("使用內建示範資料：", error);
+        }
+      }
+
+      async function bootstrapApp() {
+        await loadSheetAppData();
+        renderCandidates();
+        renderInvites();
+        renderPhotoGrid();
+        initBirthdayOptions();
+        updateDistrictOptions();
+        updateMapLinks();
+        updateSummary();
+        go("digest");
       }
 
       document.querySelectorAll("[data-step], [data-go]").forEach((button) => {
@@ -3304,12 +3506,35 @@
         const acceptButton = event.target.closest("[data-accept-invite]");
         if (acceptButton) acceptInvite(acceptButton.dataset.acceptInvite);
         const viewButton = event.target.closest("[data-view-invite]");
-        if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite);
+        if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite, viewButton.closest(".invite-card"));
         const candidateButton = event.target.closest("[data-view-candidate]");
         if (candidateButton) openCandidateFromInvite(candidateButton.dataset.viewCandidate);
       });
 
       document.getElementById("inviteDetail").addEventListener("click", (event) => {
+        if (event.target.closest("[data-close-detail='invite']")) {
+          const panel = document.getElementById("inviteDetail");
+          panel.classList.add("hidden");
+          document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
+          return;
+        }
+        const timeButton = event.target.closest("[data-incoming-time]");
+        if (timeButton) {
+          const panel = document.getElementById("inviteDetail");
+          const inviteId = panel.dataset.inviteId;
+          state.selectedIncomingTimes[inviteId] = timeButton.dataset.incomingTime;
+          renderInviteDetail(inviteId, panel.previousElementSibling?.classList.contains("invite-card") ? panel.previousElementSibling : null);
+          return;
+        }
+        const photoButton = event.target.closest("[data-invite-photo-step]");
+        if (photoButton) {
+          const panel = document.getElementById("inviteDetail");
+          const inviteId = panel.dataset.inviteId;
+          const currentCard = panel.previousElementSibling?.classList.contains("invite-card") ? panel.previousElementSibling : null;
+          panel.dataset.photoIndex = Number(panel.dataset.photoIndex || 0) + Number(photoButton.dataset.invitePhotoStep);
+          renderInviteDetail(inviteId, currentCard);
+          return;
+        }
         const cancelButton = event.target.closest("[data-cancel-invite]");
         if (cancelButton) cancelInvite(cancelButton.dataset.cancelInvite);
         const acceptButton = event.target.closest("[data-accept-invite]");
@@ -3330,14 +3555,7 @@
         renderInvites();
       });
 
-      renderCandidates();
-      renderInvites();
-      renderPhotoGrid();
-      initBirthdayOptions();
-      updateDistrictOptions();
-      updateMapLinks();
-      updateSummary();
-      go("digest");
+      bootstrapApp();
     </script>
   </body>
 </html>

@@ -33,6 +33,10 @@ function signJwt(credential) {
 }
 
 function loadCredential(credentialPath = defaultCredentialPath) {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  }
+
   if (!fs.existsSync(credentialPath)) {
     throw new Error(`找不到憑證檔：${credentialPath}`);
   }
