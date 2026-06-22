@@ -2454,6 +2454,56 @@
         return Object.fromEntries(new FormData(form).entries());
       }
 
+      function setFieldValue(id, value) {
+        const field = document.getElementById(id);
+        if (field && value !== undefined && value !== null) field.value = value;
+      }
+
+      function setSelectValue(id, value) {
+        const field = document.getElementById(id);
+        if (!field || !value) return;
+        const hasOption = Array.from(field.options).some((option) => option.value === value);
+        if (hasOption) field.value = value;
+      }
+
+      function splitProfileList(value) {
+        return String(value || "")
+          .split(/[,，、]/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function districtWithSuffix(value) {
+        if (!value) return "";
+        return /[區鄉鎮市]$/.test(value) ? value : `${value}區`;
+      }
+
+      function normalizeCityName(value) {
+        const city = String(value || "").trim();
+        const cityMap = {
+          台北: "台北市",
+          新北: "新北市",
+          桃園: "桃園市",
+          台中: "台中市",
+          台南: "台南市",
+          高雄: "高雄市",
+          基隆: "基隆市",
+          新竹: "新竹市",
+          嘉義: "嘉義市",
+        };
+        return cityMap[city] || city;
+      }
+
+      function cityFromArea(area) {
+        const city = String(area || "").split(/[・,，、\s]/)[0];
+        return normalizeCityName(city);
+      }
+
+      function districtFromArea(area) {
+        const parts = String(area || "").split(/[・,，、\s]/).filter(Boolean);
+        return districtWithSuffix(parts[1] || "");
+      }
+
       function showToast(message) {
         const toast = document.getElementById("toast");
         toast.textContent = message;
@@ -2510,7 +2560,9 @@
           name: user.name || user.nickname || user.email,
           reviewStatus: user.reviewStatus || "已登入",
         };
+        populateProfileForm(user);
         renderLoginPanel();
+        go("profile");
         showToast("登入成功");
       }
 
@@ -2832,6 +2884,7 @@
         const expanded = new Set(values.flatMap((value) => {
           if (value === "平日晚上") return ["週一晚上", "週二晚上", "週三晚上", "週四晚上", "週五晚上"];
           if (value === "週末下午") return ["週六午後", "週六傍晚", "週日午後", "週日傍晚"];
+          if (value.includes("下午")) return [value.replace("下午", "午後")];
           return [value];
         }));
         document.querySelectorAll("[data-time-choice]").forEach((button) => {
@@ -2841,6 +2894,36 @@
           );
         });
         updateAvailabilityNoteFromChoices();
+      }
+
+      function populateProfileForm(user) {
+        if (!user) return;
+        setFieldValue("nickname", user.nickname || user.name || "");
+        setFieldValue("email", user.email || "");
+        setSelectValue("gender", user.gender || "");
+        setSelectValue("birthYear", user.birthYear || "");
+        setSelectValue("birthMonth", user.birthMonth || "");
+        setSelectValue("birthDay", user.birthDay || "");
+
+        const city = normalizeCityName(user.city) || cityFromArea(user.area);
+        const district = districtWithSuffix(user.district) || districtFromArea(user.area);
+        setSelectValue("city", city);
+        updateDistrictOptions(district);
+
+        setFieldValue("occupation", user.occupation || "");
+        setSelectValue("education", user.education || "");
+        setFieldValue("school", user.school || "");
+        setSelectValue("relationshipStatus", user.relationshipStatus || "");
+        setSelectValue("hasChildren", user.hasChildren || "");
+        setSelectValue("coffeeGoal", user.coffeeGoal || user.looking || "");
+        setSelectValue("smoking", user.smoking || "");
+        setSelectValue("drinking", user.drinking || "");
+        setFieldValue("intro", user.intro || "");
+        setFieldValue("meetingArea", user.meetingArea || user.place || "");
+        setInterestKeywords(splitProfileList(user.interestKeywords || user.interests || ""));
+        setAvailableTimes(splitProfileList(user.availabilityNote || user.availableTime || user.time || ""));
+        updateMapLinks();
+        updateSummary();
       }
 
       function updateSummary() {
