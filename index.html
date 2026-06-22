@@ -228,7 +228,7 @@
 
       .login-form {
         display: grid;
-        grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.6fr) auto;
+        grid-template-columns: minmax(220px, 1fr) auto;
         gap: 10px;
         align-items: end;
       }
@@ -2484,16 +2484,12 @@
           panel.innerHTML = `
             <div>
               <p class="login-title">會員登入</p>
-              <p class="login-copy">使用 Email 登入。測試階段密碼先用生日 8 碼，例如 19810412。</p>
+              <p class="login-copy">輸入 Email 即可登入。若 Email 不存在，會進入建立使用者資料。</p>
             </div>
             <form class="login-form" id="loginForm">
               <div class="field">
                 <label for="loginEmail">Email</label>
                 <input id="loginEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
-              </div>
-              <div class="field">
-                <label for="loginPassword">生日密碼</label>
-                <input id="loginPassword" name="password" inputmode="numeric" maxlength="8" placeholder="19810412" required />
               </div>
               <button class="btn primary" type="submit">登入</button>
             </form>
@@ -2512,16 +2508,23 @@
 
       function loginWithEmail(email, password) {
         const normalizedEmail = email.trim().toLowerCase();
-        const user = mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail);
+        const user =
+          candidates.find((item) => item.email && item.email.toLowerCase() === normalizedEmail) ||
+          mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail);
         if (!user) {
+          document.getElementById("email").value = email.trim();
+          state.currentUser = null;
+          renderLoginPanel();
+          go("profile");
           showToast("找不到這個 Email，請先建立資料");
           return;
         }
-        if (user.password !== password.trim()) {
-          showToast("生日密碼不正確");
-          return;
-        }
-        state.currentUser = user;
+        state.currentUser = {
+          userId: user.userId || user.id,
+          email: user.email,
+          name: user.name || user.nickname || user.email,
+          reviewStatus: user.reviewStatus || "已登入",
+        };
         renderLoginPanel();
         showToast("登入成功");
       }
@@ -3308,6 +3311,7 @@
         await loadSheetAppData();
         renderCandidates();
         renderInvites();
+        renderLoginPanel();
         renderPhotoGrid();
         initBirthdayOptions();
         updateDistrictOptions();
@@ -3370,10 +3374,38 @@
         syncInterestKeywords();
       });
 
-      document.getElementById("profileForm").addEventListener("submit", (event) => {
+      document.getElementById("profileForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
+        try {
+          const response = await fetch("/api/users", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(state.profile),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.error || "儲存失敗");
+          state.currentUser = {
+            userId: data.userId,
+            email: state.profile.email,
+            name: state.profile.nickname || state.profile.email,
+            reviewStatus: data.created ? "已建立資料" : "已登入",
+          };
+          renderLoginPanel();
+          await loadSheetAppData();
+          renderCandidates();
+          renderInvites();
+        } catch (error) {
+          console.warn("使用者資料暫存於本機：", error);
+          state.currentUser = {
+            userId: "local-user",
+            email: state.profile.email,
+            name: state.profile.nickname || state.profile.email || "新會員",
+            reviewStatus: "本機暫存",
+          };
+          renderLoginPanel();
+        }
         updateSummary();
         showToast("使用者資料已儲存");
         go("digest");
@@ -3496,7 +3528,7 @@
           if (!event.target.matches("#loginForm")) return;
           event.preventDefault();
           const data = formToObject(event.target);
-          loginWithEmail(data.email, data.password);
+          loginWithEmail(data.email);
         });
       }
 

@@ -17,7 +17,7 @@ function signJwt(credential) {
   const header = { alg: "RS256", typ: "JWT" };
   const claim = {
     iss: credential.client_email,
-    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+    scope: "https://www.googleapis.com/auth/spreadsheets",
     aud: credential.token_uri,
     exp: now + 3600,
     iat: now,
@@ -60,9 +60,14 @@ async function getAccessToken(credential) {
   return JSON.parse(text).access_token;
 }
 
-async function requestSheetsApi(path, accessToken) {
+async function requestSheetsApi(path, accessToken, options = {}) {
   const response = await fetch(`https://sheets.googleapis.com/v4/${path}`, {
-    headers: { authorization: `Bearer ${accessToken}` },
+    method: options.method || "GET",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      ...(options.body ? { "content-type": "application/json" } : {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
   const text = await response.text();
@@ -97,9 +102,24 @@ async function getSheetValues(range, options = {}) {
   );
 }
 
+async function appendSheetValues(range, values, options = {}) {
+  const credential = loadCredential(options.credentialPath);
+  const accessToken = await getAccessToken(credential);
+  const spreadsheetId = options.spreadsheetId || defaultSpreadsheetId;
+  return requestSheetsApi(
+    `spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    accessToken,
+    {
+      method: "POST",
+      body: { values },
+    },
+  );
+}
+
 module.exports = {
   defaultCredentialPath,
   defaultSpreadsheetId,
+  appendSheetValues,
   getSpreadsheetMeta,
   getSheetValues,
 };
