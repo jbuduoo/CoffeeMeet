@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
@@ -333,11 +333,11 @@
 
       .availability-grid {
         display: grid;
-        grid-template-columns: 58px repeat(3, minmax(78px, 1fr));
+        grid-template-columns: 58px repeat(4, minmax(78px, 1fr));
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
-        max-width: 520px;
+        max-width: 650px;
         background: #fffdf8;
       }
 
@@ -353,7 +353,7 @@
         font-weight: 700;
       }
 
-      .availability-cell:nth-child(4n) { border-right: 0; }
+      .availability-cell:nth-child(5n) { border-right: 0; }
 
       .availability-head,
       .availability-day {
@@ -830,6 +830,27 @@
         font-size: 14px;
       }
 
+      .detail-item.full {
+        grid-column: 1 / -1;
+      }
+
+      .mini-availability {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 2px;
+      }
+
+      .mini-time-chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fffdf8;
+        color: #51483d;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
       .email-list {
         display: grid;
         gap: 14px;
@@ -1059,6 +1080,17 @@
         line-height: 1.7;
       }
 
+      .invite-modal-tip {
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        background: #eef8f5;
+        color: #214f49;
+        font-size: 17px;
+        font-weight: 800;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+
       .invite-modal-fields {
         display: grid;
         gap: 14px;
@@ -1072,7 +1104,7 @@
       .time-grid {
         min-width: 620px;
         display: grid;
-        grid-template-columns: 58px repeat(7, minmax(72px, 1fr));
+        grid-template-columns: 58px repeat(4, minmax(120px, 1fr));
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
@@ -1091,7 +1123,7 @@
         text-align: center;
       }
 
-      .time-grid-cell:nth-child(8n) { border-right: 0; }
+      .time-grid-cell:nth-child(5n) { border-right: 0; }
 
       .time-grid-head,
       .time-grid-time {
@@ -1105,11 +1137,7 @@
         background: #faf5eb;
       }
 
-      .time-grid-head strong {
-        display: block;
-        color: var(--ink);
-        font-size: 13px;
-      }
+      .time-grid-head strong { color: var(--ink); font-size: 13px; }
 
       .time-grid-slot { cursor: not-allowed; }
 
@@ -1117,16 +1145,31 @@
         cursor: pointer;
         background: #e7f4f1;
         color: var(--accent);
+        font-size: 14px;
         font-weight: 700;
       }
 
       .time-grid-slot.is-available:hover,
       .time-grid-slot.is-selected {
-        background: var(--accent);
+        background: #0f766e;
         color: #ffffff;
+        font-size: 15px;
+        font-weight: 900;
       }
 
-      .time-grid-slot.is-selected::after { content: "已選"; }
+      .time-grid-slot.is-selected::after {
+        content: "已選";
+        margin-left: 2px;
+      }
+
+      .selected-time-summary {
+        border: 1px solid #b8ddd7;
+        border-radius: 8px;
+        background: #f1faf8;
+        color: #31544e;
+        padding: 10px 12px;
+        font-weight: 800;
+      }
 
       .manual-time-row {
         display: grid;
@@ -1476,44 +1519,52 @@
                     <div class="field-hint">建議包含：工作型態、生活習慣、週末活動、想認識的關係。</div>
                   </div>
 
-                  <div class="form-section-title">方便的時間地點</div>
                   <div class="field full">
-                    <label for="availableTime">通常方便時間</label>
+                    <label for="availableTime">通常方便時段：（發起方選可配合時段，接受方再決定精確時間。）</label>
                     <div class="availability-grid" id="availableTimeChoices">
                       <div class="availability-cell availability-head">星期</div>
-                      <div class="availability-cell availability-head">上午</div>
-                      <div class="availability-cell availability-head">下午</div>
-                      <div class="availability-cell availability-head">晚上</div>
+                      <div class="availability-cell availability-head">上午<br />09:00-12:00</div>
+                      <div class="availability-cell availability-head">午後<br />12:00-15:00</div>
+                      <div class="availability-cell availability-head">傍晚<br />15:00-18:00</div>
+                      <div class="availability-cell availability-head">晚上<br />18:00-21:00</div>
                       <div class="availability-cell availability-day">週一</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週一晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週二</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週二晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週三</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週三晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週四</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週四晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週五</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週五晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週六</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週六晚上 18:00-21:00">晚上</button>
                       <div class="availability-cell availability-day">週日</div>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日上午">上午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日下午">下午</button>
-                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日晚上">晚上</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日上午 09:00-12:00">上午</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日午後 12:00-15:00">午後</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日傍晚 15:00-18:00">傍晚</button>
+                      <button class="availability-cell availability-slot" type="button" data-time-choice="週日晚上 18:00-21:00">晚上</button>
                     </div>
                     <input id="availabilityNote" name="availabilityNote" type="hidden" />
+                  </div>
                   <div class="field full">
                     <label for="meetingArea">方便見面地點：（按鈕會開啟 Google 地圖，選好地點後，把店名貼在這一欄。）</label>
                     <div class="place-picker">
@@ -1620,7 +1671,9 @@
               <div class="tabs" id="inviteTabs">
                 <button class="tab-button active" type="button" data-invite-filter="all">全部</button>
                 <button class="tab-button" type="button" data-invite-filter="sent">已邀約</button>
+                <button class="tab-button" type="button" data-invite-filter="incoming">被邀約</button>
                 <button class="tab-button" type="button" data-invite-filter="active">邀約中</button>
+                <button class="tab-button" type="button" data-invite-filter="confirmed">待見面</button>
                 <button class="tab-button" type="button" data-invite-filter="done">已完成</button>
                 <button class="tab-button" type="button" data-invite-filter="cancelled">已取消</button>
               </div>
@@ -1631,6 +1684,14 @@
               <div class="candidate-toolbar">
                 <h3 style="margin: 0">Email 範本</h3>
                 <span class="candidate-count">建議 7 種</span>
+              </div>
+              <div class="empty-state" style="margin-bottom: 14px">
+                <strong>線上試算表連線</strong>
+                <div style="margin-top: 8px">HTML 會透過本機 Node API 讀取 Google Sheets，不會直接暴露 service account 私鑰。</div>
+                <div class="actions" style="margin-top: 10px">
+                  <button class="btn secondary" type="button" id="testSheetsConnection">測試連線</button>
+                </div>
+                <div class="field-hint" id="sheetsConnectionResult">請先執行 node server.js，再按測試連線。</div>
               </div>
               <div class="tabs" id="emailTabs">
                 <button class="tab-button active" type="button" data-email-filter="daily">每日媒合</button>
@@ -1767,18 +1828,19 @@
                             <div class="invite-modal-backdrop hidden" id="inviteModal" role="dialog" aria-modal="true" aria-labelledby="inviteModalTitle">
       <div class="invite-modal">
         <h3 id="inviteModalTitle">確認咖啡邀約</h3>
-        <p id="inviteModalSummary">先看對方方便的時間，再選你要邀約的時段。</p>
+        <div class="invite-modal-tip" id="inviteModalSummary">先選你可配合的時段；對方接受後，再由接受方決定精確時間。</div>
         <div class="invite-modal-fields">
           <label>女生方便的時間</label>
           <div class="invite-readonly-row"><strong id="candidateAvailableTime">對方尚未填寫</strong></div>
-          <label>可選邀約時間</label>
-          <div class="quick-time-row" id="quickTimeChoices"></div>
           <label>確認地點</label>
           <div class="invite-readonly-row">
             <strong id="invitePlaceDisplay"></strong>
             <a class="detail-map-link" id="invitePlaceMapLink" href="https://www.google.com/maps/search/" target="_blank" rel="noreferrer">定位</a>
           </div>
           <input id="invitePlace" type="hidden" />
+          <label>可選邀約時段</label>
+          <div class="quick-time-row" id="quickTimeChoices"></div>
+          <div class="selected-time-summary" id="selectedInviteTimeSummary">你邀約的時段為：尚未選擇</div>
         </div>
         <div class="invite-modal-actions">
           <button class="btn secondary" type="button" data-close-invite-modal>取消</button>
@@ -2022,7 +2084,7 @@
           time: "週六下午",
           place: "象山站附近咖啡店",
           openingQuestion: "你最近最期待的一件小事是什麼？",
-          photo: "../picture/boy/684234000_1680975416563946_1023672137249206495_n.jpg",
+          photo: "picture/boy/684234000_1680975416563946_1023672137249206495_n.jpg",
         },
         {
           id: "boy-02",
@@ -2036,7 +2098,7 @@
           time: "平日晚上",
           place: "科技大樓站附近咖啡店",
           openingQuestion: "你最近一次覺得被理解，是因為什麼？",
-          photo: "../picture/boy/717270244_10226023470412478_4883509485426912438_n.jpg",
+          photo: "picture/boy/717270244_10226023470412478_4883509485426912438_n.jpg",
         },
         {
           id: "boy-03",
@@ -2050,7 +2112,7 @@
           time: "週日晚上",
           place: "新埔站附近咖啡店",
           openingQuestion: "最近看過哪部電影讓你印象深刻？",
-          photo: "../picture/boy/722117011_122127559395178548_5264100785362877648_n.jpg",
+          photo: "picture/boy/722117011_122127559395178548_5264100785362877648_n.jpg",
         },
         {
           id: "boy-04",
@@ -2064,7 +2126,7 @@
           time: "週六上午",
           place: "南京三民站附近咖啡店",
           openingQuestion: "你最喜歡的日常儀式感是什麼？",
-          photo: "../picture/boy/723527692_26897156349984626_3687745646004749304_n.jpg",
+          photo: "picture/boy/723527692_26897156349984626_3687745646004749304_n.jpg",
         },
         {
           id: "boy-05",
@@ -2078,7 +2140,7 @@
           time: "週日下午",
           place: "行天宮站附近咖啡店",
           openingQuestion: "你喜歡熱鬧的店，還是安靜的小店？",
-          photo: "../picture/boy/724752603_26897155399984721_4065294702314581524_n.jpg",
+          photo: "picture/boy/724752603_26897155399984721_4065294702314581524_n.jpg",
         },
         {
           id: "boy-06",
@@ -2092,7 +2154,7 @@
           time: "平日晚上",
           place: "中和站附近咖啡店",
           openingQuestion: "你覺得信任感通常從哪裡開始？",
-          photo: "../picture/boy/726381350_122113393971352684_5446748320240008742_n.jpg",
+          photo: "picture/boy/726381350_122113393971352684_5446748320240008742_n.jpg",
         },
         {
           id: "boy-07",
@@ -2106,7 +2168,7 @@
           time: "週六下午",
           place: "港墘站附近咖啡店",
           openingQuestion: "你現在最想把時間留給什麼？",
-          photo: "../picture/boy/726391734_1529808785407981_5783978447919193233_n.jpg",
+          photo: "picture/boy/726391734_1529808785407981_5783978447919193233_n.jpg",
         },
         {
           id: "boy-08",
@@ -2120,7 +2182,7 @@
           time: "週日上午",
           place: "桃園藝文特區附近咖啡店",
           openingQuestion: "你最能被哪一種幽默感打動？",
-          photo: "../picture/boy/726575098_27212256955109092_8060569820353239014_n.jpg",
+          photo: "picture/boy/726575098_27212256955109092_8060569820353239014_n.jpg",
         },
         {
           id: "boy-09",
@@ -2134,7 +2196,7 @@
           time: "週日晚上",
           place: "古亭站附近咖啡店",
           openingQuestion: "你覺得兩個人保有空間重要嗎？",
-          photo: "../picture/boy/726926604_985307840798222_1789460614490902386_n.jpg",
+          photo: "picture/boy/726926604_985307840798222_1789460614490902386_n.jpg",
         },
         {
           id: "boy-10",
@@ -2148,7 +2210,7 @@
           time: "平日晚上",
           place: "西門站附近咖啡店",
           openingQuestion: "最近哪首歌最像你的心情？",
-          photo: "../picture/boy/727268282_1748709303149446_5166386920659083899_n.jpg",
+          photo: "picture/boy/727268282_1748709303149446_5166386920659083899_n.jpg",
         },
         {
           id: "boy-11",
@@ -2162,7 +2224,7 @@
           time: "週六上午",
           place: "新莊站附近咖啡店",
           openingQuestion: "你第一次見面最在意對方哪個細節？",
-          photo: "../picture/boy/727457309_27586143677647563_2895463210003937716_n.jpg",
+          photo: "picture/boy/727457309_27586143677647563_2895463210003937716_n.jpg",
         },
         {
           id: "boy-12",
@@ -2176,7 +2238,7 @@
           time: "週日下午",
           place: "南港軟體園區附近咖啡店",
           openingQuestion: "你最近最想完成的小目標是什麼？",
-          photo: "../picture/boy/727497520_27022950167377648_6191385956478059861_n.jpg",
+          photo: "picture/boy/727497520_27022950167377648_6191385956478059861_n.jpg",
         },
         {
           id: "boy-13",
@@ -2190,7 +2252,7 @@
           time: "週日上午",
           place: "七張站附近咖啡店",
           openingQuestion: "你最近一次覺得生活很舒服，是在什麼時候？",
-          photo: "../picture/boy/727572310_27035398676132797_2230091092399052075_n.jpg",
+          photo: "picture/boy/727572310_27035398676132797_2230091092399052075_n.jpg",
         },
       ];
 
@@ -2200,17 +2262,31 @@
 
       const inviteStatusMeta = {
         sent: { label: "已邀約", className: "status-sent", action: "查看邀約" },
+        incoming: { label: "被邀約", className: "status-sent", action: "查看邀約" },
         active: { label: "邀約中", className: "status-active", action: "查看進度" },
+        confirmed: { label: "待見面", className: "status-active", action: "查看見面資訊" },
         done: { label: "已完成", className: "status-done", action: "填寫回饋" },
         cancelled: { label: "已取消", className: "status-cancelled", action: "查看結果" },
       };
 
       const invites = [
         {
+          id: "seed-incoming",
+          candidateId: "boy-12",
+          status: "incoming",
+          note: "對方想請你喝咖啡；可選時段：6/28 週日 午後 12:00-15:00；地點：南港軟體園區附近咖啡店",
+        },
+        {
           id: "seed-active",
           candidateId: "girl-02",
           status: "active",
           note: "等待對方確認咖啡時間",
+        },
+        {
+          id: "seed-confirmed",
+          candidateId: "girl-05",
+          status: "confirmed",
+          note: "已確認：6/29 週一 晚上 19:00；地點：永安市場站附近咖啡店",
         },
         {
           id: "seed-done",
@@ -2405,6 +2481,24 @@
         return date.getFullYear() + "/" + padTimePart(date.getMonth() + 1) + "/" + padTimePart(date.getDate()) + " " + padTimePart(date.getHours()) + ":" + padTimePart(date.getMinutes());
       }
 
+      function weekdayLabel(value) {
+        return ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][value] || "";
+      }
+
+      function availabilityPeriod(start) {
+        const hour = Number(String(start).slice(0, 2));
+        if (hour < 12) return "上午 09:00-12:00";
+        if (hour < 15) return "午後 12:00-15:00";
+        if (hour < 18) return "傍晚 15:00-18:00";
+        return "晚上 18:00-21:00";
+      }
+
+      function availabilityLabels(candidate) {
+        const ranges = candidate.availableRanges || labelToTimeRanges(candidate.time);
+        const labels = ranges.map((range) => `${weekdayLabel(range.weekday)} ${availabilityPeriod(range.start)}`);
+        return Array.from(new Set(labels.length ? labels : [candidate.time || "尚未填寫"]));
+      }
+
       function normalizeInviteTimeValue(value) {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return value;
@@ -2428,17 +2522,17 @@
       function labelToTimeRanges(label) {
         const rules = {
           "平日晚上": [
-            { weekday: 1, start: "19:00", end: "20:30" },
-            { weekday: 3, start: "19:00", end: "20:30" },
-            { weekday: 5, start: "19:00", end: "20:30" },
+            { weekday: 1, start: "18:00", end: "21:00" },
+            { weekday: 3, start: "18:00", end: "21:00" },
+            { weekday: 5, start: "18:00", end: "21:00" },
           ],
-          "週六上午": [{ weekday: 6, start: "09:00", end: "11:30" }],
-          "週六下午": [{ weekday: 6, start: "13:00", end: "17:00" }],
-          "週日下午": [{ weekday: 0, start: "13:00", end: "17:00" }],
-          "週日晚上": [{ weekday: 0, start: "18:30", end: "20:30" }],
-          "週日上午": [{ weekday: 0, start: "09:00", end: "11:30" }],
+          "週六上午": [{ weekday: 6, start: "09:00", end: "12:00" }],
+          "週六下午": [{ weekday: 6, start: "12:00", end: "18:00" }],
+          "週日下午": [{ weekday: 0, start: "12:00", end: "18:00" }],
+          "週日晚上": [{ weekday: 0, start: "18:00", end: "21:00" }],
+          "週日上午": [{ weekday: 0, start: "09:00", end: "12:00" }],
         };
-        return rules[label] || [{ weekday: 6, start: "14:00", end: "17:00" }];
+        return rules[label] || [{ weekday: 6, start: "12:00", end: "18:00" }];
       }
 
       function parseTimeParts(value) {
@@ -2483,12 +2577,46 @@
         return Array.from({ length: 12 }, (_, index) => index + 9);
       }
 
+      function invitePeriods() {
+        return [
+          { key: "morning", label: "上午", start: "09:00", end: "12:00" },
+          { key: "noon", label: "午後", start: "12:00", end: "15:00" },
+          { key: "dusk", label: "傍晚", start: "15:00", end: "18:00" },
+          { key: "night", label: "晚上", start: "18:00", end: "21:00" },
+        ];
+      }
+
+      function minutesFromTime(value) {
+        const { hour, minute } = parseTimeParts(value);
+        return hour * 60 + minute;
+      }
+
+      function rangeOverlapsPeriod(range, period) {
+        const rangeStart = minutesFromTime(range.start);
+        const rangeEnd = minutesFromTime(range.end);
+        const periodStart = minutesFromTime(period.start);
+        const periodEnd = minutesFromTime(period.end);
+        return rangeStart < periodEnd && rangeEnd > periodStart;
+      }
+
+      function nextDateForWeekday(weekday) {
+        const date = new Date();
+        const diff = (weekday - date.getDay() + 7) % 7 || 7;
+        date.setDate(date.getDate() + diff);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      }
+
+      function shortMonthDate(date) {
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }
+
       function renderInviteTimeChoices(candidate) {
         const container = document.getElementById("quickTimeChoices");
         const ranges = candidate.availableRanges || labelToTimeRanges(candidate.time);
-        const days = buildInviteWeekDays();
-        const hours = buildInviteHours();
-        const weekNames = ["日", "一", "二", "三", "四", "五", "六"];
+        const periods = invitePeriods();
+        const weekNames = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+        const availableWeekdays = Array.from(new Set(ranges.map((range) => range.weekday))).sort((a, b) => a - b);
         container.innerHTML = "";
 
         const grid = document.createElement("div");
@@ -2496,33 +2624,36 @@
 
         const corner = document.createElement("div");
         corner.className = "time-grid-cell time-grid-head";
-        corner.textContent = "時間";
+        corner.textContent = "星期";
         grid.appendChild(corner);
 
-        days.forEach((date) => {
+        periods.forEach((period) => {
           const head = document.createElement("div");
           head.className = "time-grid-cell time-grid-head";
-          head.innerHTML = "<strong>" + (date.getMonth() + 1) + "/" + date.getDate() + "</strong>" + weekNames[date.getDay()];
+          head.innerHTML = `<strong>${period.label}</strong><br />${period.start}-${period.end}`;
           grid.appendChild(head);
         });
 
-        hours.forEach((hour) => {
-          const time = document.createElement("div");
-          time.className = "time-grid-cell time-grid-time";
-          time.textContent = String(hour).padStart(2, "0") + ":00";
-          grid.appendChild(time);
+        availableWeekdays.forEach((weekday) => {
+          const inviteDate = nextDateForWeekday(weekday);
+          const dateLabel = shortMonthDate(inviteDate);
+          const dayLabel = `${dateLabel} ${weekNames[weekday]}`;
+          const day = document.createElement("div");
+          day.className = "time-grid-cell time-grid-time";
+          day.innerHTML = `<strong>${dateLabel}</strong><br />${weekNames[weekday]}`;
+          grid.appendChild(day);
 
-          days.forEach((day) => {
-            const slotDate = new Date(day);
-            slotDate.setHours(hour, 0, 0, 0);
-            const available = ranges.some((range) => dateMatchesRange(slotDate, range));
+          periods.forEach((period) => {
+            const available = ranges.some((range) => range.weekday === weekday && rangeOverlapsPeriod(range, period));
             const button = document.createElement("button");
             button.className = "time-grid-cell time-grid-slot" + (available ? " is-available" : "");
             button.type = "button";
             button.disabled = !available;
             if (available) {
-              button.dataset.timeValue = toDateTimeLocalValue(slotDate);
-              button.setAttribute("aria-label", formatInviteTime(button.dataset.timeValue));
+              const label = `${dayLabel} ${period.label} ${period.start}-${period.end}`;
+              button.textContent = period.label;
+              button.dataset.timeValue = label;
+              button.setAttribute("aria-label", label);
             }
             grid.appendChild(button);
           });
@@ -2538,7 +2669,15 @@
       }
 
       function selectedInviteTimeLabels() {
-        return selectedInviteTimes().map(formatInviteTime);
+        return selectedInviteTimes();
+      }
+
+      function updateSelectedInviteTimeSummary() {
+        const summary = document.getElementById("selectedInviteTimeSummary");
+        const times = selectedInviteTimeLabels();
+        summary.textContent = times.length
+          ? `你邀約的時段為：${times.join("、")}`
+          : "你邀約的時段為：尚未選擇";
       }
 
       function openInviteModal(candidateId) {
@@ -2550,8 +2689,9 @@
         }
         state.pendingInviteId = candidateId;
         document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 見面`;
-        document.getElementById("inviteModalSummary").textContent = "先選幾個你方便的時段，確認咖啡店後再送出邀約。";
+        document.getElementById("inviteModalSummary").textContent = "先選你可配合的時段；對方接受後，再由接受方決定精確時間。";
         renderInviteTimeChoices(candidate);
+        updateSelectedInviteTimeSummary();
         document.getElementById("candidateAvailableTime").textContent = candidate.time || "對方尚未填寫";
         document.getElementById("invitePlace").value = candidate.place || "";
         document.getElementById("invitePlaceDisplay").textContent = candidate.place || "";
@@ -2638,11 +2778,14 @@
       function setAvailableTimes(values) {
         const expanded = new Set(values.flatMap((value) => {
           if (value === "平日晚上") return ["週一晚上", "週二晚上", "週三晚上", "週四晚上", "週五晚上"];
-          if (value === "週末下午") return ["週六下午", "週日下午"];
+          if (value === "週末下午") return ["週六午後", "週六傍晚", "週日午後", "週日傍晚"];
           return [value];
         }));
         document.querySelectorAll("[data-time-choice]").forEach((button) => {
-          button.classList.toggle("active", expanded.has(button.dataset.timeChoice));
+          button.classList.toggle(
+            "active",
+            Array.from(expanded).some((value) => button.dataset.timeChoice.startsWith(value)),
+          );
         });
         updateAvailabilityNoteFromChoices();
       }
@@ -2744,6 +2887,50 @@
           .join("");
       }
 
+      function detailFromNote(note, label) {
+        const match = note.match(new RegExp(`${label}：([^；]+)`));
+        return match ? match[1] : "";
+      }
+
+      function inviteTimeText(invite, candidate) {
+        if (invite.status === "confirmed") return detailFromNote(invite.note, "已確認") || "已確認，請查看詳情";
+        return detailFromNote(invite.note, "可選時段") || candidate.time || "尚未選擇";
+      }
+
+      function invitePlaceText(invite, candidate) {
+        return detailFromNote(invite.note, "地點") || candidate.place || "尚未確認";
+      }
+
+      function inviteProgressText(invite) {
+        const messages = {
+          sent: "已送出邀約，等待對方回覆。對方接受前先不討論時間地點。",
+          incoming: "對方邀請你喝咖啡。你可以同意，也可以婉拒；這 24 小時內其他人不能再邀約你。",
+          active: "雙方已同意，可以開始確認精確時間和地點。",
+          confirmed: "時間地點已確認，見面前仍可取消。",
+          done: "已完成見面，建議留下簡短回饋。",
+          cancelled: "這次邀約已取消，保留紀錄方便回顧。",
+        };
+        return messages[invite.status] || "";
+      }
+
+      function inviteActionButtons(invite, meta) {
+        const viewButton = `<button class="btn secondary" type="button" data-view-invite="${invite.id}">${meta.action}</button>`;
+        const profileButton = `<button class="btn secondary" type="button" data-view-candidate="${invite.candidateId}">查看對方資料</button>`;
+        const cancelButton = `<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">取消邀約</button>`;
+        if (invite.status === "sent") return `${viewButton}${profileButton}${cancelButton}`;
+        if (invite.status === "incoming") {
+          return `<button class="btn primary" type="button" data-accept-invite="${invite.id}">同意邀約</button>${profileButton}<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">婉拒邀約</button>`;
+        }
+        if (invite.status === "active") {
+          return `<button class="btn primary" type="button">${meta.action}</button><button class="btn secondary" type="button">討論時間地點</button>${profileButton}${cancelButton}`;
+        }
+        if (invite.status === "confirmed") {
+          return `<button class="btn primary" type="button">${meta.action}</button>${profileButton}${cancelButton}`;
+        }
+        if (invite.status === "done") return `<button class="btn primary" type="button">填寫問卷</button>${profileButton}`;
+        return `${viewButton}${profileButton}`;
+      }
+
       function renderInvites() {
         const list = document.getElementById("inviteList");
         const visibleInvites =
@@ -2758,7 +2945,6 @@
             const candidate = candidates.find((item) => item.id === invite.candidateId);
             if (!candidate) return "";
             const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
-            const canCancel = ["sent", "active"].includes(invite.status);
             return `
               <article class="invite-card">
                 <div class="invite-thumb">
@@ -2769,14 +2955,12 @@
                     <h4>${candidate.name}<span class="status-label ${meta.className}">（${meta.label}）</span></h4>
                   </div>
                   <div class="invite-row">
-                    <div class="invite-field"><span>方便時間</span><strong>${candidate.time}</strong></div>
-                    <div class="invite-field"><span>見面地點</span><strong>${candidate.place}</strong></div>
-                    <div class="invite-field"><span>開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+                    <div class="invite-field"><span>目前進度</span><strong>${inviteProgressText(invite)}</strong></div>
+                    <div class="invite-field"><span>邀約時段</span><strong>${inviteTimeText(invite, candidate)}</strong></div>
+                    <div class="invite-field"><span>見面地點</span><strong>${invitePlaceText(invite, candidate)}</strong></div>
                   </div>
                   <div class="invite-actions">
-                    <button class="btn secondary" type="button">${meta.action}</button>
-                    <button class="btn secondary" type="button">討論時間地點</button>
-                    ${canCancel ? `<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">取消邀約</button>` : ""}
+                    ${inviteActionButtons(invite, meta)}
                   </div>
                 </div>
               </article>
@@ -2829,13 +3013,16 @@
                 <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
                 <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
                 <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
-                <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
                 <div class="detail-item">
                   <span>咖啡店</span>
                   <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
                 </div>
-                <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
-                <div class="detail-item"><span>測試階段</span><strong>目前不限制每日邀約數，方便測試流程</strong></div>
+                <div class="detail-item full">
+                  <span>通常方便時段</span>
+                  <div class="mini-availability">
+                    ${availabilityLabels(candidate).map((label) => `<span class="mini-time-chip">${label}</span>`).join("")}
+                  </div>
+                </div>
               </div>
               <div class="email-actions">
                 <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>
@@ -2852,9 +3039,10 @@
 
       function cancelInvite(inviteId) {
         const invite = invites.find((item) => item.id === inviteId);
-        if (!invite || !["sent", "active"].includes(invite.status)) return;
+        if (!invite || !["sent", "incoming", "active", "confirmed"].includes(invite.status)) return;
+        const previousStatus = invite.status;
         invite.status = "cancelled";
-        invite.note = "發起者已取消這次咖啡邀約";
+        invite.note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
         state.invited.delete(invite.candidateId);
         document.getElementById("inviteDetail")?.classList.add("hidden");
         renderCandidates();
@@ -2862,11 +3050,35 @@
         showToast("已取消邀約");
       }
 
+      function acceptInvite(inviteId) {
+        const invite = invites.find((item) => item.id === inviteId);
+        if (!invite || invite.status !== "incoming") return;
+        invite.status = "active";
+        invite.note = `你已同意邀約；${invite.note}`;
+        renderInvites();
+        renderInviteDetail(inviteId);
+        showToast("已同意邀約，接著確認精確時間地點");
+      }
+
+      function openCandidateFromInvite(candidateId) {
+        go("digest");
+        const card = document.querySelector(`[data-candidate-detail="${candidateId}"]`)?.closest(".candidate-card");
+        renderCandidateDetail(candidateId, card || null);
+      }
+
       function renderInviteDetail(inviteId) {
         const invite = invites.find((item) => item.id === inviteId);
         if (!invite) return;
         const candidate = candidates.find((item) => item.id === invite.candidateId);
         const meta = inviteStatusMeta[invite.status];
+        const feedback =
+          invite.status === "done"
+            ? `<div class="email-note"><strong>見面後問卷</strong><br />是否如約見面、聊天感受、是否願意再見面，以及有沒有安全疑慮。</div>`
+            : "";
+        const cancelledNote =
+          invite.status === "cancelled"
+            ? `<div class="email-note">已取消的邀約保留紀錄即可，不需要再寄提醒信。之後可回到交友清單重新選擇。</div>`
+            : "";
         const panel = document.getElementById("inviteDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -2885,14 +3097,15 @@
               <p>${invite.note}</p>
               <div class="detail-grid">
                 <div class="detail-item"><span>目前狀態</span><strong>${meta.label}</strong></div>
-                <div class="detail-item"><span>方便時間</span><strong>${candidate.time}</strong></div>
-                <div class="detail-item"><span>見面地點</span><strong>${candidate.place}</strong></div>
-                <div class="detail-item"><span>咖啡開場問題</span><strong>${candidate.openingQuestion}</strong></div>
+                <div class="detail-item"><span>狀態說明</span><strong>${inviteProgressText(invite)}</strong></div>
+                <div class="detail-item"><span>邀約時段</span><strong>${inviteTimeText(invite, candidate)}</strong></div>
+                <div class="detail-item"><span>見面地點</span><strong>${invitePlaceText(invite, candidate)}</strong></div>
               </div>
               <div class="email-note">收到邀約後保留 24 小時；每人每天最多收到 3 個邀約，你仍可主動邀約其他人。</div>
+              ${feedback}
+              ${cancelledNote}
               <div class="email-actions">
-                <button class="btn primary" type="button">${meta.action}</button>
-                <button class="btn secondary" type="button">討論時間地點</button>
+                ${inviteActionButtons(invite, meta)}
               </div>
             </div>
           </div>
@@ -2973,6 +3186,21 @@
         document.querySelectorAll("[data-email-template]").forEach((template) => {
           template.classList.toggle("hidden", template.dataset.emailTemplate !== button.dataset.emailFilter);
         });
+      });
+
+      document.getElementById("testSheetsConnection").addEventListener("click", async () => {
+        const result = document.getElementById("sheetsConnectionResult");
+        result.textContent = "連線中...";
+        try {
+          const response = await fetch("/api/sheets");
+          const data = await response.json();
+          if (!response.ok || !data.ok) {
+            throw new Error(data.error || "連線失敗");
+          }
+          result.textContent = `連線成功：${data.title}（${data.sheets.join("、")}）`;
+        } catch (error) {
+          result.textContent = `連線失敗：請確認已執行 node server.js。${error.message}`;
+        }
       });
 
       function renderPhotoGrid() {
@@ -3057,6 +3285,7 @@
         const button = event.target.closest(".time-grid-slot.is-available") || event.target.closest(".quick-time-button");
         if (!button) return;
         button.classList.toggle("is-selected");
+        updateSelectedInviteTimeSummary();
       });
 
       const loginPanel = document.getElementById("loginPanel");
@@ -3072,6 +3301,23 @@
       document.getElementById("inviteList").addEventListener("click", (event) => {
         const cancelButton = event.target.closest("[data-cancel-invite]");
         if (cancelButton) cancelInvite(cancelButton.dataset.cancelInvite);
+        const acceptButton = event.target.closest("[data-accept-invite]");
+        if (acceptButton) acceptInvite(acceptButton.dataset.acceptInvite);
+        const viewButton = event.target.closest("[data-view-invite]");
+        if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite);
+        const candidateButton = event.target.closest("[data-view-candidate]");
+        if (candidateButton) openCandidateFromInvite(candidateButton.dataset.viewCandidate);
+      });
+
+      document.getElementById("inviteDetail").addEventListener("click", (event) => {
+        const cancelButton = event.target.closest("[data-cancel-invite]");
+        if (cancelButton) cancelInvite(cancelButton.dataset.cancelInvite);
+        const acceptButton = event.target.closest("[data-accept-invite]");
+        if (acceptButton) acceptInvite(acceptButton.dataset.acceptInvite);
+        const viewButton = event.target.closest("[data-view-invite]");
+        if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite);
+        const candidateButton = event.target.closest("[data-view-candidate]");
+        if (candidateButton) openCandidateFromInvite(candidateButton.dataset.viewCandidate);
       });
 
       document.getElementById("inviteTabs").addEventListener("click", (event) => {
