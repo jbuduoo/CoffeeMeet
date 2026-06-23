@@ -621,6 +621,7 @@
         display: grid;
         grid-template-columns: 104px 96px minmax(0, 1fr) auto;
         align-items: center;
+        cursor: pointer;
         transition:
           transform 160ms ease,
           box-shadow 160ms ease;
@@ -1000,6 +1001,12 @@
         grid-template-columns: 96px minmax(0, 1fr) auto;
         gap: 14px;
         align-items: start;
+        cursor: pointer;
+      }
+
+      .invite-card.is-focused {
+        outline: 3px solid rgba(15, 118, 110, 0.22);
+        box-shadow: 0 16px 32px rgba(15, 118, 110, 0.12);
       }
 
       .invite-thumb {
@@ -1966,6 +1973,7 @@
           email: "test@example.com",
           password: "19810412",
           name: "測試會員",
+          gender: "男性",
           reviewStatus: "待審核",
         },
       ];
@@ -2571,6 +2579,7 @@
           document.getElementById("email").value = email.trim();
           state.currentUser = null;
           renderLoginPanel();
+          renderCandidates();
           go("profile");
           showToast("找不到這個 Email，請先建立資料");
           return;
@@ -2579,10 +2588,12 @@
           userId: user.userId || user.id,
           email: user.email,
           name: user.name || user.nickname || user.email,
+          gender: user.gender,
           reviewStatus: user.reviewStatus || "已登入",
         };
         populateProfileForm(user);
         renderLoginPanel();
+        renderCandidates();
         go("profile");
         showToast("登入成功");
       }
@@ -2977,6 +2988,34 @@
         return `${distance.toFixed(1)} km`;
       }
 
+      function normalizeGender(value) {
+        const gender = String(value || "").trim().toLowerCase();
+        if (["女性", "女", "female", "girl"].includes(gender)) return "女性";
+        if (["男性", "男", "male", "boy"].includes(gender)) return "男性";
+        return "";
+      }
+
+      function candidateGender(candidate) {
+        const explicitGender = normalizeGender(candidate.gender);
+        if (explicitGender) return explicitGender;
+        if (String(candidate.id || "").startsWith("girl-")) return "女性";
+        if (String(candidate.id || "").startsWith("boy-")) return "男性";
+        return "";
+      }
+
+      function oppositeGender(gender) {
+        if (gender === "女性") return "男性";
+        if (gender === "男性") return "女性";
+        return "";
+      }
+
+      function visibleCandidates() {
+        if (!state.currentUser) return [];
+        const targetGender = oppositeGender(normalizeGender(state.currentUser.gender));
+        if (!targetGender) return [];
+        return candidates.filter((candidate) => candidateGender(candidate) === targetGender);
+      }
+
       function profileDetail(candidate, index) {
         const occupations = ["品牌企劃", "行銷企劃", "專案管理", "行政管理", "設計師", "產品企劃", "教師", "護理師", "財務分析", "電商營運", "研究助理", "文字工作者", "地勤人員", "品牌顧問", "行銷助理", "資料工程師", "產品經理", "影像剪輯師", "金融業", "室內設計師", "後端工程師", "科技業主管", "健身教練", "法律相關", "音樂企劃", "業務管理"];
         const educations = ["大學", "研究所以上", "大學", "專科"];
@@ -3004,11 +3043,18 @@
 
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
-        if (!candidates.length) {
-          grid.innerHTML = `<div class="empty-state">目前沒有可顯示的交友清單。</div>`;
+        if (!state.currentUser) {
+          closeCandidateDetail();
+          grid.innerHTML = `<div class="empty-state">無資料，請用Email登入</div>`;
           return;
         }
-        grid.innerHTML = candidates
+        const filteredCandidates = visibleCandidates();
+        if (!filteredCandidates.length) {
+          closeCandidateDetail();
+          grid.innerHTML = `<div class="empty-state">目前沒有符合條件的交友清單。</div>`;
+          return;
+        }
+        grid.innerHTML = filteredCandidates
           .map((candidate, index) => ({ candidate, index, distance: mockDistance(index) }))
           .sort((a, b) => a.distance - b.distance)
           .map(({ candidate, distance }) => {
@@ -3225,6 +3271,25 @@
         if (anchorCard) anchorCard.insertAdjacentElement("afterend", panel);
       }
 
+      function closeCandidateDetail() {
+        const panel = document.getElementById("candidateDetail");
+        panel.classList.add("hidden");
+        delete panel.dataset.candidateId;
+        document.querySelectorAll(".candidate-card.is-focused").forEach((card) => card.classList.remove("is-focused"));
+        document.getElementById("digestPage").prepend(panel);
+      }
+
+      function toggleCandidateDetail(candidateId, card) {
+        const panel = document.getElementById("candidateDetail");
+        if (!panel.classList.contains("hidden") && panel.dataset.candidateId === candidateId) {
+          closeCandidateDetail();
+          return;
+        }
+        document.querySelectorAll(".candidate-card.is-focused").forEach((item) => item.classList.remove("is-focused"));
+        card?.classList.add("is-focused");
+        renderCandidateDetail(candidateId, card || null);
+      }
+
       function cancelInvite(inviteId) {
         const invite = invites.find((item) => item.id === inviteId);
         if (!invite || !["sent", "incoming", "confirmed"].includes(invite.status)) return;
@@ -3238,6 +3303,25 @@
         renderCandidates();
         renderInvites();
         showToast("已取消邀約");
+      }
+
+      function closeInviteDetail() {
+        const panel = document.getElementById("inviteDetail");
+        panel.classList.add("hidden");
+        delete panel.dataset.inviteId;
+        document.querySelectorAll(".invite-card.is-focused").forEach((card) => card.classList.remove("is-focused"));
+        document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
+      }
+
+      function toggleInviteDetail(inviteId, card) {
+        const panel = document.getElementById("inviteDetail");
+        if (!panel.classList.contains("hidden") && panel.dataset.inviteId === inviteId) {
+          closeInviteDetail();
+          return;
+        }
+        document.querySelectorAll(".invite-card.is-focused").forEach((item) => item.classList.remove("is-focused"));
+        card?.classList.add("is-focused");
+        renderInviteDetail(inviteId, card || null);
       }
 
       function acceptInvite(inviteId) {
@@ -3495,6 +3579,7 @@
             userId: data.userId,
             email: state.profile.email,
             name: state.profile.nickname || state.profile.email,
+            gender: state.profile.gender,
             reviewStatus: data.created ? "已建立資料" : "已登入",
           };
           renderLoginPanel();
@@ -3507,6 +3592,7 @@
             userId: "local-user",
             email: state.profile.email,
             name: state.profile.nickname || state.profile.email || "新會員",
+            gender: state.profile.gender,
             reviewStatus: "本機暫存",
           };
           renderLoginPanel();
@@ -3588,20 +3674,19 @@
       });
 
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
-        const detailButton = event.target.closest("[data-candidate-detail]");
-        if (detailButton) {
-          renderCandidateDetail(detailButton.dataset.candidateDetail, detailButton.closest(".candidate-card"));
+        const button = event.target.closest("[data-invite]");
+        if (button) {
+          openInviteModal(button.dataset.invite);
           return;
         }
-        const button = event.target.closest("[data-invite]");
-        if (!button) return;
-        openInviteModal(button.dataset.invite);
+        const card = event.target.closest("[data-candidate-card]");
+        if (!card) return;
+        toggleCandidateDetail(card.dataset.candidateCard, card);
       });
 
       document.getElementById("candidateDetail").addEventListener("click", (event) => {
         if (event.target.closest("[data-close-detail='candidate']")) {
-          document.getElementById("candidateDetail").classList.add("hidden");
-          document.getElementById("digestPage").prepend(document.getElementById("candidateDetail"));
+          closeCandidateDetail();
           return;
         }
         const photoButton = event.target.closest("[data-photo-step]");
@@ -3647,20 +3732,33 @@
 
       document.getElementById("inviteList").addEventListener("click", (event) => {
         const cancelButton = event.target.closest("[data-cancel-invite]");
-        if (cancelButton) cancelInvite(cancelButton.dataset.cancelInvite);
+        if (cancelButton) {
+          cancelInvite(cancelButton.dataset.cancelInvite);
+          return;
+        }
         const acceptButton = event.target.closest("[data-accept-invite]");
-        if (acceptButton) acceptInvite(acceptButton.dataset.acceptInvite);
+        if (acceptButton) {
+          acceptInvite(acceptButton.dataset.acceptInvite);
+          return;
+        }
         const viewButton = event.target.closest("[data-view-invite]");
-        if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite, viewButton.closest(".invite-card"));
+        if (viewButton) {
+          renderInviteDetail(viewButton.dataset.viewInvite, viewButton.closest(".invite-card"));
+          return;
+        }
         const candidateButton = event.target.closest("[data-view-candidate]");
-        if (candidateButton) openCandidateFromInvite(candidateButton.dataset.viewCandidate);
+        if (candidateButton) {
+          openCandidateFromInvite(candidateButton.dataset.viewCandidate);
+          return;
+        }
+        const card = event.target.closest("[data-invite-card]");
+        if (!card) return;
+        toggleInviteDetail(card.dataset.inviteCard, card);
       });
 
       document.getElementById("inviteDetail").addEventListener("click", (event) => {
         if (event.target.closest("[data-close-detail='invite']")) {
-          const panel = document.getElementById("inviteDetail");
-          panel.classList.add("hidden");
-          document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
+          closeInviteDetail();
           return;
         }
         const timeButton = event.target.closest("[data-incoming-time]");
