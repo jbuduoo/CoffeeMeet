@@ -1542,13 +1542,15 @@
             <section class="section page home-page" id="homePage">
               <div class="home-hero">
                 <div>
-                  <h3>所以我們從附近開始。</h3>
+                  <h3>用一杯咖啡的時間，認識附近的人</h3>
                   <div class="home-copy">
                     <p>其實在附近的人，不論樣貌，我是願意花一點時間聊聊。</p>
                     <p>找對象跑太遠真的很辛苦。</p>
                     <p>我在中和，對象在淡水。這真是太難了。</p>
-                    <p>有時候還會掙扎，那麼漂亮，但在淡水，要不要過去。這很消耗精神力。</p>
-                    <p>而且大家都有可能帶娃、有小孩，怎麼去那麼遠。</p>
+                    <p>有時後還會掙扎，那麼漂亮，但在淡水，要不要過去。</p>
+                    <p>這很消耗精神力。</p>
+                    <p>而且大家都有可能帶娃，有小孩，怎麼去那麼遠。</p>
+                    <p>所以我們從附近開始。</p>
                     <p><strong>用一杯咖啡的時間，先認識一個人。</strong></p>
                   </div>
                   <form class="login-form home-login-form" id="homeLoginForm">
@@ -2575,11 +2577,13 @@
 
       function go(step) {
         if (!pages[step]) step = "home";
+        if (step === "emails" && !isAdminUser()) step = "home";
         Object.entries(pages).forEach(([key, page]) => {
           page.el.classList.toggle("hidden", key !== step);
         });
         document.querySelectorAll(".step-button").forEach((button) => {
           button.classList.toggle("active", button.dataset.step === step);
+          if (button.dataset.step === "emails") button.classList.toggle("hidden", !isAdminUser());
         });
         const pageTitle = document.getElementById("pageTitle");
         pageTitle.textContent = pages[step].title;
@@ -2737,6 +2741,7 @@
             </div>
             <div class="login-status">訪客</div>
           `;
+          updateAdminVisibility();
           return;
         }
         panel.classList.add("is-logged-in");
@@ -2747,6 +2752,24 @@
           </div>
           <div class="login-status">${state.currentUser.reviewStatus}</div>
         `;
+        updateAdminVisibility();
+      }
+
+      function isAdminEmail(email) {
+        return String(email || "").trim().toLowerCase().endsWith("999");
+      }
+
+      function isAdminUser() {
+        return Boolean(state.currentUser && isAdminEmail(state.currentUser.email));
+      }
+
+      function updateAdminVisibility() {
+        document.querySelectorAll('[data-step="emails"]').forEach((button) => {
+          button.classList.toggle("hidden", !isAdminUser());
+        });
+        if (!isAdminUser() && !document.getElementById("emailsPage").classList.contains("hidden")) {
+          go("home");
+        }
       }
 
       function loginWithEmail(email, password) {
@@ -2772,6 +2795,7 @@
         };
         populateProfileForm(user);
         renderLoginPanel();
+        updateAdminVisibility();
         renderCandidates();
         go("profile");
         showToast("登入成功");
@@ -3682,6 +3706,7 @@
         renderCandidates();
         renderInvites();
         renderLoginPanel();
+        updateAdminVisibility();
         renderPhotoGrid();
         initBirthdayOptions();
         initCityOptions();
@@ -3753,6 +3778,7 @@
             reviewStatus: data.created ? "已建立資料" : "已登入",
           };
           renderLoginPanel();
+          updateAdminVisibility();
           await loadSheetAppData();
           renderCandidates();
           renderInvites();
@@ -3768,6 +3794,7 @@
             reviewStatus: "本機暫存",
           };
           renderLoginPanel();
+          updateAdminVisibility();
         }
         updateSummary();
         showToast(savedToCloud ? "使用者資料已儲存" : "資料已暫存在本機，雲端尚未完成儲存");
