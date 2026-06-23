@@ -373,6 +373,12 @@
         font-weight: 700;
       }
 
+      .place-verify-button.verified {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: #fff;
+      }
+
       .place-guide-link {
         width: fit-content;
         color: var(--primary);
@@ -1798,7 +1804,7 @@
                     <div class="place-picker">
                       <div class="place-verify-row">
                         <input id="meetingArea" name="meetingArea" placeholder="請貼上完整 Google Maps 地點網址，例如：https://www.google.com/maps/place/..." required />
-                        <button class="btn secondary" id="verifyMeetingPlace" type="button">驗證</button>
+                        <button class="btn secondary place-verify-button" id="verifyMeetingPlace" type="button">驗證</button>
                       </div>
                       <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
                       <input id="meetingPlaceUrl" name="meetingPlaceUrl" type="hidden" />
@@ -2662,8 +2668,15 @@
         status.classList.toggle("error", type === "error");
       }
 
+      function setMeetingPlaceButtonVerified(verified) {
+        const button = document.getElementById("verifyMeetingPlace");
+        button.textContent = verified ? "驗證成功" : "驗證";
+        button.classList.toggle("verified", verified);
+      }
+
       function clearMeetingPlaceFields() {
         ["meetingPlaceName", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
+        setMeetingPlaceButtonVerified(false);
       }
 
       function parseGoogleMapsPlace(value) {
@@ -2699,15 +2712,25 @@
       }
 
       function formatVerifiedMeetingPlace(place) {
-        return `地點：${place.name}｜座標：${place.lat}, ${place.lng}｜Google Maps：${place.url}`;
+        return `地點：${place.name}`;
       }
 
       function verifyMeetingPlace() {
+        if (
+          document.getElementById("meetingPlaceName").value &&
+          document.getElementById("meetingPlaceUrl").value &&
+          document.getElementById("meetingLat").value &&
+          document.getElementById("meetingLng").value
+        ) {
+          setMeetingPlaceButtonVerified(true);
+          setPlaceStatus("");
+          return true;
+        }
         const field = document.getElementById("meetingArea");
         const parsed = parseGoogleMapsPlace(field.value);
         if (!parsed) {
           clearMeetingPlaceFields();
-          setPlaceStatus("無法取得座標，請貼上完整 Google Maps 地點網址。", "error");
+          setPlaceStatus("請貼上完整 Google Maps 地點網址後按「驗證」。", "error");
           showToast("請貼上完整 Google Maps 地點網址");
           return false;
         }
@@ -2716,7 +2739,8 @@
         setFieldValue("meetingLat", parsed.lat);
         setFieldValue("meetingLng", parsed.lng);
         field.value = formatVerifiedMeetingPlace(parsed);
-        setPlaceStatus("地點驗證成功，可用於距離計算。", "success");
+        setPlaceStatus("");
+        setMeetingPlaceButtonVerified(true);
         showToast("地點驗證成功");
         scheduleProfileDraftSave();
         return true;
@@ -2735,7 +2759,8 @@
         setFieldValue("meetingLat", verifiedPlace.lat);
         setFieldValue("meetingLng", verifiedPlace.lng);
         setFieldValue("meetingArea", formatVerifiedMeetingPlace(verifiedPlace));
-        setPlaceStatus("地點驗證成功，可用於距離計算。", "success");
+        setPlaceStatus("");
+        setMeetingPlaceButtonVerified(true);
         return true;
       }
 
