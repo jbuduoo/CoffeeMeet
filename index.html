@@ -2779,11 +2779,12 @@
         }
       }
 
-      function loginWithEmail(email, password) {
+      async function loginWithEmail(email, password) {
         const normalizedEmail = email.trim().toLowerCase();
+        if (hasRemoteApi()) await loadSheetAppData(true);
         const user =
           candidates.find((item) => item.email && item.email.toLowerCase() === normalizedEmail) ||
-          mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail);
+          (!hasRemoteApi() ? mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail) : null);
         if (!user) {
           document.getElementById("email").value = email.trim();
           state.currentUser = null;
@@ -2804,7 +2805,7 @@
         renderLoginPanel();
         updateAdminVisibility();
         renderCandidates();
-        go("profile");
+        go("digest");
         showToast("登入成功");
       }
 
@@ -3689,7 +3690,7 @@
           .slice(0, 5);
       }
 
-      async function loadSheetAppData() {
+      async function loadSheetAppData(silent = false) {
         if (!hasRemoteApi()) return;
         try {
           const response = await fetch(apiEndpoint("app-data"));
@@ -3709,7 +3710,7 @@
           if (Array.isArray(data.invites) && data.invites.length) {
             invites.splice(0, invites.length, ...data.invites);
           }
-          showToast("已載入試算表資料");
+          if (!silent) showToast("已載入試算表資料");
         } catch (error) {
           console.warn("使用內建示範資料：", error);
         }
@@ -3955,25 +3956,30 @@
 
       const loginPanel = document.getElementById("loginPanel");
       if (loginPanel) {
-        loginPanel.addEventListener("submit", (event) => {
+        loginPanel.addEventListener("submit", async (event) => {
           if (!event.target.matches("#loginForm")) return;
           event.preventDefault();
           const data = formToObject(event.target);
-          loginWithEmail(data.email);
+          await loginWithEmail(data.email);
         });
       }
 
       const homeLoginButton = document.getElementById("homeLoginButton");
       const homeLoginEmail = document.getElementById("homeLoginEmail");
       if (homeLoginButton && homeLoginEmail) {
-        const submitHomeLogin = () => {
+        const submitHomeLogin = async () => {
           const email = homeLoginEmail.value.trim();
           if (!email) {
             showToast("請先輸入 Email");
             homeLoginEmail.focus();
             return;
           }
-          loginWithEmail(email);
+          homeLoginButton.disabled = true;
+          try {
+            await loginWithEmail(email);
+          } finally {
+            homeLoginButton.disabled = false;
+          }
         };
         homeLoginButton.addEventListener("click", submitHomeLogin);
         homeLoginEmail.addEventListener("keydown", (event) => {
