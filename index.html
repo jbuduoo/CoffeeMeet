@@ -2722,6 +2722,12 @@
           document.getElementById("meetingLat").value &&
           document.getElementById("meetingLng").value
         ) {
+          setFieldValue("meetingArea", formatVerifiedMeetingPlace({
+            name: document.getElementById("meetingPlaceName").value,
+            url: document.getElementById("meetingPlaceUrl").value,
+            lat: document.getElementById("meetingLat").value,
+            lng: document.getElementById("meetingLng").value,
+          }));
           setMeetingPlaceButtonVerified(true);
           setPlaceStatus("");
           return true;
