@@ -202,6 +202,13 @@
         font-size: 18px;
       }
 
+      .section.flush-section {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+      }
+
       .home-page {
         padding: 0;
         overflow: hidden;
@@ -756,7 +763,7 @@
 
       .candidate-grid {
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       .candidate-card {
@@ -765,7 +772,7 @@
         background: var(--panel-strong);
         overflow: hidden;
         display: grid;
-        grid-template-columns: 104px 96px minmax(0, 1fr) auto;
+        grid-template-columns: 92px 88px minmax(0, 1fr) auto;
         align-items: center;
         cursor: pointer;
         transition:
@@ -784,8 +791,8 @@
       }
 
       .candidate-photo {
-        width: 104px;
-        height: 104px;
+        width: 92px;
+        height: 92px;
         background: #eadfce;
         position: relative;
         overflow: hidden;
@@ -800,9 +807,9 @@
       }
 
       .candidate-body {
-        padding: 14px;
+        padding: 12px;
         display: grid;
-        gap: 8px;
+        gap: 7px;
       }
 
       .candidate-body h4 {
@@ -836,14 +843,14 @@
         justify-items: center;
         align-content: center;
         gap: 2px;
-        min-height: 104px;
+        min-height: 92px;
         border-left: 1px solid var(--line);
         border-right: 1px solid var(--line);
         background: #fffaf2;
       }
 
       .candidate-distance strong {
-        font-size: 21px;
+        font-size: 20px;
         line-height: 1;
         color: var(--accent-dark);
       }
@@ -861,10 +868,15 @@
       }
 
       .candidate-actions {
-        padding: 14px;
+        padding: 12px;
         display: grid;
         gap: 8px;
         justify-items: end;
+      }
+
+      .candidate-actions .btn {
+        min-height: 40px;
+        padding: 8px 12px;
       }
 
       .tabs {
@@ -1967,7 +1979,7 @@
               </form>
             </section>
 
-            <section class="section page hidden" id="digestPage">
+            <section class="section page hidden flush-section" id="digestPage">
               <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
