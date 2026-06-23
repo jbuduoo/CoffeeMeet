@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>等一個人的咖啡</title>
+    <title>不用配對，用一杯咖啡的時間，認識附近的人。</title>
     <style>
       :root {
         --bg: #f4f1eb;
@@ -195,6 +195,93 @@
 
       .section h3 {
         margin: 0 0 16px;
+        font-size: 18px;
+      }
+
+      .home-page {
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .home-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+        gap: 28px;
+        align-items: stretch;
+        padding: 34px;
+        background: #fffdf8;
+      }
+
+      .home-kicker {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      .home-page h3 {
+        margin: 0;
+        max-width: 640px;
+        font-size: 42px;
+        line-height: 1.18;
+      }
+
+      .home-copy {
+        max-width: 620px;
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.8;
+      }
+
+      .home-card {
+        display: grid;
+        align-content: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f6efe4;
+        padding: 24px;
+      }
+
+      .home-card strong {
+        font-size: 20px;
+      }
+
+      .home-card p,
+      .home-step p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .home-steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-top: 1px solid var(--line);
+      }
+
+      .home-step {
+        padding: 22px;
+        border-right: 1px solid var(--line);
+      }
+
+      .home-step:last-child {
+        border-right: 0;
+      }
+
+      .home-step span {
+        display: inline-grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        margin-bottom: 12px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: white;
+        font-weight: 800;
+      }
+
+      .home-step strong {
+        display: block;
         font-size: 18px;
       }
 
@@ -1320,7 +1407,7 @@
         }
 
         .step-list {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
         }
 
         .step-button {
@@ -1337,6 +1424,20 @@
 
         .photo-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .home-hero,
+        .home-steps {
+          grid-template-columns: 1fr;
+        }
+
+        .home-step {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .home-step:last-child {
+          border-bottom: 0;
         }
       }
 
@@ -1359,6 +1460,18 @@
 
         .title-block h2 {
           font-size: 23px;
+        }
+
+        .home-hero {
+          padding: 24px;
+        }
+
+        .home-page h3 {
+          font-size: 30px;
+        }
+
+        .home-copy {
+          font-size: 16px;
         }
 
         .form-grid,
@@ -1447,20 +1560,24 @@
         </div>
 
         <nav class="step-list" aria-label="MVP steps">
-          <button class="step-button active" data-step="digest" type="button">
+          <button class="step-button active" data-step="home" type="button">
             <span class="step-icon">1</span>
+            <span class="step-label">首頁</span>
+          </button>
+          <button class="step-button" data-step="profile" type="button">
+            <span class="step-icon">2</span>
+            <span class="step-label">建立資料</span>
+          </button>
+          <button class="step-button" data-step="digest" type="button">
+            <span class="step-icon">3</span>
             <span class="step-label">交友清單</span>
           </button>
           <button class="step-button" data-step="invites" type="button">
-            <span class="step-icon">2</span>
+            <span class="step-icon">4</span>
             <span class="step-label">我的邀約</span>
           </button>
-          <button class="step-button" data-step="profile" type="button">
-            <span class="step-icon">3</span>
-            <span class="step-label">使用者資料</span>
-          </button>
           <button class="step-button" data-step="emails" type="button">
-            <span class="step-icon">4</span>
+            <span class="step-icon">5</span>
             <span class="step-label">Email 範本</span>
           </button>
         </nav>
@@ -1469,7 +1586,7 @@
       <main class="main">
         <div class="topbar">
           <div class="title-block">
-            <h2 id="pageTitle">交友清單</h2>
+            <h2 id="pageTitle">首頁</h2>
             <p id="pageSubtitle" class="hidden"></p>
           </div>
           <div class="login-panel" id="loginPanel"></div>
@@ -1477,6 +1594,43 @@
 
         <div class="layout">
           <div>
+            <section class="section page home-page" id="homePage">
+              <div class="home-hero">
+                <div>
+                  <p class="home-kicker">附近的人，一杯咖啡先見一次</p>
+                  <h3>用一杯咖啡的時間，認識附近的人。</h3>
+                  <p class="home-copy">
+                    照片先柔焦，少一點外貌壓力。不用聊很久，找一間公開咖啡店，一小時就好。
+                  </p>
+                  <div class="actions">
+                    <button class="btn primary" type="button" data-go="profile">開始建立資料</button>
+                    <button class="btn secondary" type="button" data-go="digest">查看交友清單</button>
+                  </div>
+                </div>
+                <div class="home-card">
+                  <strong>這裡不是無限滑照片</strong>
+                  <p>有合適的人出現時，系統會通知你。你不用一直黏在上面，有接近你的，就約一杯咖啡看看。</p>
+                </div>
+              </div>
+              <div class="home-steps">
+                <div class="home-step">
+                  <span>1</span>
+                  <strong>建立資料</strong>
+                  <p>填寫基本資料、方便時段和公開咖啡店定位點。</p>
+                </div>
+                <div class="home-step">
+                  <span>2</span>
+                  <strong>查看清單</strong>
+                  <p>照片柔焦，先看距離、生活感、自我介紹與見面條件。</p>
+                </div>
+                <div class="home-step">
+                  <span>3</span>
+                  <strong>邀約咖啡</strong>
+                  <p>發起方選可配合時段，被邀請的人再決定精確時間。</p>
+                </div>
+              </div>
+            </section>
+
             <section class="section page hidden" id="profilePage">
               <h3>建立個人資料</h3>
               <form id="profileForm">
@@ -1760,7 +1914,7 @@
               </form>
             </section>
 
-            <section class="section page" id="digestPage">
+            <section class="section page hidden" id="digestPage">
               <div class="detail-panel hidden" id="candidateDetail"></div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
@@ -2462,8 +2616,13 @@
       };
 
       const pages = {
+        home: {
+          title: "首頁",
+          subtitle: "",
+          el: document.getElementById("homePage"),
+        },
         profile: {
-          title: "使用者資料",
+          title: "建立資料",
           subtitle: "",
           el: document.getElementById("profilePage"),
         },
@@ -2485,6 +2644,7 @@
       };
 
       function go(step) {
+        if (!pages[step]) step = "home";
         Object.entries(pages).forEach(([key, page]) => {
           page.el.classList.toggle("hidden", key !== step);
         });
@@ -3021,7 +3181,8 @@
         setFieldValue("nickname", user.nickname || user.name || "");
         setFieldValue("email", user.email || "");
         setSelectValue("gender", user.gender || "");
-        setSelectValue("birthYear", user.birthYear || "");
+        const inferredBirthYear = user.birthYear || (user.age ? String(new Date().getFullYear() - Number(user.age)) : "");
+        setSelectValue("birthYear", inferredBirthYear);
         setSelectValue("birthMonth", user.birthMonth || "");
         setSelectValue("birthDay", user.birthDay || "");
 
