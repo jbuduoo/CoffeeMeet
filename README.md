@@ -29,7 +29,7 @@ https://jbuduoo.github.io/CoffeeMeet/
 docs/google-apps-script-backend.js
 ```
 
-部署成 Web App 後，把部署網址填到 `index.html` 和 `prototype/index.html`：
+部署成 Web App 後，把部署網址填到 `index.html`：
 
 ```js
 const GOOGLE_APPS_SCRIPT_URL = "你的 Apps Script Web App URL";
