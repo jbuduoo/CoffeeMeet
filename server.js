@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { appendSheetValues, getSpreadsheetMeta, getSheetValues } = require("./sheets-client");
+const { appendSheetValues, getSpreadsheetMeta, getSheetValues, updateSheetValues } = require("./sheets-client");
 
 const port = Number(process.env.PORT || 3000);
 const rootDir = __dirname;
@@ -59,6 +59,9 @@ async function getAppData() {
         email: user.email,
         gender: user.gender,
         age: user.age,
+        birthYear: user.birth_year || (user.age ? String(new Date().getFullYear() - Number(user.age)) : ""),
+        birthMonth: user.birth_month || "",
+        birthDay: user.birth_day || "",
         area: [user.city, user.district].filter(Boolean).join("・"),
         looking: user.coffee_goal,
         occupation: user.occupation,
@@ -69,8 +72,15 @@ async function getAppData() {
         drinking: user.drinking,
         intro: user.intro,
         time: user.available_times,
+        availabilityNote: user.available_times,
         place: place.place_name || user.meeting_place_id || "",
+        meetingArea: place.place_name || "",
+        meetingPlaceName: place.place_name || "",
+        meetingPlaceUrl: place.map_url || "",
+        meetingLat: place.lat || "",
+        meetingLng: place.lng || "",
         openingQuestion: user.opening_question,
+        interestKeywords: user.interest_keywords || user.interests || "",
         photo: primaryPhoto.photo_url || "",
         photos: userPhotos.map((photo) => photo.photo_url),
       };
@@ -111,31 +121,62 @@ async function createUserFromProfile(profile) {
   if (!email) throw new Error("Email is required");
 
   const current = await getSheetValues("users!A1:Z1000");
-  const existing = rowsToObjects(current.values).find((user) => String(user.email || "").toLowerCase() === email);
-  if (existing) return { created: false, userId: existing.user_id };
+  const headers = await ensureUserHeaders(current.values?.[0] || []);
+  const users = rowsToObjects(current.values);
+  const existingIndex = users.findIndex((user) => String(user.email || "").toLowerCase() === email);
+  const existing = existingIndex >= 0 ? users[existingIndex] : null;
 
   const stamp = Date.now().toString(36);
-  const userId = `${profile.gender === "女性" ? "girl" : "user"}-${slugFromEmail(email)}-${stamp}`;
-  const placeId = `place-${slugFromEmail(email)}-${stamp}`;
+  const userId = existing?.user_id || `${profile.gender === "女性" ? "girl" : "user"}-${slugFromEmail(email)}-${stamp}`;
+  const placeId = existing?.meeting_place_id || `place-${slugFromEmail(email)}-${stamp}`;
   const today = todayString();
 
-  await appendSheetValues("meeting_places!A:M", [[
+  await saveMeetingPlace({
     placeId,
-    profile.meetingArea || "",
-    "",
-    profile.city || "",
-    profile.district || "",
-    profile.meetingArea ? `https://www.google.com/maps/search/${encodeURIComponent(profile.meetingArea)}` : "",
-    "",
-    "",
-    "coffee",
-    "FALSE",
     userId,
+    profile,
     today,
-    today,
-  ]]);
+    existingPlaceId: existing?.meeting_place_id || "",
+  });
 
-  await appendSheetValues("users!A:X", [[
+  const valuesByHeader = {
+    user_id: userId,
+    nickname: profile.nickname || email,
+    gender: profile.gender || "",
+    age: profile.birthYear ? String(new Date().getFullYear() - Number(profile.birthYear)) : "",
+    birth_year: profile.birthYear || "",
+    birth_month: profile.birthMonth || "",
+    birth_day: profile.birthDay || "",
+    city: profile.city || "",
+    district: profile.district || "",
+    email,
+    occupation: profile.occupation || "",
+    education: profile.education || "",
+    school: profile.school || "",
+    relationship_status: profile.relationshipStatus || "",
+    has_children: profile.hasChildren || "",
+    coffee_goal: profile.coffeeGoal || "",
+    smoking: profile.smoking || "",
+    drinking: profile.drinking || "",
+    intro: profile.intro || "",
+    interest_keywords: profile.interestKeywords || "",
+    interests: profile.interestKeywords || "",
+    available_times: profile.availabilityNote || "",
+    meeting_place_id: placeId,
+    lock_until: existing?.lock_until || "",
+    status: "active",
+    created_at: existing?.created_at || today,
+    updated_at: today,
+    notes: existing?.notes || "",
+  };
+
+  const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+  if (existing) {
+    await updateSheetValues(`users!A${existingIndex + 2}:${columnName(headers.length)}${existingIndex + 2}`, [row]);
+    return { created: false, userId };
+  }
+
+  await appendSheetValues(`users!A:${columnName(headers.length)}`, [row.length ? row : [
     userId,
     profile.nickname || email,
     profile.gender || "",
@@ -152,7 +193,7 @@ async function createUserFromProfile(profile) {
     profile.smoking || "",
     profile.drinking || "",
     profile.intro || "",
-    profile.interests || "",
+    profile.interestKeywords || "",
     profile.availabilityNote || "",
     "",
     placeId,
@@ -163,6 +204,127 @@ async function createUserFromProfile(profile) {
   ]]);
 
   return { created: true, userId };
+}
+
+async function saveMeetingPlace({ placeId, userId, profile, today, existingPlaceId }) {
+  const current = await getSheetValues("meeting_places!A1:Z1000");
+  const headers = await ensureMeetingPlaceHeaders(current.values?.[0] || []);
+  const places = rowsToObjects(current.values);
+  const existingIndex = places.findIndex((place) => place.place_id === existingPlaceId || place.place_id === placeId);
+  const existing = existingIndex >= 0 ? places[existingIndex] : null;
+  const placeName = profile.meetingPlaceName || firstLineValue(profile.meetingArea, "地點") || profile.meetingArea || "";
+  const mapUrl = profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "";
+  const valuesByHeader = {
+    place_id: placeId,
+    place_name: placeName,
+    address: existing?.address || "",
+    city: profile.city || existing?.city || "",
+    district: profile.district || existing?.district || "",
+    map_url: mapUrl,
+    lat: profile.meetingLat || firstLineCoords(profile.meetingArea)?.lat || existing?.lat || "",
+    lng: profile.meetingLng || firstLineCoords(profile.meetingArea)?.lng || existing?.lng || "",
+    google_place_id: existing?.google_place_id || "",
+    category: existing?.category || "coffee",
+    is_public: existing?.is_public || "FALSE",
+    owner_user_id: userId,
+    created_at: existing?.created_at || today,
+    updated_at: today,
+    raw_input: profile.meetingArea || "",
+  };
+  const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+  if (existing) {
+    await updateSheetValues(`meeting_places!A${existingIndex + 2}:${columnName(headers.length)}${existingIndex + 2}`, [row]);
+    return;
+  }
+  await appendSheetValues(`meeting_places!A:${columnName(headers.length)}`, [row]);
+}
+
+function firstLineValue(value, label) {
+  const match = String(value || "").match(new RegExp(`^${label}：(.+)$`, "m"));
+  return match ? match[1].trim() : "";
+}
+
+function firstLineCoords(value) {
+  const match = String(value || "").match(/^座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/m);
+  return match ? { lat: match[1], lng: match[2] } : null;
+}
+
+async function ensureMeetingPlaceHeaders(currentHeaders) {
+  const requiredHeaders = [
+    "place_id",
+    "place_name",
+    "address",
+    "city",
+    "district",
+    "map_url",
+    "lat",
+    "lng",
+    "google_place_id",
+    "category",
+    "is_public",
+    "owner_user_id",
+    "created_at",
+    "updated_at",
+    "raw_input",
+  ];
+  const headers = currentHeaders.filter(Boolean);
+  const mergedHeaders = headers.length
+    ? headers.concat(requiredHeaders.filter((header) => !headers.includes(header)))
+    : requiredHeaders;
+  if (mergedHeaders.length !== headers.length) {
+    await updateSheetValues(`meeting_places!A1:${columnName(mergedHeaders.length)}1`, [mergedHeaders]);
+  }
+  return mergedHeaders;
+}
+
+async function ensureUserHeaders(currentHeaders) {
+  const requiredHeaders = [
+    "user_id",
+    "nickname",
+    "gender",
+    "age",
+    "city",
+    "district",
+    "email",
+    "occupation",
+    "education",
+    "school",
+    "relationship_status",
+    "has_children",
+    "coffee_goal",
+    "smoking",
+    "drinking",
+    "intro",
+    "interest_keywords",
+    "available_times",
+    "meeting_place_id",
+    "lock_until",
+    "status",
+    "created_at",
+    "updated_at",
+    "notes",
+    "birth_year",
+    "birth_month",
+    "birth_day",
+  ];
+  const headers = currentHeaders.filter(Boolean);
+  const mergedHeaders = headers.length
+    ? headers.concat(requiredHeaders.filter((header) => !headers.includes(header)))
+    : requiredHeaders;
+  if (mergedHeaders.length !== headers.length) {
+    await updateSheetValues(`users!A1:${columnName(mergedHeaders.length)}1`, [mergedHeaders]);
+  }
+  return mergedHeaders;
+}
+
+function columnName(index) {
+  let name = "";
+  while (index > 0) {
+    index -= 1;
+    name = String.fromCharCode(65 + (index % 26)) + name;
+    index = Math.floor(index / 26);
+  }
+  return name || "A";
 }
 
 function sendJson(res, status, data) {

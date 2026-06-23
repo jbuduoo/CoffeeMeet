@@ -116,10 +116,25 @@ async function appendSheetValues(range, values, options = {}) {
   );
 }
 
+async function updateSheetValues(range, values, options = {}) {
+  const credential = loadCredential(options.credentialPath);
+  const accessToken = await getAccessToken(credential);
+  const spreadsheetId = options.spreadsheetId || defaultSpreadsheetId;
+  return requestSheetsApi(
+    `spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+    accessToken,
+    {
+      method: "PUT",
+      body: { values },
+    },
+  );
+}
+
 module.exports = {
   defaultCredentialPath,
   defaultSpreadsheetId,
   appendSheetValues,
   getSpreadsheetMeta,
   getSheetValues,
+  updateSheetValues,
 };

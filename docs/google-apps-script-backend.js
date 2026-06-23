@@ -93,6 +93,10 @@ function getAppData() {
         availabilityNote: user.available_times,
         place: place.place_name || "",
         meetingArea: place.place_name || "",
+        meetingPlaceName: place.place_name || "",
+        meetingPlaceUrl: place.map_url || "",
+        meetingLat: place.lat || "",
+        meetingLng: place.lng || "",
         interestKeywords: user.interest_keywords,
         photo: driveImageUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
         photos: userPhotos.map((photo) => driveImageUrl(photo.file_id, photo.photo_url)).filter(Boolean),
@@ -114,6 +118,9 @@ function saveUserProfile(profile) {
   const userId = existing
     ? existing.user_id
     : `user-${email.replace(/@.*/, "").replace(/[^a-z0-9]+/gi, "-")}-${Date.now().toString(36)}`;
+  const placeId = existing && existing.meeting_place_id
+    ? existing.meeting_place_id
+    : `place-${email.replace(/@.*/, "").replace(/[^a-z0-9]+/gi, "-")}`;
   const today = new Date().toISOString().slice(0, 10);
 
   const values = {
@@ -138,13 +145,20 @@ function saveUserProfile(profile) {
     intro: profile.intro || "",
     interest_keywords: profile.interestKeywords || "",
     available_times: profile.availabilityNote || "",
-    meeting_place_id: existing ? existing.meeting_place_id || "" : "",
+    meeting_place_id: placeId,
     lock_until: existing ? existing.lock_until || "" : "",
     status: "active",
     created_at: existing ? existing.created_at || today : today,
     updated_at: today,
     notes: existing ? existing.notes || "" : "",
   };
+
+  saveMeetingPlace({
+    placeId,
+    userId,
+    profile,
+    today,
+  });
 
   const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
   if (existing) {
@@ -154,6 +168,80 @@ function saveUserProfile(profile) {
 
   usersSheet.appendRow(row);
   return { ok: true, created: true, userId };
+}
+
+function saveMeetingPlace({ placeId, userId, profile, today }) {
+  const placesSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("meeting_places");
+  if (!placesSheet) return;
+  const headers = ensureMeetingPlaceHeaders(placesSheet);
+  const places = sheetRows("meeting_places");
+  const existingIndex = places.findIndex((place) => place.place_id === placeId || place.owner_user_id === userId);
+  const existing = existingIndex >= 0 ? places[existingIndex] : null;
+  const coords = firstLineCoords(profile.meetingArea);
+  const values = {
+    place_id: placeId,
+    place_name: profile.meetingPlaceName || firstLineValue(profile.meetingArea, "地點") || profile.meetingArea || "",
+    address: existing ? existing.address || "" : "",
+    city: profile.city || "",
+    district: profile.district || "",
+    map_url: profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "",
+    lat: profile.meetingLat || (coords && coords.lat) || "",
+    lng: profile.meetingLng || (coords && coords.lng) || "",
+    google_place_id: existing ? existing.google_place_id || "" : "",
+    category: existing ? existing.category || "coffee" : "coffee",
+    is_public: existing ? existing.is_public || "FALSE" : "FALSE",
+    owner_user_id: userId,
+    created_at: existing ? existing.created_at || today : today,
+    updated_at: today,
+    raw_input: profile.meetingArea || "",
+  };
+  const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
+  if (existing) {
+    placesSheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([row]);
+  } else {
+    placesSheet.appendRow(row);
+  }
+}
+
+function firstLineValue(value, label) {
+  const match = String(value || "").match(new RegExp("^" + label + "：(.+)$", "m"));
+  return match ? match[1].trim() : "";
+}
+
+function firstLineCoords(value) {
+  const match = String(value || "").match(/^座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/m);
+  return match ? { lat: match[1], lng: match[2] } : null;
+}
+
+function ensureMeetingPlaceHeaders(sheet) {
+  const requiredHeaders = [
+    "place_id",
+    "place_name",
+    "address",
+    "city",
+    "district",
+    "map_url",
+    "lat",
+    "lng",
+    "google_place_id",
+    "category",
+    "is_public",
+    "owner_user_id",
+    "created_at",
+    "updated_at",
+    "raw_input",
+  ];
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(Boolean);
+  if (!headers.length) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
+    return requiredHeaders;
+  }
+  const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
+  if (missingHeaders.length) {
+    sheet.getRange(1, headers.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+  }
+  return headers.concat(missingHeaders);
 }
 
 function ensureUserHeaders(sheet) {

@@ -351,6 +351,64 @@
         gap: 10px;
       }
 
+      .place-verify-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .place-status {
+        min-height: 18px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .place-status.success {
+        color: var(--primary);
+        font-weight: 700;
+      }
+
+      .place-status.error {
+        color: #b42318;
+        font-weight: 700;
+      }
+
+      .place-guide {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        overflow: hidden;
+      }
+
+      .place-guide summary {
+        cursor: pointer;
+        padding: 10px 12px;
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .place-guide-body {
+        display: grid;
+        gap: 10px;
+        padding: 0 12px 12px;
+      }
+
+      .place-guide-body p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .place-guide img {
+        display: block;
+        width: 100%;
+        max-width: 760px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
       .map-shortcuts {
         display: flex;
         flex-wrap: wrap;
@@ -1611,7 +1669,6 @@
                       <option value="">請選擇</option>
                       <option>女性</option>
                       <option>男性</option>
-                      <option>非二元 / 其他</option>
                     </select>
                   </div>
                   <div class="field">
@@ -1754,9 +1811,24 @@
                     <input id="availabilityNote" name="availabilityNote" type="hidden" />
                   </div>
                   <div class="field full">
-                    <label for="meetingArea">方便見面地點：（按鈕會開啟 Google 地圖，選好地點後，把店名貼在這一欄。）</label>
+                    <label for="meetingArea">方便見面地點：（請貼上完整 Google Maps 地點網址，驗證成功後才能用來計算距離。）</label>
                     <div class="place-picker">
-                      <input id="meetingArea" name="meetingArea" placeholder="例：全家便利商店 中和中環店" required />
+                      <div class="place-verify-row">
+                        <textarea id="meetingArea" name="meetingArea" rows="3" placeholder="例：https://www.google.com/maps/place/..." required></textarea>
+                        <button class="btn secondary" id="verifyMeetingPlace" type="button">驗證</button>
+                      </div>
+                      <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
+                      <input id="meetingPlaceUrl" name="meetingPlaceUrl" type="hidden" />
+                      <input id="meetingLat" name="meetingLat" type="hidden" />
+                      <input id="meetingLng" name="meetingLng" type="hidden" />
+                      <div class="place-status" id="meetingPlaceStatus">請貼上完整 Google Maps 地點網址後按「驗證」。</div>
+                      <details class="place-guide">
+                        <summary>如何複製 Google Maps 網址？</summary>
+                        <div class="place-guide-body">
+                          <p>選擇紅色地點、確認店名正確，再複製瀏覽器上方完整網址貼回這裡。</p>
+                          <img src="picture/guide/google-maps-url-guide.png" alt="Google Maps 網址複製教學：選擇地點、確認名稱、複製網址" />
+                        </div>
+                      </details>
                       <div class="map-shortcuts">
                         <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
                         <a class="map-link" data-map-query="7-11" href="https://www.google.com/maps/search/7-11/" target="_blank" rel="noreferrer">↗ 7-11</a>
@@ -1768,7 +1840,7 @@
                   </div>
 
                   <div class="field full">
-                    <label>興趣關鍵字</label>
+                    <label>興趣關鍵字(點選關鍵字加入興趣；再次點選可取消。)</label>
                     <input id="interestKeywords" name="interestKeywords" type="hidden" />
                     <div class="interest-worlds" id="interestWorlds">
                       <div class="interest-world">
@@ -1837,7 +1909,6 @@
                         </div>
                       </div>
                     </div>
-                    <div class="field-hint">點選關鍵字加入興趣；再次點選可取消。</div>
                   </div>
                 </div>
                 <div class="actions">
@@ -2607,6 +2678,94 @@
         if (field && value !== undefined && value !== null) field.value = value;
       }
 
+      function setPlaceStatus(message, type = "") {
+        const status = document.getElementById("meetingPlaceStatus");
+        status.textContent = message;
+        status.classList.toggle("success", type === "success");
+        status.classList.toggle("error", type === "error");
+      }
+
+      function clearMeetingPlaceFields() {
+        ["meetingPlaceName", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
+      }
+
+      function parseGoogleMapsPlace(value) {
+        const input = String(value || "").trim();
+        const verifiedUrlMatch = input.match(/^Google Maps：(.+)$/m);
+        const source = verifiedUrlMatch ? verifiedUrlMatch[1].trim() : input;
+        let url;
+        try {
+          url = new URL(source);
+        } catch {
+          return null;
+        }
+        if (!/google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(url.hostname + url.pathname)) return null;
+        if (url.hostname.includes("maps.app.goo.gl")) return null;
+
+        const decodedPath = decodeURIComponent(url.pathname.replace(/\+/g, " "));
+        const placeMatch = decodedPath.match(/\/place\/([^/]+)/);
+        const verifiedNameMatch = input.match(/^地點：(.+)$/m);
+        const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
+        const name = rawName || "Google Maps 地點";
+        const verifiedCoordsMatch = input.match(/^座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/m);
+        const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+        const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+        const coords = verifiedCoordsMatch || preciseMatch || atMatch;
+        if (!coords) return null;
+
+        return {
+          name,
+          url: source,
+          lat: coords[1],
+          lng: coords[2],
+        };
+      }
+
+      function formatVerifiedMeetingPlace(place) {
+        return [
+          `地點：${place.name}`,
+          `座標：${place.lat}, ${place.lng}`,
+          `Google Maps：${place.url}`,
+        ].join("\n");
+      }
+
+      function verifyMeetingPlace() {
+        const field = document.getElementById("meetingArea");
+        const parsed = parseGoogleMapsPlace(field.value);
+        if (!parsed) {
+          clearMeetingPlaceFields();
+          setPlaceStatus("無法取得座標，請貼上完整 Google Maps 地點網址。", "error");
+          showToast("請貼上完整 Google Maps 地點網址");
+          return false;
+        }
+        setFieldValue("meetingPlaceName", parsed.name);
+        setFieldValue("meetingPlaceUrl", parsed.url);
+        setFieldValue("meetingLat", parsed.lat);
+        setFieldValue("meetingLng", parsed.lng);
+        field.value = formatVerifiedMeetingPlace(parsed);
+        setPlaceStatus("地點驗證成功，可用於距離計算。", "success");
+        showToast("地點驗證成功");
+        scheduleProfileDraftSave();
+        return true;
+      }
+
+      function setVerifiedMeetingPlace(place) {
+        if (!place?.lat || !place?.lng || !place?.url) return false;
+        const verifiedPlace = {
+          name: place.name || "Google Maps 地點",
+          url: place.url,
+          lat: place.lat,
+          lng: place.lng,
+        };
+        setFieldValue("meetingPlaceName", verifiedPlace.name);
+        setFieldValue("meetingPlaceUrl", verifiedPlace.url);
+        setFieldValue("meetingLat", verifiedPlace.lat);
+        setFieldValue("meetingLng", verifiedPlace.lng);
+        setFieldValue("meetingArea", formatVerifiedMeetingPlace(verifiedPlace));
+        setPlaceStatus("地點驗證成功，可用於距離計算。", "success");
+        return true;
+      }
+
       function setSelectValue(id, value) {
         const field = document.getElementById(id);
         if (!field || !value) return;
@@ -2714,6 +2873,14 @@
           if (profile.city) {
             setSelectValue("city", profile.city);
             updateDistrictOptions(profile.district || "");
+          }
+          if (profile.meetingLat && profile.meetingLng && profile.meetingPlaceUrl) {
+            setVerifiedMeetingPlace({
+              name: profile.meetingPlaceName || "Google Maps 地點",
+              url: profile.meetingPlaceUrl,
+              lat: profile.meetingLat,
+              lng: profile.meetingLng,
+            });
           }
           setInterestKeywords(splitProfileList(profile.interestKeywords || ""));
           setAvailableTimes(splitProfileList(profile.availabilityNote || ""));
@@ -3105,7 +3272,6 @@
         fillSelect(document.getElementById("birthYear"), years, "年");
         fillSelect(document.getElementById("birthMonth"), months, "月");
         fillSelect(document.getElementById("birthDay"), days, "日");
-        document.getElementById("birthYear").value = String(currentYear - 45);
       }
 
       function updateMapLinks() {
@@ -3164,7 +3330,14 @@
         setSelectValue("smoking", user.smoking || "");
         setSelectValue("drinking", user.drinking || "");
         setFieldValue("intro", user.intro || "");
-        setFieldValue("meetingArea", user.meetingArea || user.place || "");
+        if (!setVerifiedMeetingPlace({
+          name: user.meetingPlaceName || user.meetingArea || user.place || "",
+          url: user.meetingPlaceUrl || "",
+          lat: user.meetingLat || "",
+          lng: user.meetingLng || "",
+        })) {
+          setFieldValue("meetingArea", user.meetingArea || user.place || "");
+        }
         setInterestKeywords(splitProfileList(user.interestKeywords || user.interests || ""));
         setAvailableTimes(splitProfileList(user.availabilityNote || user.availableTime || user.time || ""));
         state.photos = profilePhotos(user);
@@ -3811,6 +3984,11 @@
         showToast("認證信已寄出");
       });
       document.getElementById("meetingArea").addEventListener("input", updateMapLinks);
+      document.getElementById("meetingArea").addEventListener("input", () => {
+        clearMeetingPlaceFields();
+        setPlaceStatus("請貼上完整 Google Maps 地點網址後按「驗證」。");
+      });
+      document.getElementById("verifyMeetingPlace").addEventListener("click", verifyMeetingPlace);
       document.getElementById("profileForm").addEventListener("input", () => {
         updateMapLinks();
         scheduleProfileDraftSave();
@@ -3834,6 +4012,7 @@
 
       document.getElementById("profileForm").addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (!verifyMeetingPlace()) return;
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
         saveStoredPhotos(state.profile.email);
@@ -3875,7 +4054,7 @@
           updateAdminVisibility();
         }
         updateSummary();
-        showToast(savedToCloud ? "使用者資料已儲存" : "資料已暫存在本機，雲端尚未完成儲存");
+        showToast(savedToCloud ? "儲存成功" : "資料已暫存在本機，雲端尚未完成儲存");
         go("digest");
       });
 
