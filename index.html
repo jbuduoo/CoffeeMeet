@@ -2588,9 +2588,12 @@
         const pageTitle = document.getElementById("pageTitle");
         pageTitle.textContent = pages[step].title;
         pageTitle.classList.toggle("hidden", step === "home");
+        document.getElementById("loginPanel").classList.toggle("hidden", step === "home");
         const subtitle = document.getElementById("pageSubtitle");
         subtitle.textContent = pages[step].subtitle;
         subtitle.classList.toggle("hidden", !pages[step].subtitle);
+        if (step === "invites") renderInvites();
+        if (step === "digest") renderCandidates();
       }
 
       function formToObject(form) {
