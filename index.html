@@ -3069,6 +3069,8 @@
           invites.unshift({
             id: `sent-${candidateId}`,
             candidateId,
+            senderUserId: state.currentUser?.userId || "",
+            receiverUserId: candidateId,
             status: "sent",
             note: `可選時段：${times.join("、")}；地點：${place}`,
           });
@@ -3380,6 +3382,53 @@
         return profileButton;
       }
 
+      function normalizeInviteStatus(status) {
+        const normalized = String(status || "").trim().toLowerCase();
+        if (["accepted", "scheduled", "ready", "confirmed", "已確認", "待見面"].includes(normalized)) return "confirmed";
+        if (["completed", "complete", "done", "已完成"].includes(normalized)) return "done";
+        if (["canceled", "cancelled", "已取消"].includes(normalized)) return "cancelled";
+        if (["pending", "sent", "已邀約"].includes(normalized)) return "sent";
+        if (["incoming", "被邀約"].includes(normalized)) return "incoming";
+        return normalized || "sent";
+      }
+
+      function inviteUserId(invite, keys) {
+        for (const key of keys) {
+          if (invite[key]) return String(invite[key]).trim();
+        }
+        return "";
+      }
+
+      function inviteForCurrentUser(invite) {
+        if (!state.currentUser?.userId) return null;
+        const currentUserId = String(state.currentUser.userId).trim();
+        const senderId = inviteUserId(invite, ["senderUserId", "sender_user_id", "senderId", "sender_id"]);
+        const receiverId = inviteUserId(invite, ["receiverUserId", "receiver_user_id", "receiverId", "receiver_id"]);
+        const baseStatus = normalizeInviteStatus(invite.status);
+
+        if (senderId || receiverId) {
+          const isSender = senderId === currentUserId;
+          const isReceiver = receiverId === currentUserId;
+          if (!isSender && !isReceiver) return null;
+          return {
+            ...invite,
+            candidateId: isSender ? receiverId : senderId,
+            status: baseStatus === "sent" && isReceiver ? "incoming" : baseStatus,
+          };
+        }
+
+        if (!hasRemoteApi() && invite.candidateId) return { ...invite, status: baseStatus };
+        return null;
+      }
+
+      function visibleInvitesForCurrentUser() {
+        return invites
+          .map(inviteForCurrentUser)
+          .filter(Boolean)
+          .filter((invite) => candidates.some((candidate) => candidate.id === invite.candidateId))
+          .filter((invite) => state.inviteFilter === "all" || invite.status === state.inviteFilter);
+      }
+
       function renderInvites() {
         const list = document.getElementById("inviteList");
         const count = document.getElementById("inviteCount");
@@ -3389,8 +3438,7 @@
           list.innerHTML = `<div class="empty-state">無資料，請用Email登入</div>`;
           return;
         }
-        const visibleInvites =
-          state.inviteFilter === "all" ? invites : invites.filter((invite) => invite.status === state.inviteFilter);
+        const visibleInvites = visibleInvitesForCurrentUser();
         count.textContent = `${visibleInvites.length} 筆邀約`;
         if (!visibleInvites.length) {
           list.innerHTML = `<div class="empty-state">目前沒有這個狀態的邀約。</div>`;
@@ -3513,11 +3561,12 @@
       }
 
       function cancelInvite(inviteId) {
-        const invite = invites.find((item) => item.id === inviteId);
+        const sourceInvite = invites.find((item) => item.id === inviteId);
+        const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite || !["sent", "incoming", "confirmed"].includes(invite.status)) return;
         const previousStatus = invite.status;
-        invite.status = "cancelled";
-        invite.note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
+        sourceInvite.status = "cancelled";
+        sourceInvite.note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
         state.invited.delete(invite.candidateId);
         const panel = document.getElementById("inviteDetail");
         panel?.classList.add("hidden");
@@ -3547,15 +3596,16 @@
       }
 
       function acceptInvite(inviteId) {
-        const invite = invites.find((item) => item.id === inviteId);
+        const sourceInvite = invites.find((item) => item.id === inviteId);
+        const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite || invite.status !== "incoming") return;
         const selectedTime = state.selectedIncomingTimes[inviteId];
         if (!selectedTime) {
           showToast("請先選擇這次見面的時間");
           return;
         }
-        invite.status = "confirmed";
-        invite.note = `你已同意邀約；被邀請的人選擇見面時間：${selectedTime}；${invite.note}`;
+        sourceInvite.status = "confirmed";
+        sourceInvite.note = `你已同意邀約；被邀請的人選擇見面時間：${selectedTime}；${sourceInvite.note || invite.note || ""}`;
         delete state.selectedIncomingTimes[inviteId];
         renderInvites();
         renderInviteDetail(inviteId, document.querySelector(`[data-invite-card="${inviteId}"]`));
@@ -3569,7 +3619,8 @@
       }
 
       function renderInviteDetail(inviteId, anchorCard = null) {
-        const invite = invites.find((item) => item.id === inviteId);
+        const sourceInvite = invites.find((item) => item.id === inviteId);
+        const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite) return;
         const candidateIndex = candidates.findIndex((item) => item.id === invite.candidateId);
         const candidate = candidates[candidateIndex];
@@ -3682,6 +3733,17 @@
         return photoPath;
       }
 
+      function normalizeSheetInvite(invite, index) {
+        return {
+          ...invite,
+          id: invite.id || invite.invite_id || `sheet-invite-${index + 1}`,
+          candidateId: invite.candidateId || invite.candidate_id || "",
+          senderUserId: invite.senderUserId || invite.sender_user_id || invite.senderId || "",
+          receiverUserId: invite.receiverUserId || invite.receiver_user_id || invite.receiverId || "",
+          status: normalizeInviteStatus(invite.status),
+        };
+      }
+
       function profilePhotos(user) {
         return [user.photo, ...(user.photos || [])]
           .map(normalizeSheetPhotoPath)
@@ -3707,8 +3769,8 @@
               })),
             );
           }
-          if (Array.isArray(data.invites) && data.invites.length) {
-            invites.splice(0, invites.length, ...data.invites);
+          if (Array.isArray(data.invites)) {
+            invites.splice(0, invites.length, ...data.invites.map(normalizeSheetInvite));
           }
           if (!silent) showToast("已載入試算表資料");
         } catch (error) {
