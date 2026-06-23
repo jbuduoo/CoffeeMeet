@@ -1553,12 +1553,12 @@
                     <p>所以我們從附近開始。</p>
                     <p><strong>用一杯咖啡的時間，先認識一個人。</strong></p>
                   </div>
-                  <form class="login-form home-login-form" id="homeLoginForm">
+                  <div class="login-form home-login-form" id="homeLoginForm">
                     <div class="field">
-                      <input name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
+                      <input id="homeLoginEmail" name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
                     </div>
-                    <button class="btn primary" type="submit">開始</button>
-                  </form>
+                    <button class="btn primary" id="homeLoginButton" type="button">開始</button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -3948,12 +3948,23 @@
         });
       }
 
-      const homeLoginForm = document.getElementById("homeLoginForm");
-      if (homeLoginForm) {
-        homeLoginForm.addEventListener("submit", (event) => {
+      const homeLoginButton = document.getElementById("homeLoginButton");
+      const homeLoginEmail = document.getElementById("homeLoginEmail");
+      if (homeLoginButton && homeLoginEmail) {
+        const submitHomeLogin = () => {
+          const email = homeLoginEmail.value.trim();
+          if (!email) {
+            showToast("請先輸入 Email");
+            homeLoginEmail.focus();
+            return;
+          }
+          loginWithEmail(email);
+        };
+        homeLoginButton.addEventListener("click", submitHomeLogin);
+        homeLoginEmail.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter") return;
           event.preventDefault();
-          const data = formToObject(event.target);
-          loginWithEmail(data.email);
+          submitHomeLogin();
         });
       }
 
