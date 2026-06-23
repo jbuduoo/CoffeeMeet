@@ -2532,14 +2532,10 @@
         if (!state.currentUser) {
           panel.classList.remove("is-logged-in");
           panel.innerHTML = `
-            <div>
-              <p class="login-title">會員登入</p>
-              <p class="login-copy">輸入 Email 即可登入。若 Email 不存在，會進入建立使用者資料。</p>
-            </div>
             <form class="login-form" id="loginForm">
               <div class="field">
                 <label for="loginEmail">Email</label>
-                <input id="loginEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+                <input id="loginEmail" name="email" type="email" autocomplete="email" placeholder="請輸入mail登入或建立資料" required />
               </div>
               <button class="btn primary" type="submit">登入</button>
             </form>
