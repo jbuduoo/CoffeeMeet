@@ -380,20 +380,27 @@
 
       .interest-worlds {
         display: grid;
-        gap: 12px;
+        gap: 8px;
       }
 
       .interest-world {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fffdf8;
-        padding: 12px;
-        display: grid;
-        gap: 8px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
 
       .interest-world strong {
+        flex: 0 0 96px;
         font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .interest-world .choice-chips {
+        flex: 1;
       }
 
       .inline-action {
@@ -526,7 +533,7 @@
 
       .photo-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
       }
 
@@ -1357,6 +1364,15 @@
         .form-grid,
         .step-list {
           grid-template-columns: 1fr;
+        }
+
+        .interest-world {
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .interest-world strong {
+          flex-basis: 72px;
         }
 
         .candidate-card {
@@ -2538,6 +2554,23 @@
         return districtWithSuffix(parts[1] || "");
       }
 
+      function photoStorageKey(email) {
+        return `coffeemeet.photos.${String(email || "").trim().toLowerCase()}`;
+      }
+
+      function loadStoredPhotos(email) {
+        try {
+          return JSON.parse(localStorage.getItem(photoStorageKey(email)) || "[]").slice(0, 5);
+        } catch {
+          return [];
+        }
+      }
+
+      function saveStoredPhotos(email) {
+        if (!email) return;
+        localStorage.setItem(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 5)));
+      }
+
       function showToast(message) {
         const toast = document.getElementById("toast");
         toast.textContent = message;
@@ -2954,6 +2987,9 @@
         setFieldValue("meetingArea", user.meetingArea || user.place || "");
         setInterestKeywords(splitProfileList(user.interestKeywords || user.interests || ""));
         setAvailableTimes(splitProfileList(user.availabilityNote || user.availableTime || user.time || ""));
+        state.photos = profilePhotos(user);
+        if (!state.photos.length) state.photos = loadStoredPhotos(user.email);
+        renderPhotoGrid();
         updateMapLinks();
         updateSummary();
       }
@@ -3460,6 +3496,14 @@
         return photoPath;
       }
 
+      function profilePhotos(user) {
+        return [user.photo, ...(user.photos || [])]
+          .map(normalizeSheetPhotoPath)
+          .filter(Boolean)
+          .filter((photo, index, photos) => photos.indexOf(photo) === index)
+          .slice(0, 5);
+      }
+
       async function loadSheetAppData() {
         if (!hasRemoteApi()) return;
         try {
@@ -3558,6 +3602,7 @@
         event.preventDefault();
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
+        saveStoredPhotos(state.profile.email);
         try {
           if (!hasRemoteApi()) throw new Error("尚未設定 Google Apps Script URL");
           const response = await fetch(apiEndpoint("users"), {
@@ -3631,7 +3676,11 @@
             const src = state.photos[index];
             const mainClass = index === 0 ? " main" : "";
             const label = index === 0 ? "主照片" : `${index + 1}`;
-            return `<div class="photo-slot${mainClass}">${src ? `<img alt="照片 ${index + 1}" src="${src}" />` : label}</div>`;
+            return `<div class="photo-slot${mainClass}">${
+              src
+                ? `<img alt="照片 ${index + 1}" src="${src}" /><button class="photo-remove" type="button" data-remove-photo="${index}" aria-label="刪除照片">×</button>`
+                : label
+            }</div>`;
           })
           .join("");
       }
@@ -3655,10 +3704,21 @@
         }
         const urls = await Promise.all(selected.map(readFileAsDataUrl));
         state.photos = state.photos.concat(urls).slice(0, 5);
+        saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
         updateSummary();
         showToast(files.length > selected.length ? "已匯入前 5 張照片" : "照片已匯入");
         event.target.value = "";
+      });
+
+      document.getElementById("photoGrid").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-photo]");
+        if (!button) return;
+        state.photos.splice(Number(button.dataset.removePhoto), 1);
+        saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
+        renderPhotoGrid();
+        updateSummary();
+        showToast("照片已刪除");
       });
 
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
