@@ -185,6 +185,10 @@
         max-width: 980px;
       }
 
+      .no-break {
+        white-space: nowrap;
+      }
+
       .section {
         background: var(--panel);
         border: 1px solid var(--line);
@@ -374,8 +378,14 @@
       }
 
       .place-verify-button.verified {
-        border-color: var(--primary);
-        background: var(--primary);
+        border-color: #16803c;
+        background: #16803c;
+        color: #fff;
+      }
+
+      .place-verify-button.invalid {
+        border-color: #b42318;
+        background: #b42318;
         color: #fff;
       }
 
@@ -407,38 +417,73 @@
       .choice-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
       }
 
       .choice-chip {
-        min-height: 38px;
+        min-height: 30px;
         border: 1px solid var(--line);
         border-radius: 999px;
         background: #fffdf8;
         color: var(--ink);
-        padding: 7px 12px;
+        padding: 4px 10px;
+        font-size: 13px;
         font-weight: 700;
+      }
+
+      .user-menu {
+        position: relative;
+        justify-self: end;
+      }
+
+      .user-menu-button {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fffdf8;
+        color: var(--ink);
+        padding: 8px 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .user-menu-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 20;
+        min-width: 120px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        padding: 6px;
+      }
+
+      .user-menu-panel .btn {
+        width: 100%;
+        justify-content: center;
       }
 
       .availability-grid {
         display: grid;
-        grid-template-columns: 58px repeat(4, minmax(78px, 1fr));
+        grid-template-columns: 48px repeat(4, minmax(64px, 1fr));
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
-        max-width: 650px;
+        max-width: 540px;
         background: #fffdf8;
       }
 
       .availability-cell {
-        min-height: 40px;
+        min-height: 34px;
         border: 0;
         border-right: 1px solid var(--line);
         border-bottom: 1px solid var(--line);
         background: #fffdf8;
         color: var(--ink);
         font: inherit;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
       }
 
@@ -469,22 +514,22 @@
 
       .interest-worlds {
         display: grid;
-        gap: 8px;
+        gap: 6px;
       }
 
       .interest-world {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: #fffdf8;
-        padding: 10px 12px;
+        padding: 7px 10px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
 
       .interest-world strong {
-        flex: 0 0 96px;
-        font-size: 14px;
+        flex: 0 0 88px;
+        font-size: 13px;
         line-height: 1.4;
       }
 
@@ -1466,6 +1511,16 @@
           font-size: 16px;
         }
 
+        .availability-grid {
+          grid-template-columns: 42px repeat(4, minmax(56px, 1fr));
+          max-width: 100%;
+        }
+
+        .availability-cell {
+          min-height: 31px;
+          font-size: 11px;
+        }
+
         .form-grid,
         .step-list {
           grid-template-columns: 1fr;
@@ -1473,11 +1528,18 @@
 
         .interest-world {
           align-items: flex-start;
-          gap: 8px;
+          gap: 6px;
+          padding: 6px 8px;
         }
 
         .interest-world strong {
           flex-basis: 72px;
+        }
+
+        .choice-chip {
+          min-height: 28px;
+          padding: 3px 8px;
+          font-size: 12px;
         }
 
         .candidate-card {
@@ -1558,11 +1620,11 @@
           </button>
           <button class="step-button" data-step="profile" type="button">
             <span class="step-icon">2</span>
-            <span class="step-label">建立資料</span>
+            <span class="step-label">我的資料</span>
           </button>
           <button class="step-button" data-step="digest" type="button">
             <span class="step-icon">3</span>
-            <span class="step-label">交友清單</span>
+            <span class="step-label">附近的人</span>
           </button>
           <button class="step-button" data-step="invites" type="button">
             <span class="step-icon">4</span>
@@ -1589,7 +1651,7 @@
             <section class="section page home-page" id="homePage">
               <div class="home-hero">
                 <div>
-                  <h3>用一杯咖啡的時間，認識附近的人</h3>
+                  <h3>用一杯咖啡的時間，認識<span class="no-break">附近的人</span></h3>
                   <div class="home-copy">
                     <p>其實在附近的人，不論樣貌，我是願意花一點時間聊聊。</p>
                     <p>找對象跑太遠真的很辛苦。</p>
@@ -2609,17 +2671,17 @@
           el: document.getElementById("homePage"),
         },
         profile: {
-          title: "建立資料",
+          title: "我的資料",
           subtitle: "",
           el: document.getElementById("profilePage"),
         },
         digest: {
-          title: "交友清單",
+          title: "附近的人",
           subtitle: "",
           el: document.getElementById("digestPage"),
         },
         invites: {
-          title: "我的咖啡邀約",
+          title: "我的邀約",
           subtitle: "",
           el: document.getElementById("invitesPage"),
         },
@@ -2672,6 +2734,14 @@
         const button = document.getElementById("verifyMeetingPlace");
         button.textContent = verified ? "驗證成功" : "驗證";
         button.classList.toggle("verified", verified);
+        button.classList.remove("invalid");
+      }
+
+      function setMeetingPlaceButtonInvalid(invalid) {
+        const button = document.getElementById("verifyMeetingPlace");
+        button.textContent = invalid ? "驗證失敗" : "驗證";
+        button.classList.toggle("invalid", invalid);
+        button.classList.remove("verified");
       }
 
       function clearMeetingPlaceFields() {
@@ -2736,6 +2806,7 @@
         const parsed = parseGoogleMapsPlace(field.value);
         if (!parsed) {
           clearMeetingPlaceFields();
+          setMeetingPlaceButtonInvalid(true);
           setPlaceStatus("請貼上完整 Google Maps 地點網址後按「驗證」。", "error");
           showToast("請貼上完整 Google Maps 地點網址");
           return false;
@@ -2923,14 +2994,27 @@
         }
         panel.classList.add("is-logged-in");
         panel.innerHTML = `
-          <div>
-            <p class="login-title">${state.currentUser.name}，你好</p>
-            <p class="login-copy">${state.currentUser.email}</p>
+          <div class="user-menu">
+            <button class="user-menu-button" type="button" data-toggle-user-menu>👤 ${state.currentUser.name}</button>
+            <div class="user-menu-panel hidden" data-user-menu-panel>
+              <button class="btn secondary" type="button" data-logout>登出</button>
+            </div>
           </div>
-          <div class="login-status">${state.currentUser.reviewStatus}</div>
         `;
         updateAdminVisibility();
         panel.classList.toggle("hidden", state.currentStep === "home");
+      }
+
+      function logoutCurrentUser() {
+        state.currentUser = null;
+        state.profile = {};
+        state.profileDirty = false;
+        renderLoginPanel();
+        renderCandidates();
+        renderInvites();
+        updateAdminVisibility();
+        go("home");
+        showToast("已登出");
       }
 
       function isAdminEmail(email) {
@@ -4204,6 +4288,16 @@
           event.preventDefault();
           const data = formToObject(event.target);
           await loginWithEmail(data.email);
+        });
+        loginPanel.addEventListener("click", (event) => {
+          const toggle = event.target.closest("[data-toggle-user-menu]");
+          if (toggle) {
+            loginPanel.querySelector("[data-user-menu-panel]")?.classList.toggle("hidden");
+            return;
+          }
+          if (event.target.closest("[data-logout]")) {
+            logoutCurrentUser();
+          }
         });
       }
 
