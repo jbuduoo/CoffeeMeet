@@ -1531,10 +1531,10 @@
       <main class="main">
         <div class="topbar">
           <div class="title-block">
-            <h2 id="pageTitle">首頁</h2>
+            <h2 class="hidden" id="pageTitle">首頁</h2>
             <p id="pageSubtitle" class="hidden"></p>
           </div>
-          <div class="login-panel" id="loginPanel"></div>
+          <div class="login-panel hidden" id="loginPanel"></div>
         </div>
 
         <div class="layout">
@@ -2059,6 +2059,7 @@
         pendingInviteId: null,
         selectedIncomingTimes: {},
         currentUser: null,
+        currentStep: "home",
         profileDirty: false,
         draftTimer: null,
       };
@@ -2578,6 +2579,7 @@
       function go(step) {
         if (!pages[step]) step = "home";
         if (step === "emails" && !isAdminUser()) step = "home";
+        state.currentStep = step;
         Object.entries(pages).forEach(([key, page]) => {
           page.el.classList.toggle("hidden", key !== step);
         });
@@ -2745,6 +2747,7 @@
             <div class="login-status">訪客</div>
           `;
           updateAdminVisibility();
+          panel.classList.toggle("hidden", state.currentStep === "home");
           return;
         }
         panel.classList.add("is-logged-in");
@@ -2756,6 +2759,7 @@
           <div class="login-status">${state.currentUser.reviewStatus}</div>
         `;
         updateAdminVisibility();
+        panel.classList.toggle("hidden", state.currentStep === "home");
       }
 
       function isAdminEmail(email) {
@@ -3712,6 +3716,7 @@
       }
 
       async function bootstrapApp() {
+        go("home");
         await loadSheetAppData();
         renderCandidates();
         renderInvites();
