@@ -373,40 +373,16 @@
         font-weight: 700;
       }
 
-      .place-guide {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: #fffdf8;
-        overflow: hidden;
-      }
-
-      .place-guide summary {
-        cursor: pointer;
-        padding: 10px 12px;
+      .place-guide-link {
+        width: fit-content;
         color: var(--primary);
         font-size: 14px;
         font-weight: 800;
+        text-decoration: none;
       }
 
-      .place-guide-body {
-        display: grid;
-        gap: 10px;
-        padding: 0 12px 12px;
-      }
-
-      .place-guide-body p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
-      }
-
-      .place-guide img {
-        display: block;
-        width: 100%;
-        max-width: 760px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
+      .place-guide-link:hover {
+        text-decoration: underline;
       }
 
       .map-shortcuts {
@@ -1814,7 +1790,7 @@
                     <label for="meetingArea">方便見面地點：（請貼上完整 Google Maps 地點網址，驗證成功後才能用來計算距離。）</label>
                     <div class="place-picker">
                       <div class="place-verify-row">
-                        <textarea id="meetingArea" name="meetingArea" rows="3" placeholder="例：https://www.google.com/maps/place/..." required></textarea>
+                        <input id="meetingArea" name="meetingArea" placeholder="例：https://www.google.com/maps/place/..." required />
                         <button class="btn secondary" id="verifyMeetingPlace" type="button">驗證</button>
                       </div>
                       <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
@@ -1822,13 +1798,7 @@
                       <input id="meetingLat" name="meetingLat" type="hidden" />
                       <input id="meetingLng" name="meetingLng" type="hidden" />
                       <div class="place-status" id="meetingPlaceStatus">請貼上完整 Google Maps 地點網址後按「驗證」。</div>
-                      <details class="place-guide">
-                        <summary>如何複製 Google Maps 網址？</summary>
-                        <div class="place-guide-body">
-                          <p>選擇紅色地點、確認店名正確，再複製瀏覽器上方完整網址貼回這裡。</p>
-                          <img src="picture/guide/google-maps-url-guide.png" alt="Google Maps 網址複製教學：選擇地點、確認名稱、複製網址" />
-                        </div>
-                      </details>
+                      <a class="place-guide-link" href="picture/guide/google-maps-url-guide.png" target="_blank" rel="noreferrer">如何複製 Google Maps 網址？</a>
                       <div class="map-shortcuts">
                         <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
                         <a class="map-link" data-map-query="7-11" href="https://www.google.com/maps/search/7-11/" target="_blank" rel="noreferrer">↗ 7-11</a>
@@ -2691,7 +2661,7 @@
 
       function parseGoogleMapsPlace(value) {
         const input = String(value || "").trim();
-        const verifiedUrlMatch = input.match(/^Google Maps：(.+)$/m);
+        const verifiedUrlMatch = input.match(/Google Maps：(\S+)/);
         const source = verifiedUrlMatch ? verifiedUrlMatch[1].trim() : input;
         let url;
         try {
@@ -2704,10 +2674,10 @@
 
         const decodedPath = decodeURIComponent(url.pathname.replace(/\+/g, " "));
         const placeMatch = decodedPath.match(/\/place\/([^/]+)/);
-        const verifiedNameMatch = input.match(/^地點：(.+)$/m);
+        const verifiedNameMatch = input.match(/地點：([^｜\n]+)/);
         const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
         const name = rawName || "Google Maps 地點";
-        const verifiedCoordsMatch = input.match(/^座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/m);
+        const verifiedCoordsMatch = input.match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
         const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
         const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
         const coords = verifiedCoordsMatch || preciseMatch || atMatch;
@@ -2722,11 +2692,7 @@
       }
 
       function formatVerifiedMeetingPlace(place) {
-        return [
-          `地點：${place.name}`,
-          `座標：${place.lat}, ${place.lng}`,
-          `Google Maps：${place.url}`,
-        ].join("\n");
+        return `地點：${place.name}｜座標：${place.lat}, ${place.lng}｜Google Maps：${place.url}`;
       }
 
       function verifyMeetingPlace() {
