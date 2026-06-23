@@ -1934,6 +1934,17 @@
 <div class="toast" id="toast">已儲存</div>
 
     <script>
+      const GOOGLE_APPS_SCRIPT_URL = "";
+
+      function apiEndpoint(action) {
+        if (!GOOGLE_APPS_SCRIPT_URL) return "";
+        const baseUrl = GOOGLE_APPS_SCRIPT_URL.replace(/\/$/, "");
+        return `${baseUrl}?action=${encodeURIComponent(action)}`;
+      }
+
+      function hasRemoteApi() {
+        return Boolean(GOOGLE_APPS_SCRIPT_URL);
+      }
       const state = {
         profile: {},
         listFilter: { minAge: "28", maxAge: "42" },
@@ -3366,8 +3377,9 @@
       }
 
       async function loadSheetAppData() {
+        if (!hasRemoteApi()) return;
         try {
-          const response = await fetch("/api/app-data");
+          const response = await fetch(apiEndpoint("app-data"));
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.error || "讀取試算表失敗");
           if (Array.isArray(data.candidates) && data.candidates.length) {
@@ -3463,9 +3475,10 @@
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
         try {
-          const response = await fetch("/api/users", {
+          if (!hasRemoteApi()) throw new Error("尚未設定 Google Apps Script URL");
+          const response = await fetch(apiEndpoint("users"), {
             method: "POST",
-            headers: { "content-type": "application/json" },
+            headers: { "content-type": "text/plain;charset=utf-8" },
             body: JSON.stringify(state.profile),
           });
           const data = await response.json();
@@ -3508,9 +3521,13 @@
 
       document.getElementById("testSheetsConnection").addEventListener("click", async () => {
         const result = document.getElementById("sheetsConnectionResult");
+        if (!hasRemoteApi()) {
+          result.textContent = "GitHub Pages 模式：尚未設定 Google Apps Script URL，會先使用內建示範資料。";
+          return;
+        }
         result.textContent = "連線中...";
         try {
-          const response = await fetch("/api/sheets");
+          const response = await fetch(apiEndpoint("sheets"));
           const data = await response.json();
           if (!response.ok || !data.ok) {
             throw new Error(data.error || "連線失敗");
