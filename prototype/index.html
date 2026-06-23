@@ -227,6 +227,19 @@
         line-height: 1.8;
       }
 
+      .home-copy p {
+        margin: 0 0 10px;
+      }
+
+      .home-copy p:last-child {
+        margin-bottom: 0;
+      }
+
+      .home-login-form {
+        max-width: 520px;
+        margin-top: 24px;
+      }
+
       .login-panel {
         display: grid;
         gap: 10px;
@@ -1529,13 +1542,21 @@
             <section class="section page home-page" id="homePage">
               <div class="home-hero">
                 <div>
-                  <h3>用一杯咖啡的時間，認識附近的人。</h3>
-                  <p class="home-copy">
-                    照片先柔焦，少一點外貌壓力。不用聊很久，找一間公開咖啡店，一小時就好。
-                  </p>
-                  <div class="actions">
-                    <button class="btn primary" type="button" data-go="profile">開始建立資料</button>
+                  <h3>所以我們從附近開始。</h3>
+                  <div class="home-copy">
+                    <p>其實在附近的人，不論樣貌，我是願意花一點時間聊聊。</p>
+                    <p>找對象跑太遠真的很辛苦。</p>
+                    <p>我在中和，對象在淡水。這真是太難了。</p>
+                    <p>有時候還會掙扎，那麼漂亮，但在淡水，要不要過去。這很消耗精神力。</p>
+                    <p>而且大家都有可能帶娃、有小孩，怎麼去那麼遠。</p>
+                    <p><strong>用一杯咖啡的時間，先認識一個人。</strong></p>
                   </div>
+                  <form class="login-form home-login-form" id="homeLoginForm">
+                    <div class="field">
+                      <input name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
+                    </div>
+                    <button class="btn primary" type="submit">開始</button>
+                  </form>
                 </div>
               </div>
             </section>
@@ -2708,14 +2729,13 @@
         const panel = document.getElementById("loginPanel");
         if (!panel) return;
         if (!state.currentUser) {
-          panel.classList.remove("is-logged-in");
+          panel.classList.add("is-logged-in");
           panel.innerHTML = `
-            <form class="login-form" id="loginForm">
-              <div class="field">
-                <input id="loginEmail" name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
-              </div>
-              <button class="btn primary" type="submit">登入</button>
-            </form>
+            <div>
+              <p class="login-title">尚未登入</p>
+              <p class="login-copy">請在首頁輸入 Email</p>
+            </div>
+            <div class="login-status">訪客</div>
           `;
           return;
         }
@@ -3895,6 +3915,15 @@
       if (loginPanel) {
         loginPanel.addEventListener("submit", (event) => {
           if (!event.target.matches("#loginForm")) return;
+          event.preventDefault();
+          const data = formToObject(event.target);
+          loginWithEmail(data.email);
+        });
+      }
+
+      const homeLoginForm = document.getElementById("homeLoginForm");
+      if (homeLoginForm) {
+        homeLoginForm.addEventListener("submit", (event) => {
           event.preventDefault();
           const data = formToObject(event.target);
           loginWithEmail(data.email);
