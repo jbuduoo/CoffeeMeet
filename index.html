@@ -388,7 +388,14 @@
       .map-shortcuts {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         gap: 8px;
+      }
+
+      .map-shortcuts-label {
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 800;
       }
 
       .choice-chips {
@@ -1787,10 +1794,10 @@
                     <input id="availabilityNote" name="availabilityNote" type="hidden" />
                   </div>
                   <div class="field full">
-                    <label for="meetingArea">方便見面地點：（請貼上完整 Google Maps 地點網址，驗證成功後才能用來計算距離。）</label>
+                    <label for="meetingArea">方便見面地點（教學：<a href="picture/guide/google-maps-url-guide.png" target="_blank" rel="noreferrer">如何複製 Google Maps 網址？</a>）</label>
                     <div class="place-picker">
                       <div class="place-verify-row">
-                        <input id="meetingArea" name="meetingArea" placeholder="例：https://www.google.com/maps/place/..." required />
+                        <input id="meetingArea" name="meetingArea" placeholder="請貼上完整 Google Maps 地點網址，例如：https://www.google.com/maps/place/..." required />
                         <button class="btn secondary" id="verifyMeetingPlace" type="button">驗證</button>
                       </div>
                       <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
@@ -1798,8 +1805,8 @@
                       <input id="meetingLat" name="meetingLat" type="hidden" />
                       <input id="meetingLng" name="meetingLng" type="hidden" />
                       <div class="place-status" id="meetingPlaceStatus">請貼上完整 Google Maps 地點網址後按「驗證」。</div>
-                      <a class="place-guide-link" href="picture/guide/google-maps-url-guide.png" target="_blank" rel="noreferrer">如何複製 Google Maps 網址？</a>
                       <div class="map-shortcuts">
+                        <span class="map-shortcuts-label">位置僅限：</span>
                         <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
                         <a class="map-link" data-map-query="7-11" href="https://www.google.com/maps/search/7-11/" target="_blank" rel="noreferrer">↗ 7-11</a>
                         <a class="map-link" data-map-query="Starbucks" href="https://www.google.com/maps/search/Starbucks/" target="_blank" rel="noreferrer">↗ Starbucks</a>
