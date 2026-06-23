@@ -3374,9 +3374,16 @@
 
       function renderInvites() {
         const list = document.getElementById("inviteList");
+        const count = document.getElementById("inviteCount");
+        if (!state.currentUser) {
+          closeInviteDetail();
+          count.textContent = "0 筆邀約";
+          list.innerHTML = `<div class="empty-state">無資料，請用Email登入</div>`;
+          return;
+        }
         const visibleInvites =
           state.inviteFilter === "all" ? invites : invites.filter((invite) => invite.status === state.inviteFilter);
-        document.getElementById("inviteCount").textContent = `${visibleInvites.length} 筆邀約`;
+        count.textContent = `${visibleInvites.length} 筆邀約`;
         if (!visibleInvites.length) {
           list.innerHTML = `<div class="empty-state">目前沒有這個狀態的邀約。</div>`;
           return;
