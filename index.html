@@ -1800,7 +1800,7 @@
                     <input id="availabilityNote" name="availabilityNote" type="hidden" />
                   </div>
                   <div class="field full">
-                    <label for="meetingArea">方便見面地點（教學：<a href="picture/guide/google-maps-url-guide.png" target="_blank" rel="noreferrer">如何複製 Google Maps 網址？</a>）</label>
+                    <label for="meetingArea">方便見面地點（教學：<a href="picture/guide/google-maps-url-guide.png" target="_blank" rel="noreferrer">如何複製 Google Maps 網址</a>）</label>
                     <div class="place-picker">
                       <div class="place-verify-row">
                         <input id="meetingArea" name="meetingArea" placeholder="請貼上完整 Google Maps 地點網址，例如：https://www.google.com/maps/place/..." required />
@@ -3280,10 +3280,8 @@
 
       function updateMapLinks() {
         document.querySelectorAll(".place-picker").forEach((picker) => {
-          const area = picker.querySelector("input").value.trim();
           picker.querySelectorAll("[data-map-query]").forEach((link) => {
-            const query = [link.dataset.mapQuery, area].filter(Boolean).join(" ");
-            link.href = `https://www.google.com/maps/search/${encodeURIComponent(query)}/`;
+            link.href = `https://www.google.com/maps/search/${encodeURIComponent(link.dataset.mapQuery)}/`;
           });
         });
       }
