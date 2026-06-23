@@ -1564,10 +1564,6 @@
                     </select>
                   </div>
                   <div class="field">
-                    <label for="school">學校</label>
-                    <input id="school" name="school" placeholder="例如：政治大學、台灣大學" />
-                  </div>
-                  <div class="field">
                     <label for="relationshipStatus">感情狀態</label>
                     <select id="relationshipStatus" name="relationshipStatus">
                       <option value="">請選擇</option>
@@ -1760,7 +1756,6 @@
                 </div>
                 <div class="actions">
                   <button class="btn primary" type="submit">✓ 儲存並下一步</button>
-                  <button class="btn secondary" type="button" id="fillProfile">↺ 填入範例</button>
                 </div>
               </form>
             </section>
@@ -1978,6 +1973,8 @@
         pendingInviteId: null,
         selectedIncomingTimes: {},
         currentUser: null,
+        profileDirty: false,
+        draftTimer: null,
       };
 
       const DAILY_SENT_INVITE_LIMIT = 3;
@@ -2571,6 +2568,64 @@
         localStorage.setItem(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 5)));
       }
 
+      function profileDraftKey(email) {
+        const key = String(email || document.getElementById("email")?.value || "anonymous").trim().toLowerCase();
+        return `coffeemeet.profileDraft.${key || "anonymous"}`;
+      }
+
+      function currentProfileDraft() {
+        syncInterestKeywords();
+        updateAvailabilityNoteFromChoices();
+        return {
+          profile: formToObject(document.getElementById("profileForm")),
+          photos: state.photos.slice(0, 5),
+          savedAt: new Date().toISOString(),
+        };
+      }
+
+      function saveProfileDraft() {
+        const draft = currentProfileDraft();
+        localStorage.setItem(profileDraftKey(draft.profile.email), JSON.stringify(draft));
+      }
+
+      function scheduleProfileDraftSave() {
+        state.profileDirty = true;
+        window.clearTimeout(state.draftTimer);
+        state.draftTimer = window.setTimeout(() => {
+          saveProfileDraft();
+          showToast("草稿已暫存");
+        }, 2000);
+      }
+
+      function clearProfileDraft(email) {
+        window.clearTimeout(state.draftTimer);
+        localStorage.removeItem(profileDraftKey(email));
+        state.profileDirty = false;
+      }
+
+      function restoreProfileDraft(email = "") {
+        const raw = localStorage.getItem(profileDraftKey(email));
+        if (!raw) return false;
+        try {
+          const draft = JSON.parse(raw);
+          const profile = draft.profile || {};
+          Object.entries(profile).forEach(([key, value]) => setFieldValue(key, value));
+          if (profile.city) {
+            setSelectValue("city", profile.city);
+            updateDistrictOptions(profile.district || "");
+          }
+          setInterestKeywords(splitProfileList(profile.interestKeywords || ""));
+          setAvailableTimes(splitProfileList(profile.availabilityNote || ""));
+          state.photos = (draft.photos || []).slice(0, 5);
+          renderPhotoGrid();
+          updateMapLinks();
+          state.profileDirty = true;
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
       function showToast(message) {
         const toast = document.getElementById("toast");
         toast.textContent = message;
@@ -2977,7 +3032,6 @@
 
         setFieldValue("occupation", user.occupation || "");
         setSelectValue("education", user.education || "");
-        setFieldValue("school", user.school || "");
         setSelectValue("relationshipStatus", user.relationshipStatus || "");
         setSelectValue("hasChildren", user.hasChildren || "");
         setSelectValue("coffeeGoal", user.coffeeGoal || user.looking || "");
@@ -2989,6 +3043,7 @@
         setAvailableTimes(splitProfileList(user.availabilityNote || user.availableTime || user.time || ""));
         state.photos = profilePhotos(user);
         if (!state.photos.length) state.photos = loadStoredPhotos(user.email);
+        restoreProfileDraft(user.email);
         renderPhotoGrid();
         updateMapLinks();
         updateSummary();
@@ -3539,6 +3594,7 @@
         initBirthdayOptions();
         initCityOptions();
         updateDistrictOptions();
+        restoreProfileDraft();
         updateMapLinks();
         updateSummary();
         go("digest");
@@ -3546,30 +3602,6 @@
 
       document.querySelectorAll("[data-step], [data-go]").forEach((button) => {
         button.addEventListener("click", () => go(button.dataset.step || button.dataset.go));
-      });
-
-      document.getElementById("fillProfile").addEventListener("click", () => {
-        document.getElementById("nickname").value = "Kai";
-        document.getElementById("email").value = "kai@example.com";
-        document.getElementById("gender").value = "男性";
-        document.getElementById("birthYear").value = "1991";
-        document.getElementById("birthMonth").value = "08";
-        document.getElementById("birthDay").value = "16";
-        document.getElementById("city").value = "台北市";
-        updateDistrictOptions("大安區");
-        document.getElementById("occupation").value = "品牌企劃";
-        document.getElementById("education").value = "大學";
-        document.getElementById("school").value = "政治大學";
-        document.getElementById("relationshipStatus").value = "單身";
-        document.getElementById("hasChildren").value = "沒有";
-        document.getElementById("coffeeGoal").value = "長期交往";
-        document.getElementById("smoking").value = "不抽菸";
-        document.getElementById("drinking").value = "偶爾小酌";
-        setInterestKeywords(["咖啡廳", "展覽", "閱讀"]);
-        document.getElementById("intro").value = "平日工作穩定，週末喜歡咖啡、散步和看展。想用輕鬆但真誠的方式認識新朋友。";
-        setAvailableTimes(["\u9031\u4e8c\u665a\u4e0a", "\u9031\u4e94\u665a\u4e0a", "\u9031\u65e5\u4e0b\u5348"]);
-        document.getElementById("meetingArea").value = "Louisa 忠孝復興門市";
-        updateMapLinks();
       });
 
       document.getElementById("city").addEventListener("change", () => updateDistrictOptions());
@@ -3584,11 +3616,17 @@
         showToast("認證信已寄出");
       });
       document.getElementById("meetingArea").addEventListener("input", updateMapLinks);
+      document.getElementById("profileForm").addEventListener("input", () => {
+        updateMapLinks();
+        scheduleProfileDraftSave();
+      });
+      document.getElementById("profileForm").addEventListener("change", scheduleProfileDraftSave);
       document.getElementById("profileForm").addEventListener("click", (event) => {
         const button = event.target.closest("[data-time-choice]");
         if (!button) return;
         button.classList.toggle("active");
         updateAvailabilityNoteFromChoices();
+        scheduleProfileDraftSave();
       });
 
       document.getElementById("interestWorlds").addEventListener("click", (event) => {
@@ -3596,6 +3634,7 @@
         if (!button) return;
         button.classList.toggle("active");
         syncInterestKeywords();
+        scheduleProfileDraftSave();
       });
 
       document.getElementById("profileForm").addEventListener("submit", async (event) => {
@@ -3603,6 +3642,8 @@
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
         saveStoredPhotos(state.profile.email);
+        saveProfileDraft();
+        let savedToCloud = false;
         try {
           if (!hasRemoteApi()) throw new Error("尚未設定 Google Apps Script URL");
           const response = await fetch(apiEndpoint("users"), {
@@ -3623,6 +3664,8 @@
           await loadSheetAppData();
           renderCandidates();
           renderInvites();
+          clearProfileDraft(state.profile.email);
+          savedToCloud = true;
         } catch (error) {
           console.warn("使用者資料暫存於本機：", error);
           state.currentUser = {
@@ -3635,7 +3678,7 @@
           renderLoginPanel();
         }
         updateSummary();
-        showToast("使用者資料已儲存");
+        showToast(savedToCloud ? "使用者資料已儲存" : "資料已暫存在本機，雲端尚未完成儲存");
         go("digest");
       });
 
@@ -3707,6 +3750,7 @@
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
         updateSummary();
+        scheduleProfileDraftSave();
         showToast(files.length > selected.length ? "已匯入前 5 張照片" : "照片已匯入");
         event.target.value = "";
       });
@@ -3718,7 +3762,14 @@
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
         updateSummary();
+        scheduleProfileDraftSave();
         showToast("照片已刪除");
+      });
+
+      window.addEventListener("beforeunload", (event) => {
+        if (!state.profileDirty) return;
+        event.preventDefault();
+        event.returnValue = "你有尚未儲存的修改，確定要離開嗎？";
       });
 
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
