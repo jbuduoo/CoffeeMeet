@@ -997,9 +997,10 @@
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         object-position: center;
         filter: blur(4px);
+        transform: scale(1.03);
       }
 
       .photo-nav {
@@ -1188,9 +1189,11 @@
       }
 
       .invite-thumb img {
+        display: block;
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center;
         filter: blur(4px);
         transform: scale(1.03);
       }
@@ -3678,12 +3681,9 @@
         };
       }
 
-      function candidatePhotos(candidate, index) {
+      function candidatePhotos(candidate) {
         if (candidate.photos?.length) return candidate.photos;
-        const girlPhotos = candidates.filter((item) => item.id.startsWith("girl-")).map((item) => item.photo);
-        const boyPhotos = candidates.filter((item) => item.id.startsWith("boy-")).map((item) => item.photo);
-        const pool = candidate.id.startsWith("boy-") ? boyPhotos : girlPhotos;
-        return [0, 1, 2].map((offset) => pool[(index + offset) % pool.length]).filter(Boolean);
+        return [candidate.photo].filter(Boolean);
       }
 
       function renderCandidates() {
@@ -3909,7 +3909,7 @@
         const candidate = candidates[candidateIndex];
         if (!candidate) return;
         const detail = profileDetail(candidate, candidateIndex);
-        const photos = candidatePhotos(candidate, candidateIndex);
+        const photos = candidatePhotos(candidate);
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const invited = state.invited.has(candidate.id);
         const inviteDisabled = invited;
@@ -4058,7 +4058,7 @@
         const meta = inviteStatusMeta[invite.status];
         const panel = document.getElementById("inviteDetail");
         const currentPhotoIndex = panel.dataset.inviteId === inviteId ? Number(panel.dataset.photoIndex || 0) : 0;
-        const photos = candidatePhotos(candidate, candidateIndex);
+        const photos = candidatePhotos(candidate);
         const activePhotoIndex = ((currentPhotoIndex % photos.length) + photos.length) % photos.length;
         const feedback =
           invite.status === "done"
