@@ -2169,7 +2169,7 @@
 <div class="toast" id="toast">已儲存</div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQWEMtzX_lQbKPiCqhu5wrYqBYVhceB_CW1fmRLY2YV_GpuvUwNPcwahZgjjHPsBjOUQ/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKD9mhf4ywnBCg3YDtON7FFt3llSzsWos7_Ncq0KD9YLkagNweM72V-Ow_Gym3rXj28w/exec";
 
       function apiEndpoint(action) {
         if (!GOOGLE_APPS_SCRIPT_URL) return "";
@@ -2957,6 +2957,23 @@
         state.profileDirty = false;
       }
 
+      function resetProfileFormForNewUser(email = "") {
+        const form = document.getElementById("profileForm");
+        if (form) form.reset();
+        state.photos = [];
+        state.profile = {};
+        state.profileDirty = false;
+        setFieldValue("email", email);
+        clearMeetingPlaceFields();
+        setPlaceStatus("請貼上完整 Google Maps 地點網址後按「驗證」。");
+        updateDistrictOptions();
+        setInterestKeywords([]);
+        setAvailableTimes([]);
+        renderPhotoGrid();
+        updateMapLinks();
+        updateSummary();
+      }
+
       function restoreProfileDraft(email = "") {
         const raw = localStorage.getItem(profileDraftKey(email));
         if (!raw) return false;
@@ -3028,6 +3045,7 @@
         state.currentUser = null;
         state.profile = {};
         state.profileDirty = false;
+        resetProfileFormForNewUser();
         renderLoginPanel();
         renderCandidates();
         renderInvites();
@@ -3060,8 +3078,8 @@
           candidates.find((item) => item.email && item.email.toLowerCase() === normalizedEmail) ||
           (!hasRemoteApi() ? mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail) : null);
         if (!user) {
-          document.getElementById("email").value = email.trim();
           state.currentUser = null;
+          resetProfileFormForNewUser(email.trim());
           renderLoginPanel();
           renderCandidates();
           go("profile");
@@ -4067,7 +4085,6 @@
         initBirthdayOptions();
         initCityOptions();
         updateDistrictOptions();
-        restoreProfileDraft();
         updateMapLinks();
         updateSummary();
         go("home");

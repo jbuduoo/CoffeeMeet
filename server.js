@@ -225,8 +225,6 @@ async function createUserFromProfile(profile) {
 
 async function saveUserPhotos({ userId, profile, today }) {
   const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
-  if (!photos.length) return 0;
-
   const current = await getSheetValues("user_photos!A1:Z1000");
   const headers = await ensurePhotoHeaders(current.values?.[0] || []);
   const rows = rowsToObjects(current.values);

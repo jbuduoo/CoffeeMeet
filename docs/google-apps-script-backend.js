@@ -7,6 +7,7 @@ function doGet(event) {
   if (action === "app-data") return jsonResponse(getAppData());
   if (action === "sheets") return jsonResponse(getSheetMeta());
   if (action === "version") return jsonResponse(getVersion());
+  if (action === "photo-storage") return jsonResponse(getPhotoStorageMeta());
   return jsonResponse({ ok: false, error: "Unknown action" });
 }
 
@@ -207,8 +208,6 @@ function calculateAge(birthYear, birthMonth, birthDay) {
 
 function saveUserPhotos({ userId, profile, today }) {
   const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
-  if (!photos.length) return 0;
-
   const photosSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("user_photos");
   if (!photosSheet) return 0;
   const headers = ensurePhotoHeaders(photosSheet);
@@ -279,9 +278,55 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
 function getVersion() {
   return {
     ok: true,
-    version: "profile-persistence-2026-06-24-2",
-    features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback"],
+    version: "profile-persistence-2026-06-24-4",
+    features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback", "photo-delete-all", "photo-storage-diagnostics", "drive-authorization-helper"],
   };
+}
+
+function authorizeDriveAccess() {
+  const spreadsheetName = SpreadsheetApp.openById(SPREADSHEET_ID).getName();
+  const boyFolderName = DriveApp.getFolderById(BOY_FOLDER_ID).getName();
+  const girlFolderName = DriveApp.getFolderById(GIRL_FOLDER_ID).getName();
+  return {
+    ok: true,
+    spreadsheetName,
+    boyFolderName,
+    girlFolderName,
+  };
+}
+
+function getPhotoStorageMeta() {
+  return {
+    ok: true,
+    boy: folderMeta(BOY_FOLDER_ID),
+    girl: folderMeta(GIRL_FOLDER_ID),
+  };
+}
+
+function folderMeta(folderId) {
+  try {
+    const folder = DriveApp.getFolderById(folderId);
+    let fileCount = 0;
+    const files = folder.getFiles();
+    while (files.hasNext() && fileCount < 5) {
+      files.next();
+      fileCount += 1;
+    }
+    return {
+      ok: true,
+      id: folderId,
+      name: folder.getName(),
+      url: folder.getUrl(),
+      hasFiles: fileCount > 0,
+      sampledFileCount: fileCount,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      id: folderId,
+      error: error.message || String(error),
+    };
+  }
 }
 
 function extractDriveFileId(value) {
