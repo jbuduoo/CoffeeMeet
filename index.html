@@ -2949,7 +2949,6 @@
         window.clearTimeout(state.draftTimer);
         state.draftTimer = window.setTimeout(() => {
           saveProfileDraft();
-          showToast("草稿已暫存");
         }, 2000);
       }
 
@@ -4183,7 +4182,9 @@
           updateAdminVisibility();
         }
         updateSummary();
-        showToast(savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存");
+        const saveMessage = savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存";
+        showToast(saveMessage);
+        window.alert(saveMessage);
         go("digest");
       });
 
