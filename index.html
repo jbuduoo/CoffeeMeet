@@ -1461,6 +1461,53 @@
         transform: translateY(0);
       }
 
+      .saving-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: grid;
+        place-items: center;
+        background: rgba(37, 33, 28, 0.36);
+      }
+
+      .saving-dialog {
+        width: min(320px, calc(100vw - 40px));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        padding: 22px;
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .saving-spinner {
+        width: 34px;
+        height: 34px;
+        border: 4px solid #e5ddd0;
+        border-top-color: var(--accent);
+        border-radius: 999px;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .saving-title {
+        font-weight: 800;
+      }
+
+      .saving-copy {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
       @media (max-width: 980px) {
         .app {
           grid-template-columns: 1fr;
@@ -1972,7 +2019,7 @@
                   </div>
                 </div>
                 <div class="actions">
-                  <button class="btn primary" type="submit">✓ 儲存並下一步</button>
+                  <button class="btn primary" type="submit">✓ 儲存</button>
                 </div>
               </form>
             </section>
@@ -2167,6 +2214,13 @@
       </div>
     </div>
 <div class="toast" id="toast">已儲存</div>
+<div class="saving-backdrop hidden" id="savingOverlay" role="alertdialog" aria-modal="true" aria-live="assertive" aria-labelledby="savingTitle">
+  <div class="saving-dialog">
+    <div class="saving-spinner" aria-hidden="true"></div>
+    <div class="saving-title" id="savingTitle">儲存中</div>
+    <div class="saving-copy">正在把資料寫入試算表與雲端硬碟，請稍候。</div>
+  </div>
+</div>
 
     <script>
       const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5oiOQCg-zeoc6QNxw7Vcuy0aKkBUYGjMEl2AzCBeHbjEBQTYLmYDFT8V-XKTSEsqW5w/exec";
@@ -2193,6 +2247,7 @@
         currentStep: "home",
         profileDirty: false,
         draftTimer: null,
+        isSaving: false,
       };
 
       const DAILY_SENT_INVITE_LIMIT = 3;
@@ -3011,6 +3066,13 @@
         toast.textContent = message;
         toast.classList.add("show");
         window.setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      function setSaving(isSaving) {
+        state.isSaving = isSaving;
+        document.getElementById("savingOverlay").classList.toggle("hidden", !isSaving);
+        const submitButton = document.querySelector('#profileForm button[type="submit"]');
+        if (submitButton) submitButton.disabled = isSaving;
       }
 
       function renderLoginPanel() {
@@ -4134,6 +4196,7 @@
 
       document.getElementById("profileForm").addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (state.isSaving) return;
         if (!verifyMeetingPlace()) return;
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
@@ -4142,6 +4205,7 @@
         saveProfileDraft();
         let savedToCloud = false;
         let cloudWarning = "";
+        setSaving(true);
         try {
           if (!hasRemoteApi()) throw new Error("尚未設定 Google Apps Script URL");
           const response = await fetch(apiEndpoint("users"), {
@@ -4180,6 +4244,8 @@
           };
           renderLoginPanel();
           updateAdminVisibility();
+        } finally {
+          setSaving(false);
         }
         updateSummary();
         const saveMessage = savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存";
