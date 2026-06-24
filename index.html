@@ -2863,8 +2863,10 @@
       function setSelectValue(id, value) {
         const field = document.getElementById(id);
         if (!field || !value) return;
-        const hasOption = Array.from(field.options).some((option) => option.value === value);
-        if (hasOption) field.value = value;
+        let normalizedValue = String(value);
+        if (id === "birthMonth" || id === "birthDay") normalizedValue = normalizedValue.padStart(2, "0");
+        const hasOption = Array.from(field.options).some((option) => option.value === normalizedValue);
+        if (hasOption) field.value = normalizedValue;
       }
 
       function splitProfileList(value) {
@@ -4151,6 +4153,9 @@
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.error || "儲存失敗");
           cloudWarning = data.photoError ? `資料已儲存，但照片未完成：${data.photoError}` : "";
+          if (!cloudWarning && state.profile.photos.length && Number(data.photoCount || 0) === 0) {
+            cloudWarning = "資料已儲存，但照片沒有寫入後台，請重新匯入照片後再儲存。";
+          }
           state.currentUser = {
             userId: data.userId,
             email: state.profile.email,
@@ -4248,7 +4253,7 @@
       async function compressPhoto(file) {
         const source = await readFileAsDataUrl(file);
         const image = await loadImage(source);
-        const maxSide = 1200;
+        const maxSide = 900;
         const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const width = Math.max(1, Math.round(image.naturalWidth * scale));
         const height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -4258,7 +4263,7 @@
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0, width, height);
         const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
-        return canvas.toDataURL(outputType, outputType === "image/jpeg" ? 0.82 : undefined);
+        return canvas.toDataURL(outputType, outputType === "image/jpeg" ? 0.72 : undefined);
       }
 
       document.getElementById("photoInput").addEventListener("change", async (event) => {
