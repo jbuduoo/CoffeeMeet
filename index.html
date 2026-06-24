@@ -4096,7 +4096,6 @@
       document.getElementById("verifyMeetingPlace").addEventListener("click", verifyMeetingPlace);
       document.getElementById("profileForm").addEventListener("input", () => {
         updateMapLinks();
-        scheduleProfileDraftSave();
       });
       document.getElementById("profileForm").addEventListener("change", scheduleProfileDraftSave);
       document.getElementById("profileForm").addEventListener("click", (event) => {
@@ -4124,6 +4123,7 @@
         saveStoredPhotos(state.profile.email);
         saveProfileDraft();
         let savedToCloud = false;
+        let cloudWarning = "";
         try {
           if (!hasRemoteApi()) throw new Error("尚未設定 Google Apps Script URL");
           const response = await fetch(apiEndpoint("users"), {
@@ -4133,6 +4133,7 @@
           });
           const data = await response.json();
           if (!response.ok || !data.ok) throw new Error(data.error || "儲存失敗");
+          cloudWarning = data.photoError ? `資料已儲存，但照片未完成：${data.photoError}` : "";
           state.currentUser = {
             userId: data.userId,
             email: state.profile.email,
@@ -4160,7 +4161,7 @@
           updateAdminVisibility();
         }
         updateSummary();
-        showToast(savedToCloud ? "儲存成功" : "資料已暫存在本機，雲端尚未完成儲存");
+        showToast(savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存");
         go("digest");
       });
 

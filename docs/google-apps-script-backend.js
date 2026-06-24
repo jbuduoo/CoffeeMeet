@@ -6,14 +6,19 @@ function doGet(event) {
   const action = event.parameter.action || "";
   if (action === "app-data") return jsonResponse(getAppData());
   if (action === "sheets") return jsonResponse(getSheetMeta());
+  if (action === "version") return jsonResponse(getVersion());
   return jsonResponse({ ok: false, error: "Unknown action" });
 }
 
 function doPost(event) {
-  const action = event.parameter.action || "";
-  const body = JSON.parse(event.postData.contents || "{}");
-  if (action === "users") return jsonResponse(saveUserProfile(body));
-  return jsonResponse({ ok: false, error: "Unknown action" });
+  try {
+    const action = event.parameter.action || "";
+    const body = JSON.parse(event.postData.contents || "{}");
+    if (action === "users") return jsonResponse(saveUserProfile(body));
+    return jsonResponse({ ok: false, error: "Unknown action" });
+  } catch (error) {
+    return jsonResponse({ ok: false, error: error.message || String(error) });
+  }
 }
 
 function jsonResponse(data) {
@@ -157,26 +162,33 @@ function saveUserProfile(profile) {
     notes: existing ? existing.notes || "" : "",
   };
 
+  const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
+  if (existing) {
+    usersSheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([row]);
+  } else {
+    usersSheet.appendRow(row);
+  }
+
   saveMeetingPlace({
     placeId,
     userId,
     profile,
     today,
   });
-  const photoCount = saveUserPhotos({
-    userId,
-    profile,
-    today,
-  });
 
-  const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
-  if (existing) {
-    usersSheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([row]);
-    return { ok: true, created: false, userId, photoCount };
+  let photoCount = 0;
+  let photoError = "";
+  try {
+    photoCount = saveUserPhotos({
+      userId,
+      profile,
+      today,
+    });
+  } catch (error) {
+    photoError = error.message || String(error);
   }
 
-  usersSheet.appendRow(row);
-  return { ok: true, created: true, userId, photoCount };
+  return { ok: true, created: !existing, userId, photoCount, photoError };
 }
 
 function calculateAge(birthYear, birthMonth, birthDay) {
@@ -261,6 +273,14 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
   return {
     photoUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
     fileId: file.getId(),
+  };
+}
+
+function getVersion() {
+  return {
+    ok: true,
+    version: "profile-persistence-2026-06-24-2",
+    features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback"],
   };
 }
 
