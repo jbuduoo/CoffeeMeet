@@ -97,10 +97,13 @@ async function getAppData() {
   const invites = inviteRows.map((invite, index) => ({
     id: invite.invite_id || `sheet-invite-${index + 1}`,
     candidateId: invite.receiver_user_id || invite.sender_user_id,
+    senderUserId: invite.sender_user_id || "",
+    receiverUserId: invite.receiver_user_id || "",
     status: statusToInviteStatus(invite.status),
-    note: [
+    note: invite.note || [
       invite.accepted_at ? `已確認：${invite.accepted_at}` : "",
-      `地點：${fallbackPlace(invite.receiver_place_id || invite.sender_place_id)}`,
+      invite.selected_times ? `可選時段：${invite.selected_times}` : "",
+      `地點：${invite.place_name || fallbackPlace(invite.receiver_place_id || invite.sender_place_id)}`,
     ]
       .filter(Boolean)
       .join("；") || "從試算表載入的邀約",
@@ -229,6 +232,42 @@ async function createUserFromProfile(profile) {
   return { created: true, userId, photoCount };
 }
 
+async function createInvite(invite) {
+  const senderUserId = String(invite.senderUserId || invite.sender_user_id || "").trim();
+  const receiverUserId = String(invite.receiverUserId || invite.receiver_user_id || "").trim();
+  if (!senderUserId || !receiverUserId) throw new Error("senderUserId and receiverUserId are required");
+
+  const current = await getSheetValues("invites!A1:Z1000");
+  const headers = await ensureInviteHeaders(current.values?.[0] || []);
+  const today = todayString();
+  const note = String(invite.note || "").trim();
+  const selectedTimes = Array.isArray(invite.selectedTimes)
+    ? invite.selectedTimes.join("、")
+    : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
+  const placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
+  const inviteId = String(invite.id || invite.inviteId || invite.invite_id || `invite-${Date.now().toString(36)}`).trim();
+
+  const valuesByHeader = {
+    invite_id: inviteId,
+    sender_user_id: senderUserId,
+    receiver_user_id: receiverUserId,
+    status: "sent",
+    selected_times: selectedTimes,
+    place_name: placeName,
+    note: note || `可選時段：${selectedTimes}；地點：${placeName}`,
+    created_at: today,
+    updated_at: today,
+    accepted_at: "",
+  };
+  const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+  await appendSheetValues(`invites!A:${columnName(headers.length)}`, [row]);
+  return { inviteId };
+}
+
+function detailFromNote(note, label) {
+  const match = String(note || "").match(new RegExp(`${label}：([^；]+)`));
+  return match ? match[1].trim() : "";
+}
 async function saveUserPhotos({ userId, profile, today }) {
   const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
   const current = await getSheetValues("user_photos!A1:Z1000");
@@ -420,6 +459,28 @@ async function ensureUserHeaders(currentHeaders) {
   return mergedHeaders;
 }
 
+async function ensureInviteHeaders(currentHeaders) {
+  const requiredHeaders = [
+    "invite_id",
+    "sender_user_id",
+    "receiver_user_id",
+    "status",
+    "selected_times",
+    "place_name",
+    "note",
+    "created_at",
+    "updated_at",
+    "accepted_at",
+  ];
+  const headers = currentHeaders.filter(Boolean);
+  const mergedHeaders = headers.length
+    ? headers.concat(requiredHeaders.filter((header) => !headers.includes(header)))
+    : requiredHeaders;
+  if (mergedHeaders.length !== headers.length) {
+    await updateSheetValues(`invites!A1:${columnName(mergedHeaders.length)}1`, [mergedHeaders]);
+  }
+  return mergedHeaders;
+}
 function columnName(index) {
   let name = "";
   while (index > 0) {
@@ -503,6 +564,13 @@ async function handleApi(req, res, url) {
     if (url.pathname === "/api/users" && req.method === "POST") {
       const profile = await readRequestBody(req);
       const result = await createUserFromProfile(profile);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+
+    if (url.pathname === "/api/invites" && req.method === "POST") {
+      const invite = await readRequestBody(req);
+      const result = await createInvite(invite);
       sendJson(res, 200, { ok: true, ...result });
       return;
     }

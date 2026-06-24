@@ -1362,6 +1362,36 @@
         padding-bottom: 4px;
       }
 
+      .quick-time-row.is-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        overflow-x: visible;
+      }
+
+      .quick-time-button,
+      .mini-time-chip.incoming-time-choice {
+        border: 1px solid #b8ddd7;
+        border-radius: 999px;
+        background: #f7fcfb;
+        color: #23564f;
+        cursor: pointer;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 800;
+        padding: 9px 12px;
+        text-align: left;
+      }
+
+      .quick-time-button:hover,
+      .quick-time-button.is-selected,
+      .mini-time-chip.incoming-time-choice:hover,
+      .mini-time-chip.incoming-time-choice.active {
+        border-color: #0f766e;
+        background: #0f766e;
+        color: #ffffff;
+      }
+
       .time-grid {
         min-width: 620px;
         display: grid;
@@ -1461,7 +1491,7 @@
 
       .invite-modal-actions {
         display: flex;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 10px;
         margin-top: 18px;
         flex-wrap: wrap;
@@ -1760,7 +1790,7 @@
                     </div>
                     <button class="btn primary" id="homeLoginButton" type="button">開始</button>
                     <div class="quick-login-buttons">
-                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="jbuduoo@gamil.com">jbuduoo</button>
+                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="jbuduoo@gmail.com">jbuduoo</button>
                       <button class="btn secondary quick-login-button" type="button" data-quick-login-email="girl-01@example.com">girl-01</button>
                     </div>
                     <span class="build-time">更新：2026-06-24 20:52</span>
@@ -2241,8 +2271,8 @@
           <div class="selected-time-summary" id="selectedInviteTimeSummary">你邀約的時段為：尚未選擇</div>
         </div>
         <div class="invite-modal-actions">
-          <button class="btn secondary" type="button" data-close-invite-modal>取消</button>
           <button class="btn primary" type="button" id="confirmInviteButton">送出邀約</button>
+          <button class="btn secondary" type="button" data-close-invite-modal>取消</button>
         </div>
       </div>
     </div>
@@ -2256,9 +2286,12 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3OfqE-_05KQsd9wNBjnODUPmGyl5-ODhfqJeldwL3UMf9Lh-NYJtjXGR-bXFBV4mb/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby48qqeRAX4iFYNja-1djlx58iCVuAlH5dzYDEK8yw28YRYN60v0s3T1QOYYWKPtYnS4w/exec";
 
       function apiEndpoint(action) {
+        if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+          return `/api/${encodeURIComponent(action)}`;
+        }
         if (!GOOGLE_APPS_SCRIPT_URL) return "";
         const baseUrl = GOOGLE_APPS_SCRIPT_URL.replace(/\/$/, "");
         return `${baseUrl}?action=${encodeURIComponent(action)}`;
@@ -3398,60 +3431,41 @@
       function shortMonthDate(date) {
         return `${date.getMonth() + 1}/${date.getDate()}`;
       }
+      function displayWeekday(date) {
+        return ["週日", "週一", "週二", "週三", "週四", "週五", "週六"][date.getDay()];
+      }
+
+      function preciseSlotsFromRanges(ranges) {
+        return ranges.flatMap((range) => {
+          const date = nextDateForWeekday(range.weekday);
+          const prefix = `${shortMonthDate(date)}（${displayWeekday(date)}）`;
+          const start = minutesFromTime(range.start);
+          const end = minutesFromTime(range.end);
+          const slots = [];
+          for (let minute = start; minute + 60 <= end; minute += 60) {
+            slots.push(`${prefix} ${formatMinutesAsTime(minute)}-${formatMinutesAsTime(minute + 60)}`);
+          }
+          return slots;
+        });
+      }
 
       function renderInviteTimeChoices(candidate) {
         const container = document.getElementById("quickTimeChoices");
         const ranges = candidate.availableRanges || labelToTimeRanges(candidate.time);
-        const periods = invitePeriods();
-        const weekNames = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-        const availableWeekdays = Array.from(new Set(ranges.map((range) => range.weekday))).sort((a, b) => a - b);
+        const slots = preciseSlotsFromRanges(ranges);
         container.innerHTML = "";
-
-        const grid = document.createElement("div");
-        grid.className = "time-grid";
-
-        const corner = document.createElement("div");
-        corner.className = "time-grid-cell time-grid-head";
-        corner.textContent = "星期";
-        grid.appendChild(corner);
-
-        periods.forEach((period) => {
-          const head = document.createElement("div");
-          head.className = "time-grid-cell time-grid-head";
-          head.innerHTML = `<strong>${period.label}</strong><br />${period.start}-${period.end}`;
-          grid.appendChild(head);
+        container.classList.add("is-chip-list");
+        slots.forEach((slot) => {
+          const button = document.createElement("button");
+          button.className = "quick-time-button";
+          button.type = "button";
+          button.textContent = slot;
+          button.dataset.timeValue = slot;
+          container.appendChild(button);
         });
-
-        availableWeekdays.forEach((weekday) => {
-          const inviteDate = nextDateForWeekday(weekday);
-          const dateLabel = shortMonthDate(inviteDate);
-          const dayLabel = `${dateLabel} ${weekNames[weekday]}`;
-          const day = document.createElement("div");
-          day.className = "time-grid-cell time-grid-time";
-          day.innerHTML = `<strong>${dateLabel}</strong><br />${weekNames[weekday]}`;
-          grid.appendChild(day);
-
-          periods.forEach((period) => {
-            const available = ranges.some((range) => range.weekday === weekday && rangeOverlapsPeriod(range, period));
-            const button = document.createElement("button");
-            button.className = "time-grid-cell time-grid-slot" + (available ? " is-available" : "");
-            button.type = "button";
-            button.disabled = !available;
-            if (available) {
-              const label = `${dayLabel} ${period.label} ${period.start}-${period.end}`;
-              button.textContent = period.label;
-              button.dataset.timeValue = label;
-              button.setAttribute("aria-label", label);
-            }
-            grid.appendChild(button);
-          });
-        });
-
-        container.appendChild(grid);
       }
-
       function selectedInviteTimes() {
-        return Array.from(document.querySelectorAll("#quickTimeChoices .time-grid-slot.is-selected"))
+        return Array.from(document.querySelectorAll("#quickTimeChoices .quick-time-button.is-selected"))
           .map((button) => button.dataset.timeValue)
           .filter(Boolean);
       }
@@ -3465,7 +3479,7 @@
         const times = selectedInviteTimeLabels();
         summary.textContent = times.length
           ? `你邀約的時段為：${times.join("、")}`
-          : "你邀約的時段為：尚未選擇";
+          : "請選擇 1 到 3 個邀約時段";
       }
 
       function openInviteModal(candidateId) {
@@ -3476,8 +3490,8 @@
           return;
         }
         state.pendingInviteId = candidateId;
-        document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 見面`;
-      document.getElementById("inviteModalSummary").textContent = "先選你可配合的時段；對方接受後，再由被邀請的人決定精確時間。";
+        document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 喝咖啡`;
+        document.getElementById("inviteModalSummary").textContent = "請從對方方便的大時段中選擇最多 3 個 1 小時時段。";
         renderInviteTimeChoices(candidate);
         updateSelectedInviteTimeSummary();
         document.getElementById("candidateAvailableTime").textContent = candidate.time || "對方尚未填寫";
@@ -3498,7 +3512,18 @@
         document.getElementById("inviteModal").classList.add("hidden");
       }
 
-      function confirmInvite() {
+      async function saveInviteToCloud(invite) {
+        if (!hasRemoteApi()) return;
+        const response = await fetch(apiEndpoint("invites"), {
+          method: "POST",
+          headers: { "content-type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(invite),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "邀約儲存失敗");
+      }
+
+      async function confirmInvite() {
         const candidateId = state.pendingInviteId;
         if (!candidateId) return;
         const times = selectedInviteTimeLabels();
@@ -3507,20 +3532,36 @@
           showToast("請至少選一個時段並確認地點");
           return;
         }
+        const note = `可選時段：${times.join("、")}；地點：${place}`;
+        const inviteRecord = {
+          id: `sent-${candidateId}-${Date.now().toString(36)}`,
+          candidateId,
+          senderUserId: state.currentUser?.userId || "",
+          receiverUserId: candidateId,
+          status: "sent",
+          selectedTimes: times,
+          placeName: place,
+          note,
+        };
+        const confirmButton = document.getElementById("confirmInviteButton");
+        confirmButton.disabled = true;
+        try {
+          await saveInviteToCloud(inviteRecord);
+        } catch (error) {
+          console.warn("邀約儲存失敗", error);
+          showToast("邀約儲存失敗，請稍後再試");
+          confirmButton.disabled = false;
+          return;
+        }
         state.invited.add(candidateId);
         state.dailyInviteCount += 1;
         receivedInviteCounts[candidateId] = (receivedInviteCounts[candidateId] || 0) + 1;
         if (!invites.some((invite) => invite.candidateId === candidateId && invite.status === "sent")) {
-          invites.unshift({
-            id: `sent-${candidateId}`,
-            candidateId,
-            senderUserId: state.currentUser?.userId || "",
-            receiverUserId: candidateId,
-            status: "sent",
-            note: `可選時段：${times.join("、")}；地點：${place}`,
-          });
+          invites.unshift(inviteRecord);
         }
         closeInviteModal();
+        confirmButton.disabled = false;
+        await loadSheetAppData(true);
         renderCandidates();
         renderInvites();
         showToast("已送出咖啡邀約");
@@ -3645,9 +3686,29 @@
         return intro.length > limit ? `${intro.slice(0, limit)}...` : intro;
       }
 
-      function mockDistance(index) {
-        const distances = [0.8, 1.2, 1.7, 2.1, 2.6, 3.1, 3.8, 4.4, 5.0, 5.7, 6.3, 7.1, 8.0];
-        return distances[index % distances.length];
+      function profileCoords(profile) {
+        const lat = Number(profile?.lat ?? profile?.meetingLat);
+        const lng = Number(profile?.lng ?? profile?.meetingLng);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+      }
+
+      function distanceKm(a, b) {
+        const R = 6371;
+        const toRad = (deg) => (deg * Math.PI) / 180;
+        const dLat = toRad(b.lat - a.lat);
+        const dLng = toRad(b.lng - a.lng);
+        const lat1 = toRad(a.lat);
+        const lat2 = toRad(b.lat);
+        const h =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+      }
+
+      function currentUserProfile() {
+        const email = state.currentUser?.email?.toLowerCase();
+        if (!email) return null;
+        return candidates.find((candidate) => candidate.email?.toLowerCase() === email) || null;
       }
 
       function formatDistance(distance) {
@@ -3723,20 +3784,39 @@
 
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
+        let panel = document.getElementById("candidateDetail");
+        if (!panel) {
+          panel = document.createElement("div");
+          panel.className = "detail-panel hidden";
+          panel.id = "candidateDetail";
+          document.getElementById("digestPage").prepend(panel);
+          bindCandidateDetailEvents();
+        }
+        if (panel.parentElement === grid) {
+          closeCandidateDetail();
+        }
         if (!state.currentUser) {
           closeCandidateDetail();
           grid.innerHTML = `<div class="empty-state">無資料，請用Email登入</div>`;
           return;
         }
-        const filteredCandidates = visibleCandidates();
+        const currentCoords = profileCoords(currentUserProfile());
+        const filteredCandidates = currentCoords
+          ? visibleCandidates()
+              .filter((candidate) => candidate.email?.toLowerCase() !== state.currentUser.email?.toLowerCase())
+              .map((candidate) => {
+                const coords = profileCoords(candidate);
+                return coords ? { candidate, distance: distanceKm(currentCoords, coords) } : null;
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.distance - b.distance)
+          : [];
         if (!filteredCandidates.length) {
           closeCandidateDetail();
           grid.innerHTML = `<div class="empty-state">目前沒有符合條件的交友清單。</div>`;
           return;
         }
         grid.innerHTML = filteredCandidates
-          .map((candidate, index) => ({ candidate, index, distance: mockDistance(index) }))
-          .sort((a, b) => a.distance - b.distance)
           .map(({ candidate, distance }) => {
             const invited = state.invited.has(candidate.id);
             const buttonLabel = invited ? "✓ 已送出邀請" : "";
@@ -4004,6 +4084,7 @@
 
       function closeCandidateDetail() {
         const panel = document.getElementById("candidateDetail");
+        if (!panel) return;
         panel.classList.add("hidden");
         delete panel.dataset.candidateId;
         document.querySelectorAll(".candidate-card.is-focused").forEach((card) => card.classList.remove("is-focused"));
@@ -4012,6 +4093,7 @@
 
       function toggleCandidateDetail(candidateId, card) {
         const panel = document.getElementById("candidateDetail");
+        if (!panel) return;
         if (!panel.classList.contains("hidden") && panel.dataset.candidateId === candidateId) {
           closeCandidateDetail();
           return;
@@ -4066,7 +4148,7 @@
           return;
         }
         sourceInvite.status = "confirmed";
-        sourceInvite.note = `你已同意邀約；被邀請的人選擇見面時間：${selectedTime}；${sourceInvite.note || invite.note || ""}`;
+        sourceInvite.note = `已確認：${selectedTime}；${sourceInvite.note || invite.note || ""}`;
         delete state.selectedIncomingTimes[inviteId];
         renderInvites();
         renderInviteDetail(inviteId, document.querySelector(`[data-invite-card="${inviteId}"]`));
@@ -4296,6 +4378,11 @@
       document.getElementById("profileForm").addEventListener("click", (event) => {
         const button = event.target.closest("[data-time-choice]");
         if (!button) return;
+        const selectedCount = document.querySelectorAll("[data-time-choice].active").length;
+        if (!button.classList.contains("active") && selectedCount >= 3) {
+          showToast("通常方便時段最多選 3 個");
+          return;
+        }
         button.classList.toggle("active");
         updateAvailabilityNoteFromChoices();
         scheduleProfileDraftSave();
@@ -4496,7 +4583,16 @@
         toggleCandidateDetail(card.dataset.candidateCard, card);
       });
 
-      document.getElementById("candidateDetail").addEventListener("click", (event) => {
+      function bindCandidateDetailEvents() {
+        const detail = document.getElementById("candidateDetail");
+        if (!detail || detail.dataset.eventsBound) return;
+        detail.dataset.eventsBound = "true";
+        detail.addEventListener("click", (event) => {
+          const mapLink = event.target.closest(".detail-map-link");
+          if (mapLink) {
+            event.stopPropagation();
+            return;
+          }
         const photoButton = event.target.closest("[data-photo-step]");
         if (photoButton) {
           const panel = document.getElementById("candidateDetail");
@@ -4511,7 +4607,10 @@
         const button = event.target.closest("[data-invite]");
         if (!button) return;
         openInviteModal(button.dataset.invite);
-      });
+        });
+      }
+
+      bindCandidateDetailEvents();
 
       document.getElementById("inviteModal").addEventListener("click", (event) => {
         if (event.target.id === "inviteModal" || event.target.closest("[data-close-invite-modal]")) {
@@ -4524,6 +4623,10 @@
       document.getElementById("quickTimeChoices").addEventListener("click", (event) => {
         const button = event.target.closest(".time-grid-slot.is-available") || event.target.closest(".quick-time-button");
         if (!button) return;
+        if (!button.classList.contains("is-selected") && selectedInviteTimes().length >= 3) {
+          showToast("最多選 3 個邀約時段");
+          return;
+        }
         button.classList.toggle("is-selected");
         updateSelectedInviteTimeSummary();
       });

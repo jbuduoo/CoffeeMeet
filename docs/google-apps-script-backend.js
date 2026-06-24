@@ -18,6 +18,7 @@ function doPost(event) {
     const action = event.parameter.action || "";
     const body = JSON.parse(event.postData.contents || "{}");
     if (action === "users") return jsonResponse(saveUserProfile(body));
+    if (action === "invites") return jsonResponse(saveInvite(body));
     return jsonResponse({ ok: false, error: "Unknown action" });
   } catch (error) {
     return jsonResponse({ ok: false, error: error.message || String(error) });
@@ -114,7 +115,63 @@ function getAppData() {
       };
     });
 
-  return { ok: true, candidates, invites };
+  return {
+    ok: true,
+    candidates,
+    invites: invites.map(function(invite, index) {
+      return {
+        id: invite.invite_id || "sheet-invite-" + (index + 1),
+        candidateId: invite.receiver_user_id || invite.sender_user_id,
+        senderUserId: invite.sender_user_id || "",
+        receiverUserId: invite.receiver_user_id || "",
+        status: invite.status || "sent",
+        note: invite.note || [
+          invite.accepted_at ? "已確認：" + invite.accepted_at : "",
+          invite.selected_times ? "可選時段：" + invite.selected_times : "",
+          invite.place_name ? "地點：" + invite.place_name : "",
+        ].filter(Boolean).join("；"),
+      };
+    }),
+  };
+}
+
+function saveInvite(invite) {
+  var senderUserId = String(invite.senderUserId || invite.sender_user_id || "").trim();
+  var receiverUserId = String(invite.receiverUserId || invite.receiver_user_id || "").trim();
+  if (!senderUserId || !receiverUserId) return { ok: false, error: "senderUserId and receiverUserId are required" };
+
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("invites");
+  if (!sheet) return { ok: false, error: "invites sheet not found" };
+  var headers = ensureInviteHeaders(sheet);
+  var today = new Date().toISOString().slice(0, 10);
+  var note = String(invite.note || "").trim();
+  var selectedTimes = Array.isArray(invite.selectedTimes)
+    ? invite.selectedTimes.join("、")
+    : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
+  var placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
+  var inviteId = String(invite.id || invite.inviteId || invite.invite_id || "invite-" + Date.now().toString(36)).trim();
+
+  var values = {
+    invite_id: inviteId,
+    sender_user_id: senderUserId,
+    receiver_user_id: receiverUserId,
+    status: "sent",
+    selected_times: selectedTimes,
+    place_name: placeName,
+    note: note || "可選時段：" + selectedTimes + "；地點：" + placeName,
+    created_at: today,
+    updated_at: today,
+    accepted_at: "",
+  };
+  sheet.appendRow(headers.map(function(header) {
+    return values[header] !== undefined ? values[header] : "";
+  }));
+  return { ok: true, inviteId: inviteId };
+}
+
+function detailFromNote(note, label) {
+  var match = String(note || "").match(new RegExp(label + "：([^；]+)"));
+  return match ? match[1].trim() : "";
 }
 
 function saveUserProfile(profile) {
@@ -518,6 +575,33 @@ function ensureUserHeaders(sheet) {
     "birth_year",
     "birth_month",
     "birth_day",
+  ];
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(Boolean);
+  if (!headers.length) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
+    return requiredHeaders;
+  }
+
+  const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
+  if (missingHeaders.length) {
+    sheet.getRange(1, headers.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+  }
+  return headers.concat(missingHeaders);
+}
+
+function ensureInviteHeaders(sheet) {
+  const requiredHeaders = [
+    "invite_id",
+    "sender_user_id",
+    "receiver_user_id",
+    "status",
+    "selected_times",
+    "place_name",
+    "note",
+    "created_at",
+    "updated_at",
+    "accepted_at",
   ];
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
   const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(Boolean);
