@@ -248,7 +248,7 @@ function saveUserPhotos({ userId, profile, today }) {
 
 function savePhotoFile(photoValue, { userId, order, gender }) {
   const dataUrlMatch = String(photoValue || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!dataUrlMatch) return { photoUrl: photoValue, fileId: "" };
+  if (!dataUrlMatch) return { photoUrl: photoValue, fileId: extractDriveFileId(photoValue) };
 
   const mimeType = dataUrlMatch[1];
   const extension = mimeType.split("/")[1].replace("jpeg", "jpg");
@@ -262,6 +262,15 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
     photoUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
     fileId: file.getId(),
   };
+}
+
+function extractDriveFileId(value) {
+  const text = String(value || "");
+  const ucMatch = text.match(/[?&]id=([^&]+)/);
+  if (ucMatch) return ucMatch[1];
+  const fileMatch = text.match(/\/file\/d\/([^/]+)/);
+  if (fileMatch) return fileMatch[1];
+  return "";
 }
 
 function saveMeetingPlace({ placeId, userId, profile, today }) {

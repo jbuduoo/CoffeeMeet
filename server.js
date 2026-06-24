@@ -238,11 +238,12 @@ async function saveUserPhotos({ userId, profile, today }) {
     const existing = existingIndexes[index]?.photo;
     const existingRowIndex = existingIndexes[index]?.index;
     const photoUrl = photos[index];
+    const fileId = extractDriveFileId(photoUrl) || existing?.file_id || "";
     const valuesByHeader = {
       photo_id: existing?.photo_id || `photo-${userId}-${index + 1}`,
       user_id: userId,
       photo_url: photoUrl,
-      file_id: existing?.file_id || "",
+      file_id: fileId,
       photo_order: String(index + 1),
       is_primary: index === 0 ? "TRUE" : "FALSE",
       status: "active",
@@ -269,6 +270,15 @@ async function saveUserPhotos({ userId, profile, today }) {
   }
 
   return photos.length;
+}
+
+function extractDriveFileId(value) {
+  const text = String(value || "");
+  const ucMatch = text.match(/[?&]id=([^&]+)/);
+  if (ucMatch) return ucMatch[1];
+  const fileMatch = text.match(/\/file\/d\/([^/]+)/);
+  if (fileMatch) return fileMatch[1];
+  return "";
 }
 
 async function saveMeetingPlace({ placeId, userId, profile, today, existingPlaceId }) {
