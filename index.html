@@ -799,9 +799,11 @@
       }
 
       .candidate-photo img {
+        display: block;
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center;
         filter: blur(4px);
         transform: scale(1.03);
       }
@@ -821,6 +823,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+        min-width: 0;
       }
 
       .chip {
@@ -830,6 +833,13 @@
         padding: 4px 8px;
         color: #62594e;
         font-size: 12px;
+      }
+
+      .time-chip {
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .candidate-body p {
@@ -984,11 +994,12 @@
       }
 
       .detail-photo img {
+        display: block;
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
+        object-position: center;
         filter: blur(4px);
-        transform: scale(1.03);
       }
 
       .photo-nav {
@@ -1056,6 +1067,7 @@
         padding: 4px 8px;
         font-size: 12px;
         font-weight: 700;
+        max-width: 100%;
       }
 
       .email-list {
@@ -3191,10 +3203,24 @@
         return "晚上 18:00-21:00";
       }
 
+      function splitAvailabilityText(value) {
+        return String(value || "")
+          .split(/[、,，\n]+/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
       function availabilityLabels(candidate) {
+        const explicitLabels = splitAvailabilityText(candidate.time);
         const ranges = candidate.availableRanges || labelToTimeRanges(candidate.time);
         const labels = ranges.map((range) => `${weekdayLabel(range.weekday)} ${availabilityPeriod(range.start)}`);
-        return Array.from(new Set(labels.length ? labels : [candidate.time || "尚未填寫"]));
+        return Array.from(new Set(labels.length ? labels : explicitLabels.length ? explicitLabels : ["尚未填寫"]));
+      }
+
+      function compactAvailabilityLabels(candidate, limit = 3) {
+        const labels = availabilityLabels(candidate);
+        if (labels.length <= limit) return labels;
+        return [...labels.slice(0, limit), `+${labels.length - limit} 個時段`];
       }
 
       function normalizeInviteTimeValue(value) {
@@ -3218,6 +3244,49 @@
       }
 
       function labelToTimeRanges(label) {
+        const labels = splitAvailabilityText(label);
+        if (labels.length > 1) {
+          const ranges = labels.flatMap((item) => labelToTimeRanges(item));
+          return ranges.length ? ranges : [{ weekday: 6, start: "12:00", end: "18:00" }];
+        }
+
+        const text = String(label || "").trim();
+        const dayMap = {
+          週日: 0,
+          星期日: 0,
+          週一: 1,
+          星期一: 1,
+          週二: 2,
+          星期二: 2,
+          週三: 3,
+          星期三: 3,
+          週四: 4,
+          星期四: 4,
+          週五: 5,
+          星期五: 5,
+          週六: 6,
+          星期六: 6,
+        };
+        const periodMap = {
+          上午: { start: "09:00", end: "12:00" },
+          午後: { start: "12:00", end: "15:00" },
+          下午: { start: "12:00", end: "18:00" },
+          傍晚: { start: "15:00", end: "18:00" },
+          晚上: { start: "18:00", end: "21:00" },
+        };
+        const explicitMatch = text.match(/(週[一二三四五六日]|星期[一二三四五六日]).*?(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+        if (explicitMatch) {
+          return [{ weekday: dayMap[explicitMatch[1]], start: explicitMatch[2], end: explicitMatch[3] }];
+        }
+        const dayEntry = Object.entries(dayMap).find(([day]) => text.includes(day));
+        const periodEntry = Object.entries(periodMap).find(([period]) => text.includes(period));
+        if (dayEntry && periodEntry) {
+          return [{ weekday: dayEntry[1], ...periodEntry[1] }];
+        }
+        if (text.includes("平日") && text.includes("晚上")) {
+          return [1, 2, 3, 4, 5].map((weekday) => ({ weekday, start: "18:00", end: "21:00" }));
+        }
+
         const rules = {
           "平日晚上": [
             { weekday: 1, start: "18:00", end: "21:00" },
@@ -3636,6 +3705,9 @@
           .map(({ candidate, distance }) => {
             const invited = state.invited.has(candidate.id);
             const buttonLabel = invited ? "✓ 已送出邀請" : "";
+            const timeChips = compactAvailabilityLabels(candidate)
+              .map((label) => `<span class="chip time-chip" title="${label}">${label}</span>`)
+              .join("");
             return `
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
@@ -3652,7 +3724,7 @@
                   <div class="candidate-meta">
                     <span class="chip">${candidate.age} 歲</span>
                     <span class="chip">${candidate.area}</span>
-                    <span class="chip">${candidate.time}</span>
+                    ${timeChips}
                     <span class="chip">${candidate.place}</span>
                   </div>
                 </div>
