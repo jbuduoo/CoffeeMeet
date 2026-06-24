@@ -3763,10 +3763,7 @@
                     <span class="chip">${candidate.place}</span>
                   </div>
                 </div>
-                <div class="candidate-actions">
-                  <button class="btn primary" type="button" data-candidate-detail="${candidate.id}">看詳細資料</button>
-                  ${invited ? `<span class="candidate-count">${buttonLabel}</span>` : ""}
-                </div>
+                ${invited ? `<div class="candidate-actions"><span class="candidate-count">${buttonLabel}</span></div>` : ""}
               </article>
             `;
           })
@@ -3948,14 +3945,13 @@
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const invited = state.invited.has(candidate.id);
         const inviteDisabled = invited;
-        const inviteLabel = invited ? "已送出邀請" : "請對方喝杯咖啡";
+        const inviteLabel = invited ? "已送出邀請" : "一起喝杯咖啡";
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
             <div>
               <h3>${candidate.name}</h3>
             </div>
-            <button class="btn secondary" type="button" data-close-detail="candidate">關閉</button>
           </div>
           <div class="detail-layout">
             <div class="detail-media">
@@ -3996,7 +3992,6 @@
               </div>
               <div class="email-actions">
                 <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>
-                <button class="btn secondary" type="button">讓他注意我</button>
               </div>
             </div>
           </div>
@@ -4080,7 +4075,7 @@
 
       function openCandidateFromInvite(candidateId) {
         go("digest");
-        const card = document.querySelector(`[data-candidate-detail="${candidateId}"]`)?.closest(".candidate-card");
+        const card = document.querySelector(`[data-candidate-card="${candidateId}"]`);
         renderCandidateDetail(candidateId, card || null);
       }
 
@@ -4502,10 +4497,6 @@
       });
 
       document.getElementById("candidateDetail").addEventListener("click", (event) => {
-        if (event.target.closest("[data-close-detail='candidate']")) {
-          closeCandidateDetail();
-          return;
-        }
         const photoButton = event.target.closest("[data-photo-step]");
         if (photoButton) {
           const panel = document.getElementById("candidateDetail");
