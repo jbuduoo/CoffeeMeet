@@ -150,6 +150,35 @@ function saveInvite(invite) {
     : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
   var placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
   var inviteId = String(invite.id || invite.inviteId || invite.invite_id || "invite-" + Date.now().toString(36)).trim();
+  var rows = sheetRows("invites");
+  var existingIndex = rows.findIndex(function(row) {
+    return row.invite_id === inviteId;
+  });
+  if (existingIndex < 0) {
+    existingIndex = rows.findIndex(function(row) {
+      var status = String(row.status || "").toLowerCase();
+      return row.sender_user_id === senderUserId &&
+        row.receiver_user_id === receiverUserId &&
+        ["sent", "pending", "incoming", "confirmed"].indexOf(status) >= 0;
+    });
+  }
+  if (existingIndex >= 0 && String(invite.status || "").toLowerCase() === "confirmed") {
+    var existing = rows[existingIndex];
+    var acceptedTime = String(invite.acceptedTime || invite.accepted_at || detailFromNote(note, "已確認") || "").trim();
+    var updated = Object.assign({}, existing, {
+      status: "confirmed",
+      note: note || "已確認：" + acceptedTime + "；" + (existing.note || ""),
+      accepted_at: acceptedTime,
+      updated_at: today,
+    });
+    sheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([headers.map(function(header) {
+      return updated[header] !== undefined ? updated[header] : "";
+    })]);
+    return { ok: true, inviteId: inviteId, updated: true };
+  }
+  if (existingIndex >= 0) {
+    return { ok: true, inviteId: rows[existingIndex].invite_id || inviteId, duplicate: true };
+  }
 
   var values = {
     invite_id: inviteId,

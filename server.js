@@ -246,6 +246,33 @@ async function createInvite(invite) {
     : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
   const placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
   const inviteId = String(invite.id || invite.inviteId || invite.invite_id || `invite-${Date.now().toString(36)}`).trim();
+  const rows = rowsToObjects(current.values);
+  const requestedStatus = statusToInviteStatus(invite.status || "");
+  let existingIndex = rows.findIndex((row) => row.invite_id === inviteId);
+  if (existingIndex < 0) {
+    existingIndex = rows.findIndex((row) =>
+      row.sender_user_id === senderUserId &&
+      row.receiver_user_id === receiverUserId &&
+      ["sent", "pending", "incoming", "confirmed"].includes(statusToInviteStatus(row.status)),
+    );
+  }
+  if (existingIndex >= 0 && requestedStatus === "confirmed") {
+    const existing = rows[existingIndex];
+    const acceptedTime = String(invite.acceptedTime || invite.accepted_at || detailFromNote(note, "已確認") || "").trim();
+    const valuesByHeader = {
+      ...existing,
+      status: "confirmed",
+      note: note || `已確認：${acceptedTime}；${existing.note || ""}`,
+      accepted_at: acceptedTime,
+      updated_at: today,
+    };
+    const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+    await updateSheetValues(`invites!A${existingIndex + 2}:${columnName(headers.length)}${existingIndex + 2}`, [row]);
+    return { inviteId, updated: true };
+  }
+  if (existingIndex >= 0) {
+    return { inviteId: rows[existingIndex].invite_id || inviteId, duplicate: true };
+  }
 
   const valuesByHeader = {
     invite_id: inviteId,

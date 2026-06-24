@@ -901,6 +901,35 @@
         justify-items: end;
       }
 
+      .candidate-status-badge {
+        border: 1px solid #e6c76f;
+        border-radius: 999px;
+        background: #fff3b0;
+        color: #6f4e00;
+        font-size: 13px;
+        font-weight: 900;
+        padding: 8px 12px;
+        white-space: nowrap;
+      }
+
+      .candidate-status-badge.status-active {
+        border-color: #90d0c6;
+        background: #e7f4f1;
+        color: #0f766e;
+      }
+
+      .candidate-status-badge.status-done {
+        border-color: #d8c4f0;
+        background: #f3ecff;
+        color: #6d28d9;
+      }
+
+      .candidate-status-badge.status-cancelled {
+        border-color: #f2b8c5;
+        background: #fff1f4;
+        color: #be123c;
+      }
+
       .candidate-actions .btn {
         min-height: 40px;
         padding: 8px 12px;
@@ -1271,17 +1300,6 @@
 
       .text-action-button:hover {
         background: var(--accent-dark);
-      }
-
-      .invite-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        grid-column: 3;
-        grid-row: 1;
-        align-self: center;
-        justify-content: end;
-        min-width: 140px;
       }
 
       .status-label {
@@ -1692,13 +1710,6 @@
 
         .invite-card {
           grid-template-columns: 64px minmax(0, 1fr);
-        }
-
-        .invite-actions {
-          grid-column: 2;
-          grid-row: auto;
-          justify-content: stretch;
-          min-width: 0;
         }
 
         .detail-layout {
@@ -2286,7 +2297,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby48qqeRAX4iFYNja-1djlx58iCVuAlH5dzYDEK8yw28YRYN60v0s3T1QOYYWKPtYnS4w/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGeeFQICQ4St2YtiiFuHhoQ1bps_vzf7nGPqCyjeQIn7z0oG91JjRpQAAsq0fXRRARYA/exec";
 
       function apiEndpoint(action) {
         if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
@@ -3782,6 +3793,39 @@
         return `<img alt="${alt}" src="${src}" ${fallback ? `data-fallback-src="${fallback}"` : ""} referrerpolicy="no-referrer" />`;
       }
 
+      function candidateInviteStatus(candidateId) {
+        const currentUserId = String(state.currentUser?.userId || "").trim();
+        if (!currentUserId) return null;
+        const related = dedupeInvitesForDisplay(
+          invites
+            .map((invite) => {
+              const senderId = inviteUserId(invite, ["senderUserId", "sender_user_id", "senderId", "sender_id"]);
+              const receiverId = inviteUserId(invite, ["receiverUserId", "receiver_user_id", "receiverId", "receiver_id"]);
+              if (![senderId, receiverId].includes(candidateId) || ![senderId, receiverId].includes(currentUserId)) return null;
+              const status = normalizeInviteStatus(invite.status);
+              return {
+                ...invite,
+                candidateId,
+                status: status === "sent" && receiverId === currentUserId ? "incoming" : status,
+              };
+            })
+            .filter(Boolean),
+        )[0];
+        if (!related) return null;
+        const labels = {
+          sent: "已邀約",
+          incoming: "被邀約",
+          confirmed: "待見面",
+          done: "已完成",
+          cancelled: "已取消",
+        };
+        const meta = inviteStatusMeta[related.status] || inviteStatusMeta.sent;
+        return {
+          label: labels[related.status] || meta.label,
+          className: meta.className || "status-sent",
+        };
+      }
+
       function renderCandidates() {
         const grid = document.getElementById("candidateGrid");
         let panel = document.getElementById("candidateDetail");
@@ -3819,7 +3863,7 @@
         grid.innerHTML = filteredCandidates
           .map(({ candidate, distance }) => {
             const invited = state.invited.has(candidate.id);
-            const buttonLabel = invited ? "✓ 已送出邀請" : "";
+            const candidateStatus = candidateInviteStatus(candidate.id);
             const timeChips = compactAvailabilityLabels(candidate)
               .map((label) => `<span class="chip time-chip" title="${label}">${label}</span>`)
               .join("");
@@ -3843,7 +3887,7 @@
                     <span class="chip">${candidate.place}</span>
                   </div>
                 </div>
-                ${invited ? `<div class="candidate-actions"><span class="candidate-count">${buttonLabel}</span></div>` : ""}
+                ${candidateStatus ? `<div class="candidate-actions"><span class="candidate-status-badge ${candidateStatus.className}">${candidateStatus.label}</span></div>` : ""}
               </article>
             `;
           })
@@ -3910,21 +3954,6 @@
         return inviteProgressText(invite);
       }
 
-      function inviteActionButtons(invite, meta) {
-        const viewButton = `<button class="btn secondary" type="button" data-view-invite="${invite.id}">${meta.action}</button>`;
-        const profileButton = `<button class="btn secondary" type="button" data-view-invite="${invite.id}">查看對方訊息</button>`;
-        if (invite.status === "sent") return `${viewButton}${profileButton}`;
-        if (invite.status === "incoming") {
-          return profileButton;
-        }
-        if (invite.status === "confirmed") {
-          return profileButton;
-        }
-        if (invite.status === "done") return profileButton;
-        if (invite.status === "cancelled") return profileButton;
-        return profileButton;
-      }
-
       function normalizeInviteStatus(status) {
         const normalized = String(status || "").trim().toLowerCase();
         if (["accepted", "scheduled", "ready", "confirmed", "已確認", "待見面"].includes(normalized)) return "confirmed";
@@ -3964,11 +3993,28 @@
         return null;
       }
 
+      function dedupeInvitesForDisplay(items) {
+        const statusRank = { confirmed: 5, incoming: 4, sent: 3, done: 2, cancelled: 1 };
+        const unique = new Map();
+        items.forEach((invite) => {
+          const senderId = inviteUserId(invite, ["senderUserId", "sender_user_id", "senderId", "sender_id"]);
+          const receiverId = inviteUserId(invite, ["receiverUserId", "receiver_user_id", "receiverId", "receiver_id"]);
+          const pairKey = senderId && receiverId
+            ? [senderId, receiverId].sort().join("|")
+            : invite.candidateId || invite.id;
+          const current = unique.get(pairKey);
+          const inviteRank = statusRank[invite.status] || 0;
+          const currentRank = current ? statusRank[current.status] || 0 : -1;
+          if (!current || inviteRank >= currentRank) unique.set(pairKey, invite);
+        });
+        return Array.from(unique.values());
+      }
+
       function visibleInvitesForCurrentUser() {
-        return invites
+        return dedupeInvitesForDisplay(invites
           .map(inviteForCurrentUser)
           .filter(Boolean)
-          .filter((invite) => candidates.some((candidate) => candidate.id === invite.candidateId))
+          .filter((invite) => candidates.some((candidate) => candidate.id === invite.candidateId)))
           .filter((invite) => state.inviteFilter === "all" || invite.status === state.inviteFilter);
       }
 
@@ -4005,9 +4051,6 @@
                     <div class="invite-field"><span>目前進度</span><strong>${inviteProgressContent(invite)}</strong></div>
                     <div class="invite-field"><span>邀約時段</span><strong>${inviteTimeText(invite, candidate)}</strong></div>
                     <div class="invite-field"><span>見面地點</span><strong>${invitePlaceText(invite, candidate)}</strong></div>
-                  </div>
-                  <div class="invite-actions">
-                    ${inviteActionButtons(invite, meta)}
                   </div>
                 </div>
               </article>
@@ -4138,7 +4181,7 @@
         renderInviteDetail(inviteId, card || null);
       }
 
-      function acceptInvite(inviteId) {
+      async function acceptInvite(inviteId) {
         const sourceInvite = invites.find((item) => item.id === inviteId);
         const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite || invite.status !== "incoming") return;
@@ -4147,12 +4190,29 @@
           showToast("請先選擇這次見面的時間");
           return;
         }
+        const note = `已確認：${selectedTime}；${sourceInvite.note || invite.note || ""}`;
+        try {
+          await saveInviteToCloud({
+            id: sourceInvite.id || invite.id,
+            inviteId: sourceInvite.id || invite.id,
+            senderUserId: sourceInvite.senderUserId || invite.senderUserId || "",
+            receiverUserId: sourceInvite.receiverUserId || invite.receiverUserId || state.currentUser?.userId || "",
+            status: "confirmed",
+            acceptedTime: selectedTime,
+            note,
+          });
+        } catch (error) {
+          console.warn("邀約確認失敗", error);
+          showToast("邀約確認失敗，請稍後再試");
+          return;
+        }
         sourceInvite.status = "confirmed";
-        sourceInvite.note = `已確認：${selectedTime}；${sourceInvite.note || invite.note || ""}`;
+        sourceInvite.note = note;
         delete state.selectedIncomingTimes[inviteId];
+        await loadSheetAppData(true);
         renderInvites();
         renderInviteDetail(inviteId, document.querySelector(`[data-invite-card="${inviteId}"]`));
-        showToast("已同意邀約，接著確認精確時間地點");
+        showToast("已同意邀約，已進入待見面");
       }
 
       function openCandidateFromInvite(candidateId) {
