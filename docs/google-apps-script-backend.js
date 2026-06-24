@@ -8,6 +8,8 @@ function doGet(event) {
   if (action === "sheets") return jsonResponse(getSheetMeta());
   if (action === "version") return jsonResponse(getVersion());
   if (action === "photo-storage") return jsonResponse(getPhotoStorageMeta());
+  if (action === "publish-seed-photos") return jsonResponse(publishSeedPhotos(event.parameter.token || ""));
+  if (action === "clear-photo-urls") return jsonResponse(clearPhotoUrls(event.parameter.token || ""));
   return jsonResponse({ ok: false, error: "Unknown action" });
 }
 
@@ -58,7 +60,7 @@ function getAppData() {
   );
 
   const photosByUserId = photos.reduce((groups, photo) => {
-    if (!photo.user_id || !photo.photo_url) return groups;
+    if (!photo.user_id || (!photo.file_id && !photo.photo_url)) return groups;
     groups[photo.user_id] = groups[photo.user_id] || [];
     groups[photo.user_id].push(photo);
     return groups;
@@ -107,8 +109,8 @@ function getAppData() {
         meetingLat: place.lat || "",
         meetingLng: place.lng || "",
         interestKeywords: user.interest_keywords,
-        photo: driveImageUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
-        photos: userPhotos.map((photo) => driveImageUrl(photo.file_id, photo.photo_url)).filter(Boolean),
+      photo: driveImageUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
+      photos: userPhotos.map((photo) => driveImageUrl(photo.file_id, photo.photo_url)).filter(Boolean),
       };
     });
 
@@ -227,7 +229,7 @@ function saveUserPhotos({ userId, profile, today }) {
     const values = {
       photo_id: existing && existing.photo_id ? existing.photo_id : `photo-${userId}-${index + 1}`,
       user_id: userId,
-      photo_url: uploaded.photoUrl || photoValue,
+      photo_url: "",
       file_id: uploaded.fileId || (existing && existing.file_id) || "",
       photo_order: String(index + 1),
       is_primary: index === 0 ? "TRUE" : "FALSE",
@@ -259,7 +261,7 @@ function saveUserPhotos({ userId, profile, today }) {
 
 function savePhotoFile(photoValue, { userId, order, gender }) {
   const dataUrlMatch = String(photoValue || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!dataUrlMatch) return { photoUrl: photoValue, fileId: extractDriveFileId(photoValue) };
+  if (!dataUrlMatch) return { photoUrl: "", fileId: extractDriveFileId(photoValue) };
 
   const mimeType = dataUrlMatch[1];
   const extension = mimeType.split("/")[1].replace("jpeg", "jpg");
@@ -270,7 +272,7 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
   const file = DriveApp.getFolderById(folderId).createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return {
-    photoUrl: driveImageUrl(file.getId()),
+    photoUrl: "",
     fileId: file.getId(),
   };
 }
@@ -301,6 +303,55 @@ function getPhotoStorageMeta() {
     boy: folderMeta(BOY_FOLDER_ID),
     girl: folderMeta(GIRL_FOLDER_ID),
   };
+}
+
+function publishSeedPhotos(token) {
+  const expectedToken = PropertiesService.getScriptProperties().getProperty("SEED_MIGRATION_TOKEN");
+  if (!expectedToken || token !== expectedToken) return { ok: false, error: "Invalid migration token" };
+  return {
+    ok: true,
+    girl: publishFolderPhotos(GIRL_FOLDER_ID),
+    boy: publishFolderPhotos(BOY_FOLDER_ID),
+  };
+}
+
+function publishFolderPhotos(folderId) {
+  const folder = DriveApp.getFolderById(folderId);
+  const files = folder.getFiles();
+  const published = [];
+  while (files.hasNext()) {
+    const file = files.next();
+    if (!String(file.getMimeType() || "").startsWith("image/")) continue;
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    published.push({
+      id: file.getId(),
+      name: file.getName(),
+      url: driveImageUrl(file.getId()),
+    });
+  }
+  return published;
+}
+
+function clearPhotoUrls(token) {
+  const expectedToken = PropertiesService.getScriptProperties().getProperty("SEED_MIGRATION_TOKEN");
+  if (!expectedToken || token !== expectedToken) return { ok: false, error: "Invalid migration token" };
+
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("user_photos");
+  if (!sheet) return { ok: false, error: "user_photos sheet not found" };
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0] || [];
+  const photoUrlIndex = headers.indexOf("photo_url");
+  const fileIdIndex = headers.indexOf("file_id");
+  if (photoUrlIndex < 0 || fileIdIndex < 0) return { ok: false, error: "photo_url or file_id column not found" };
+
+  let cleared = 0;
+  for (let rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+    const row = values[rowIndex];
+    if (!row[fileIdIndex] || !row[photoUrlIndex]) continue;
+    sheet.getRange(rowIndex + 1, photoUrlIndex + 1).setValue("");
+    cleared += 1;
+  }
+  return { ok: true, cleared };
 }
 
 function folderMeta(folderId) {
@@ -483,6 +534,6 @@ function ensureUserHeaders(sheet) {
 }
 
 function driveImageUrl(fileId, fallbackUrl) {
-  if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
+  if (fileId) return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
   return fallbackUrl || "";
 }

@@ -25,9 +25,9 @@ function statusToInviteStatus(status) {
   return normalized || "sent";
 }
 
-function normalizePhotoUrl(photoUrl, fileId = "") {
+function normalizePhotoUrl(fileId = "", photoUrl = "") {
   const driveFileId = fileId || extractDriveFileId(photoUrl);
-  if (driveFileId) return `https://drive.google.com/thumbnail?id=${driveFileId}&sz=w1200`;
+  if (driveFileId) return `https://lh3.googleusercontent.com/d/${driveFileId}=w1200`;
   return photoUrl || "";
 }
 
@@ -46,7 +46,7 @@ async function getAppData() {
   const placesById = Object.fromEntries(places.map((place) => [place.place_id, place]));
   const placesByOwnerUserId = Object.fromEntries(places.map((place) => [place.owner_user_id, place]).filter(([userId]) => userId));
   const photosByUserId = photos.reduce((groups, photo) => {
-    if (!photo.user_id || !photo.photo_url) return groups;
+    if (!photo.user_id || (!photo.file_id && !photo.photo_url)) return groups;
     groups[photo.user_id] ||= [];
     groups[photo.user_id].push(photo);
     return groups;
@@ -88,8 +88,8 @@ async function getAppData() {
         meetingLng: place.lng || "",
         openingQuestion: user.opening_question,
         interestKeywords: user.interest_keywords || user.interests || "",
-        photo: normalizePhotoUrl(primaryPhoto.photo_url, primaryPhoto.file_id),
-        photos: userPhotos.map((photo) => normalizePhotoUrl(photo.photo_url, photo.file_id)),
+        photo: normalizePhotoUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
+        photos: userPhotos.map((photo) => normalizePhotoUrl(photo.file_id, photo.photo_url)).filter(Boolean),
       };
     });
 
@@ -241,12 +241,12 @@ async function saveUserPhotos({ userId, profile, today }) {
   for (let index = 0; index < photos.length; index += 1) {
     const existing = existingIndexes[index]?.photo;
     const existingRowIndex = existingIndexes[index]?.index;
-    const photoUrl = photos[index];
-    const fileId = extractDriveFileId(photoUrl) || existing?.file_id || "";
+    const photoValue = photos[index];
+    const fileId = extractDriveFileId(photoValue) || existing?.file_id || "";
     const valuesByHeader = {
       photo_id: existing?.photo_id || `photo-${userId}-${index + 1}`,
       user_id: userId,
-      photo_url: photoUrl,
+      photo_url: "",
       file_id: fileId,
       photo_order: String(index + 1),
       is_primary: index === 0 ? "TRUE" : "FALSE",
