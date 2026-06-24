@@ -679,7 +679,7 @@
 
       .photo-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
       }
 
@@ -1700,8 +1700,6 @@
                         <div class="photo-slot main">主照片</div>
                         <div class="photo-slot">2</div>
                         <div class="photo-slot">3</div>
-                        <div class="photo-slot">4</div>
-                        <div class="photo-slot">5</div>
                       </div>
                       <div>
                         <div class="field">
@@ -1709,7 +1707,7 @@
                           <input id="photoInput" type="file" accept="image/*" multiple />
                         </div>
                         <div class="hint-list" style="margin-top: 14px">
-                          <div>最多可以放 5 張照片，第一張會作為主照片。</div>
+                          <div>最多可以放 3 張照片，第一張會作為主照片。</div>
                           <div>這裡顯示你上傳的原圖，方便確認照片是否正確。</div>
                           <div>出現在交友清單裡時，系統會顯示柔焦版本。</div>
                           <div>原圖未來可供平台審核，不直接公開。</div>
@@ -2799,7 +2797,11 @@
       }
 
       function formatVerifiedMeetingPlace(place) {
-        return `地點：${place.name}`;
+        return [
+          `地點：${place.name}`,
+          `Google Maps：${place.url}`,
+          `座標：${place.lat}, ${place.lng}`,
+        ].join("\n");
       }
 
       function verifyMeetingPlace() {
@@ -2909,7 +2911,7 @@
 
       function loadStoredPhotos(email) {
         try {
-          return JSON.parse(localStorage.getItem(photoStorageKey(email)) || "[]").slice(0, 5);
+          return JSON.parse(localStorage.getItem(photoStorageKey(email)) || "[]").slice(0, 3);
         } catch {
           return [];
         }
@@ -2917,7 +2919,7 @@
 
       function saveStoredPhotos(email) {
         if (!email) return;
-        localStorage.setItem(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 5)));
+        localStorage.setItem(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 3)));
       }
 
       function profileDraftKey(email) {
@@ -2930,7 +2932,7 @@
         updateAvailabilityNoteFromChoices();
         return {
           profile: formToObject(document.getElementById("profileForm")),
-          photos: state.photos.slice(0, 5),
+          photos: state.photos.slice(0, 3),
           savedAt: new Date().toISOString(),
         };
       }
@@ -2976,7 +2978,7 @@
           }
           setInterestKeywords(splitProfileList(profile.interestKeywords || ""));
           setAvailableTimes(splitProfileList(profile.availabilityNote || ""));
-          state.photos = (draft.photos || []).slice(0, 5);
+          state.photos = (draft.photos || []).slice(0, 3);
           renderPhotoGrid();
           updateMapLinks();
           state.profileDirty = true;
@@ -4025,7 +4027,7 @@
           .map(normalizeSheetPhotoPath)
           .filter(Boolean)
           .filter((photo, index, photos) => photos.indexOf(photo) === index)
-          .slice(0, 5);
+          .slice(0, 3);
       }
 
       async function loadSheetAppData(silent = false) {
@@ -4118,6 +4120,7 @@
         if (!verifyMeetingPlace()) return;
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
+        state.profile.photos = state.photos.slice(0, 3);
         saveStoredPhotos(state.profile.email);
         saveProfileDraft();
         let savedToCloud = false;
@@ -4193,7 +4196,7 @@
 
       function renderPhotoGrid() {
         const grid = document.getElementById("photoGrid");
-        grid.innerHTML = Array.from({ length: 5 })
+        grid.innerHTML = Array.from({ length: 3 })
           .map((_, index) => {
             const src = state.photos[index];
             const mainClass = index === 0 ? " main" : "";
@@ -4215,22 +4218,48 @@
         });
       }
 
+      function loadImage(dataUrl) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = dataUrl;
+        });
+      }
+
+      async function compressPhoto(file) {
+        const source = await readFileAsDataUrl(file);
+        const image = await loadImage(source);
+        const maxSide = 1200;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, width, height);
+        const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
+        return canvas.toDataURL(outputType, outputType === "image/jpeg" ? 0.82 : undefined);
+      }
+
       document.getElementById("photoInput").addEventListener("change", async (event) => {
         const files = Array.from(event.target.files || []);
         if (!files.length) return;
-        const remainingSlots = 5 - state.photos.length;
+        const remainingSlots = 3 - state.photos.length;
         const selected = files.slice(0, Math.max(remainingSlots, 0));
         if (!selected.length) {
-          showToast("最多只能放 5 張照片");
+          showToast("最多只能放 3 張照片");
           return;
         }
-        const urls = await Promise.all(selected.map(readFileAsDataUrl));
-        state.photos = state.photos.concat(urls).slice(0, 5);
+        showToast("照片壓縮中...");
+        const urls = await Promise.all(selected.map(compressPhoto));
+        state.photos = state.photos.concat(urls).slice(0, 3);
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
         updateSummary();
         scheduleProfileDraftSave();
-        showToast(files.length > selected.length ? "已匯入前 5 張照片" : "照片已匯入");
+        showToast(files.length > selected.length ? "已匯入前 3 張照片" : "照片已匯入");
         event.target.value = "";
       });
 

@@ -47,6 +47,9 @@ function getAppData() {
   const photos = sheetRows("user_photos").filter((photo) => photo.status !== "deleted");
   const invites = sheetRows("invites");
   const placesById = Object.fromEntries(places.map((place) => [place.place_id, place]));
+  const placesByOwnerUserId = Object.fromEntries(
+    places.map((place) => [place.owner_user_id, place]).filter(([userId]) => userId),
+  );
 
   const photosByUserId = photos.reduce((groups, photo) => {
     if (!photo.user_id || !photo.photo_url) return groups;
@@ -58,7 +61,7 @@ function getAppData() {
   const candidates = users
     .filter((user) => user.status !== "inactive")
     .map((user) => {
-      const place = placesById[user.meeting_place_id] || {};
+      const place = placesById[user.meeting_place_id] || placesByOwnerUserId[user.user_id] || {};
       const userPhotos = (photosByUserId[user.user_id] || []).sort(
         (a, b) => Number(a.photo_order || 99) - Number(b.photo_order || 99),
       );
@@ -122,12 +125,13 @@ function saveUserProfile(profile) {
     ? existing.meeting_place_id
     : `place-${email.replace(/@.*/, "").replace(/[^a-z0-9]+/gi, "-")}`;
   const today = new Date().toISOString().slice(0, 10);
+  const age = calculateAge(profile.birthYear, profile.birthMonth, profile.birthDay);
 
   const values = {
     user_id: userId,
     nickname: profile.nickname || email,
     gender: profile.gender || "",
-    age: profile.birthYear ? String(new Date().getFullYear() - Number(profile.birthYear)) : "",
+    age,
     birth_year: profile.birthYear || "",
     birth_month: profile.birthMonth || "",
     birth_day: profile.birthDay || "",
@@ -159,15 +163,105 @@ function saveUserProfile(profile) {
     profile,
     today,
   });
+  const photoCount = saveUserPhotos({
+    userId,
+    profile,
+    today,
+  });
 
   const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
   if (existing) {
     usersSheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([row]);
-    return { ok: true, created: false, userId };
+    return { ok: true, created: false, userId, photoCount };
   }
 
   usersSheet.appendRow(row);
-  return { ok: true, created: true, userId };
+  return { ok: true, created: true, userId, photoCount };
+}
+
+function calculateAge(birthYear, birthMonth, birthDay) {
+  const year = Number(birthYear);
+  if (!year) return "";
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  const month = Number(birthMonth);
+  const day = Number(birthDay);
+  if (month && day) {
+    const birthdayThisYear = new Date(today.getFullYear(), month - 1, day);
+    if (today < birthdayThisYear) age -= 1;
+  }
+  return String(age);
+}
+
+function saveUserPhotos({ userId, profile, today }) {
+  const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
+  if (!photos.length) return 0;
+
+  const photosSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("user_photos");
+  if (!photosSheet) return 0;
+  const headers = ensurePhotoHeaders(photosSheet);
+  const rows = sheetRows("user_photos");
+  const existingIndexes = rows
+    .map((photo, index) => ({ photo, index }))
+    .filter(({ photo }) => photo.user_id === userId);
+
+  photos.forEach((photoValue, index) => {
+    const existing = existingIndexes[index] && existingIndexes[index].photo;
+    const existingRowIndex = existingIndexes[index] && existingIndexes[index].index;
+    const uploaded = savePhotoFile(photoValue, {
+      userId,
+      order: index + 1,
+      gender: profile.gender,
+    });
+    const values = {
+      photo_id: existing && existing.photo_id ? existing.photo_id : `photo-${userId}-${index + 1}`,
+      user_id: userId,
+      photo_url: uploaded.photoUrl || photoValue,
+      file_id: uploaded.fileId || (existing && existing.file_id) || "",
+      photo_order: String(index + 1),
+      is_primary: index === 0 ? "TRUE" : "FALSE",
+      status: "active",
+      created_at: existing && existing.created_at ? existing.created_at : today,
+      updated_at: today,
+    };
+    const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
+    if (existingRowIndex !== undefined) {
+      photosSheet.getRange(existingRowIndex + 2, 1, 1, headers.length).setValues([row]);
+    } else {
+      photosSheet.appendRow(row);
+    }
+  });
+
+  for (let index = photos.length; index < existingIndexes.length; index += 1) {
+    const existing = existingIndexes[index].photo;
+    const rowIndex = existingIndexes[index].index;
+    const values = Object.assign({}, existing, {
+      status: "deleted",
+      updated_at: today,
+    });
+    const row = headers.map((header) => (values[header] !== undefined ? values[header] : ""));
+    photosSheet.getRange(rowIndex + 2, 1, 1, headers.length).setValues([row]);
+  }
+
+  return photos.length;
+}
+
+function savePhotoFile(photoValue, { userId, order, gender }) {
+  const dataUrlMatch = String(photoValue || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!dataUrlMatch) return { photoUrl: photoValue, fileId: "" };
+
+  const mimeType = dataUrlMatch[1];
+  const extension = mimeType.split("/")[1].replace("jpeg", "jpg");
+  const bytes = Utilities.base64Decode(dataUrlMatch[2]);
+  const fileName = `${userId}-${order}-${Date.now()}.${extension}`;
+  const blob = Utilities.newBlob(bytes, mimeType, fileName);
+  const folderId = String(gender || "").includes("女") ? GIRL_FOLDER_ID : BOY_FOLDER_ID;
+  const file = DriveApp.getFolderById(folderId).createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return {
+    photoUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
+    fileId: file.getId(),
+  };
 }
 
 function saveMeetingPlace({ placeId, userId, profile, today }) {
@@ -237,6 +331,32 @@ function ensureMeetingPlaceHeaders(sheet) {
     sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
     return requiredHeaders;
   }
+  const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
+  if (missingHeaders.length) {
+    sheet.getRange(1, headers.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+  }
+  return headers.concat(missingHeaders);
+}
+
+function ensurePhotoHeaders(sheet) {
+  const requiredHeaders = [
+    "photo_id",
+    "user_id",
+    "photo_url",
+    "file_id",
+    "photo_order",
+    "is_primary",
+    "status",
+    "created_at",
+    "updated_at",
+  ];
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(Boolean);
+  if (!headers.length) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
+    return requiredHeaders;
+  }
+
   const missingHeaders = requiredHeaders.filter((header) => !headers.includes(header));
   if (missingHeaders.length) {
     sheet.getRange(1, headers.length + 1, 1, missingHeaders.length).setValues([missingHeaders]);

@@ -35,9 +35,10 @@ async function getAppData() {
 
   const users = rowsToObjects(usersSheet.values);
   const places = rowsToObjects(placesSheet.values);
-  const photos = rowsToObjects(photosSheet.values);
+  const photos = rowsToObjects(photosSheet.values).filter((photo) => photo.status !== "deleted");
   const inviteRows = rowsToObjects(invitesSheet.values);
   const placesById = Object.fromEntries(places.map((place) => [place.place_id, place]));
+  const placesByOwnerUserId = Object.fromEntries(places.map((place) => [place.owner_user_id, place]).filter(([userId]) => userId));
   const photosByUserId = photos.reduce((groups, photo) => {
     if (!photo.user_id || !photo.photo_url) return groups;
     groups[photo.user_id] ||= [];
@@ -48,7 +49,7 @@ async function getAppData() {
   const candidates = users
     .filter((user) => user.status !== "inactive")
     .map((user) => {
-      const place = placesById[user.meeting_place_id] || {};
+      const place = placesById[user.meeting_place_id] || placesByOwnerUserId[user.user_id] || {};
       const userPhotos = (photosByUserId[user.user_id] || []).sort(
         (a, b) => Number(a.photo_order || 99) - Number(b.photo_order || 99),
       );
@@ -106,6 +107,19 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function calculateAge(birthYear, birthMonth, birthDay, today = new Date()) {
+  const year = Number(birthYear);
+  if (!year) return "";
+  let age = today.getFullYear() - year;
+  const month = Number(birthMonth);
+  const day = Number(birthDay);
+  if (month && day) {
+    const birthdayThisYear = new Date(today.getFullYear(), month - 1, day);
+    if (today < birthdayThisYear) age -= 1;
+  }
+  return String(age);
+}
+
 function slugFromEmail(email) {
   return String(email || "")
     .trim()
@@ -130,6 +144,7 @@ async function createUserFromProfile(profile) {
   const userId = existing?.user_id || `${profile.gender === "女性" ? "girl" : "user"}-${slugFromEmail(email)}-${stamp}`;
   const placeId = existing?.meeting_place_id || `place-${slugFromEmail(email)}-${stamp}`;
   const today = todayString();
+  const age = calculateAge(profile.birthYear, profile.birthMonth, profile.birthDay);
 
   await saveMeetingPlace({
     placeId,
@@ -143,7 +158,7 @@ async function createUserFromProfile(profile) {
     user_id: userId,
     nickname: profile.nickname || email,
     gender: profile.gender || "",
-    age: profile.birthYear ? String(new Date().getFullYear() - Number(profile.birthYear)) : "",
+    age,
     birth_year: profile.birthYear || "",
     birth_month: profile.birthMonth || "",
     birth_day: profile.birthDay || "",
@@ -173,14 +188,15 @@ async function createUserFromProfile(profile) {
   const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
   if (existing) {
     await updateSheetValues(`users!A${existingIndex + 2}:${columnName(headers.length)}${existingIndex + 2}`, [row]);
-    return { created: false, userId };
+    const photoCount = await saveUserPhotos({ userId, profile, today });
+    return { created: false, userId, photoCount };
   }
 
   await appendSheetValues(`users!A:${columnName(headers.length)}`, [row.length ? row : [
     userId,
     profile.nickname || email,
     profile.gender || "",
-    profile.birthYear ? String(new Date().getFullYear() - Number(profile.birthYear)) : "",
+    age,
     profile.city || "",
     profile.district || "",
     email,
@@ -203,14 +219,65 @@ async function createUserFromProfile(profile) {
     "",
   ]]);
 
-  return { created: true, userId };
+  const photoCount = await saveUserPhotos({ userId, profile, today });
+  return { created: true, userId, photoCount };
+}
+
+async function saveUserPhotos({ userId, profile, today }) {
+  const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
+  if (!photos.length) return 0;
+
+  const current = await getSheetValues("user_photos!A1:Z1000");
+  const headers = await ensurePhotoHeaders(current.values?.[0] || []);
+  const rows = rowsToObjects(current.values);
+  const existingIndexes = rows
+    .map((photo, index) => ({ photo, index }))
+    .filter(({ photo }) => photo.user_id === userId);
+
+  for (let index = 0; index < photos.length; index += 1) {
+    const existing = existingIndexes[index]?.photo;
+    const existingRowIndex = existingIndexes[index]?.index;
+    const photoUrl = photos[index];
+    const valuesByHeader = {
+      photo_id: existing?.photo_id || `photo-${userId}-${index + 1}`,
+      user_id: userId,
+      photo_url: photoUrl,
+      file_id: existing?.file_id || "",
+      photo_order: String(index + 1),
+      is_primary: index === 0 ? "TRUE" : "FALSE",
+      status: "active",
+      created_at: existing?.created_at || today,
+      updated_at: today,
+    };
+    const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+    if (existingRowIndex !== undefined) {
+      await updateSheetValues(`user_photos!A${existingRowIndex + 2}:${columnName(headers.length)}${existingRowIndex + 2}`, [row]);
+    } else {
+      await appendSheetValues(`user_photos!A:${columnName(headers.length)}`, [row]);
+    }
+  }
+
+  for (let index = photos.length; index < existingIndexes.length; index += 1) {
+    const { photo, index: rowIndex } = existingIndexes[index];
+    const valuesByHeader = {
+      ...photo,
+      status: "deleted",
+      updated_at: today,
+    };
+    const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
+    await updateSheetValues(`user_photos!A${rowIndex + 2}:${columnName(headers.length)}${rowIndex + 2}`, [row]);
+  }
+
+  return photos.length;
 }
 
 async function saveMeetingPlace({ placeId, userId, profile, today, existingPlaceId }) {
   const current = await getSheetValues("meeting_places!A1:Z1000");
   const headers = await ensureMeetingPlaceHeaders(current.values?.[0] || []);
   const places = rowsToObjects(current.values);
-  const existingIndex = places.findIndex((place) => place.place_id === existingPlaceId || place.place_id === placeId);
+  const existingIndex = places.findIndex(
+    (place) => place.place_id === existingPlaceId || place.place_id === placeId || place.owner_user_id === userId,
+  );
   const existing = existingIndex >= 0 ? places[existingIndex] : null;
   const placeName = profile.meetingPlaceName || firstLineValue(profile.meetingArea, "地點") || profile.meetingArea || "";
   const mapUrl = profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "";
@@ -273,6 +340,28 @@ async function ensureMeetingPlaceHeaders(currentHeaders) {
     : requiredHeaders;
   if (mergedHeaders.length !== headers.length) {
     await updateSheetValues(`meeting_places!A1:${columnName(mergedHeaders.length)}1`, [mergedHeaders]);
+  }
+  return mergedHeaders;
+}
+
+async function ensurePhotoHeaders(currentHeaders) {
+  const requiredHeaders = [
+    "photo_id",
+    "user_id",
+    "photo_url",
+    "file_id",
+    "photo_order",
+    "is_primary",
+    "status",
+    "created_at",
+    "updated_at",
+  ];
+  const headers = currentHeaders.filter(Boolean);
+  const mergedHeaders = headers.length
+    ? headers.concat(requiredHeaders.filter((header) => !headers.includes(header)))
+    : requiredHeaders;
+  if (mergedHeaders.length !== headers.length) {
+    await updateSheetValues(`user_photos!A1:${columnName(mergedHeaders.length)}1`, [mergedHeaders]);
   }
   return mergedHeaders;
 }
@@ -340,7 +429,7 @@ function readRequestBody(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 25_000_000) {
         reject(new Error("Request body too large"));
         req.destroy();
       }
