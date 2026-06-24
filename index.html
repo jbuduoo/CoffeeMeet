@@ -247,8 +247,27 @@
       }
 
       .home-login-form {
-        max-width: 520px;
+        max-width: 940px;
+        grid-template-columns: minmax(260px, 1fr) auto auto auto;
         margin-top: 24px;
+      }
+
+      .quick-login-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .quick-login-button {
+        padding-inline: 12px;
+        white-space: nowrap;
+      }
+
+      .build-time {
+        align-self: center;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
       }
 
       .login-panel {
@@ -1740,6 +1759,11 @@
                       <input id="homeLoginEmail" name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
                     </div>
                     <button class="btn primary" id="homeLoginButton" type="button">開始</button>
+                    <div class="quick-login-buttons">
+                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="jbuduoo@gamil.com">jbuduoo</button>
+                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="girl-01@example.com">girl-01</button>
+                    </div>
+                    <span class="build-time">更新：2026-06-24 20:52</span>
                   </div>
                 </div>
               </div>
@@ -4551,6 +4575,12 @@
           }
         };
         homeLoginButton.addEventListener("click", submitHomeLogin);
+        document.querySelectorAll("[data-quick-login-email]").forEach((button) => {
+          button.addEventListener("click", () => {
+            homeLoginEmail.value = button.dataset.quickLoginEmail || "";
+            submitHomeLogin();
+          });
+        });
         homeLoginEmail.addEventListener("keydown", (event) => {
           if (event.key !== "Enter") return;
           event.preventDefault();
