@@ -270,7 +270,7 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
   const file = DriveApp.getFolderById(folderId).createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return {
-    photoUrl: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
+    photoUrl: driveImageUrl(file.getId()),
     fileId: file.getId(),
   };
 }
@@ -278,7 +278,7 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
 function getVersion() {
   return {
     ok: true,
-    version: "profile-persistence-2026-06-24-4",
+    version: "profile-persistence-2026-06-24-5",
     features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback", "photo-delete-all", "photo-storage-diagnostics", "drive-authorization-helper"],
   };
 }
@@ -330,12 +330,12 @@ function folderMeta(folderId) {
 }
 
 function extractDriveFileId(value) {
-  const text = String(value || "");
-  const ucMatch = text.match(/[?&]id=([^&]+)/);
+  const text = String(value || "").trim();
+  const ucMatch = text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (ucMatch) return ucMatch[1];
-  const fileMatch = text.match(/\/file\/d\/([^/]+)/);
+  const fileMatch = text.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return fileMatch[1];
-  return "";
+  return /^[a-zA-Z0-9_-]{20,}$/.test(text) ? text : "";
 }
 
 function saveMeetingPlace({ placeId, userId, profile, today }) {
@@ -483,6 +483,6 @@ function ensureUserHeaders(sheet) {
 }
 
 function driveImageUrl(fileId, fallbackUrl) {
-  if (fileId) return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200`;
   return fallbackUrl || "";
 }

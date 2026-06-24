@@ -25,6 +25,12 @@ function statusToInviteStatus(status) {
   return normalized || "sent";
 }
 
+function normalizePhotoUrl(photoUrl, fileId = "") {
+  const driveFileId = fileId || extractDriveFileId(photoUrl);
+  if (driveFileId) return `https://drive.google.com/thumbnail?id=${driveFileId}&sz=w1200`;
+  return photoUrl || "";
+}
+
 async function getAppData() {
   const [usersSheet, placesSheet, photosSheet, invitesSheet] = await Promise.all([
     getSheetValues("users!A1:Z1000"),
@@ -82,8 +88,8 @@ async function getAppData() {
         meetingLng: place.lng || "",
         openingQuestion: user.opening_question,
         interestKeywords: user.interest_keywords || user.interests || "",
-        photo: primaryPhoto.photo_url || "",
-        photos: userPhotos.map((photo) => photo.photo_url),
+        photo: normalizePhotoUrl(primaryPhoto.photo_url, primaryPhoto.file_id),
+        photos: userPhotos.map((photo) => normalizePhotoUrl(photo.photo_url, photo.file_id)),
       };
     });
 
@@ -271,12 +277,12 @@ async function saveUserPhotos({ userId, profile, today }) {
 }
 
 function extractDriveFileId(value) {
-  const text = String(value || "");
-  const ucMatch = text.match(/[?&]id=([^&]+)/);
+  const text = String(value || "").trim();
+  const ucMatch = text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (ucMatch) return ucMatch[1];
-  const fileMatch = text.match(/\/file\/d\/([^/]+)/);
+  const fileMatch = text.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (fileMatch) return fileMatch[1];
-  return "";
+  return /^[a-zA-Z0-9_-]{20,}$/.test(text) ? text : "";
 }
 
 async function saveMeetingPlace({ placeId, userId, profile, today, existingPlaceId }) {
