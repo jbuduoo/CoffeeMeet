@@ -71,6 +71,21 @@
         align-items: center;
       }
 
+      .brand-home {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        text-align: left;
+      }
+
+      .brand-home:focus-visible {
+        outline: 2px solid #ffd37a;
+        outline-offset: 4px;
+        border-radius: 8px;
+      }
+
       .brand-mark {
         width: 46px;
         height: 46px;
@@ -252,6 +267,19 @@
         margin-top: 24px;
       }
 
+      .home-login-button {
+        display: grid;
+        justify-items: center;
+        line-height: 1.15;
+        min-width: 108px;
+      }
+
+      .home-login-button small {
+        font-size: 12px;
+        font-weight: 700;
+        opacity: 0.82;
+      }
+
       .quick-login-buttons {
         display: flex;
         gap: 8px;
@@ -300,6 +328,66 @@
         color: var(--muted);
         font-size: 12px;
         line-height: 1.6;
+      }
+
+      .profile-login-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        box-shadow: var(--shadow);
+        padding: 24px;
+        margin-bottom: 18px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .profile-login-title {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 900;
+      }
+
+      .profile-login-copy {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .profile-login-steps {
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+        color: #3d362f;
+        font-weight: 800;
+        list-style: none;
+      }
+
+      .profile-login-card .btn,
+      .digest-login-cta {
+        width: fit-content;
+      }
+
+      .profile-preview-note {
+        border: 1px dashed #c9bda9;
+        border-radius: 8px;
+        background: #fff8e8;
+        color: #7c4a03;
+        font-weight: 800;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+      }
+
+      .profile-form-preview {
+        opacity: 0.5;
+      }
+
+      .photo-login-placeholder {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        background: #fff8e8;
+        color: var(--muted);
+        padding: 12px;
+        font-weight: 800;
       }
 
       .login-form {
@@ -1179,6 +1267,97 @@
         padding: 18px;
       }
 
+      .digest-intro {
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .digest-intro h3 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .digest-intro p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.7;
+      }
+
+      .guest-nearby {
+        display: grid;
+        gap: 12px;
+      }
+
+      .guest-nearby-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        min-height: 74px;
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr) auto;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .guest-nearby-photo {
+        width: 58px;
+        height: 74px;
+        background:
+          radial-gradient(circle at 50% 32%, rgba(255, 234, 206, 0.95) 0 16%, transparent 17%),
+          linear-gradient(135deg, #7f8ea3, #d8c3aa 48%, #53726f);
+        filter: blur(5px);
+        transform: scale(1.08);
+      }
+
+      .guest-nearby-card:nth-child(2) .guest-nearby-photo {
+        background:
+          radial-gradient(circle at 52% 30%, rgba(255, 229, 196, 0.95) 0 15%, transparent 16%),
+          linear-gradient(135deg, #43536b, #c9d0cd 44%, #9d7f61);
+      }
+
+      .guest-nearby-card:nth-child(3) .guest-nearby-photo {
+        background:
+          radial-gradient(circle at 48% 31%, rgba(255, 232, 204, 0.95) 0 16%, transparent 17%),
+          linear-gradient(135deg, #8f6f68, #ece0d0 46%, #52767d);
+      }
+
+      .guest-nearby-card:nth-child(4) .guest-nearby-photo {
+        background:
+          radial-gradient(circle at 50% 30%, rgba(255, 234, 207, 0.95) 0 15%, transparent 16%),
+          linear-gradient(135deg, #5a6276, #d9bf9c 48%, #446f5f);
+      }
+
+      .guest-nearby-name {
+        padding: 0 12px;
+        font-weight: 900;
+      }
+
+      .guest-nearby-distance {
+        padding: 0 14px;
+        color: var(--accent);
+        font-size: 18px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .guest-nearby-cta {
+        border: 1px solid #b8ddd7;
+        border-radius: 8px;
+        background: #f1faf8;
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+        justify-items: start;
+      }
+
+      .guest-nearby-cta strong {
+        font-size: 18px;
+      }
+
       .attention-card {
         border: 1px solid #b8ddd7;
         border-radius: 8px;
@@ -1725,8 +1904,34 @@
       }
 
       @media (max-width: 620px) {
+        body {
+          padding-bottom: calc(76px + env(safe-area-inset-bottom));
+        }
+
+        .sidebar {
+          padding: 16px 12px 10px;
+          gap: 12px;
+        }
+
+        .brand {
+          gap: 10px;
+        }
+
+        .brand-mark {
+          width: 40px;
+          height: 40px;
+        }
+
+        .brand h1 {
+          font-size: 16px;
+        }
+
+        .brand p {
+          font-size: 12px;
+        }
+
         .main {
-          padding: 18px;
+          padding: 14px 10px 18px;
         }
 
         .topbar {
@@ -1757,6 +1962,47 @@
           font-size: 16px;
         }
 
+        .profile-login-card,
+        .digest-intro {
+          padding-inline: 16px;
+        }
+
+        .profile-login-title,
+        .digest-intro h3 {
+          font-size: 22px;
+          line-height: 1.25;
+        }
+
+        .profile-login-card .btn,
+        .digest-login-cta,
+        .home-login-button {
+          max-width: 100%;
+          min-width: 0;
+          white-space: normal;
+        }
+
+        .guest-nearby-card {
+          grid-template-columns: 54px minmax(0, 1fr) auto;
+          min-height: 68px;
+        }
+
+        .guest-nearby-photo {
+          width: 54px;
+          height: 68px;
+        }
+
+        .guest-nearby-name {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .guest-nearby-distance {
+          padding: 0 12px 0 8px;
+          font-size: 16px;
+        }
+
         .availability-grid {
           grid-template-columns: 42px repeat(4, minmax(56px, 1fr));
           max-width: 100%;
@@ -1767,8 +2013,21 @@
           font-size: 11px;
         }
 
-        .form-grid,
         .step-list {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 50;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 6px;
+          padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+          background: rgba(43, 37, 31, 0.96);
+          border-top: 1px solid rgba(255, 255, 255, 0.11);
+          box-shadow: 0 -12px 28px rgba(43, 36, 27, 0.18);
+        }
+
+        .form-grid {
           grid-template-columns: 1fr;
         }
 
@@ -1789,29 +2048,72 @@
         }
 
         .candidate-card {
-          grid-template-columns: 1fr;
+          grid-template-columns: 56px minmax(0, 1fr) auto;
+          min-height: 68px;
+          align-items: center;
+          gap: 0;
         }
 
         .candidate-distance {
           min-height: auto;
-          grid-template-columns: auto auto;
-          justify-content: start;
-          padding: 12px 14px;
+          grid-column: 3;
+          grid-row: 1;
+          justify-items: end;
+          justify-content: end;
+          padding: 0 12px 0 8px;
           border-left: 0;
           border-right: 0;
-          border-top: 1px solid var(--line);
-          border-bottom: 1px solid var(--line);
+          border-top: 0;
+          border-bottom: 0;
+          background: transparent;
+        }
+
+        .candidate-distance strong {
+          font-size: 16px;
+          white-space: nowrap;
+        }
+
+        .candidate-distance span {
+          display: none;
         }
 
         .candidate-photo {
-          width: 100%;
-          height: auto;
-          aspect-ratio: 16 / 9;
+          grid-column: 1;
+          grid-row: 1;
+          width: 56px;
+          height: 68px;
+          aspect-ratio: auto;
+        }
+
+        .candidate-body {
+          grid-column: 2;
+          grid-row: 1;
+          min-width: 0;
+          padding: 10px 8px 10px 12px;
+          gap: 2px;
+        }
+
+        .candidate-body h4 {
+          font-size: 16px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .candidate-meta {
+          display: none;
         }
 
         .candidate-actions {
-          padding-top: 0;
-          justify-items: stretch;
+          display: none;
+        }
+
+        .candidate-card:hover {
+          transform: none;
+        }
+
+        .candidate-card.is-focused {
+          outline-width: 2px;
         }
 
         .invite-card {
@@ -1832,11 +2134,98 @@
         }
 
         .step-button {
-          justify-content: flex-start;
+          min-height: 54px;
+          flex-direction: column;
+          justify-content: center;
+          gap: 3px;
+          padding: 7px 4px;
+          text-align: center;
         }
 
         .step-label {
           display: inline;
+          font-size: 12px;
+          font-weight: 800;
+          line-height: 1.2;
+        }
+      }
+
+      @media (max-width: 380px) {
+        body {
+          padding-bottom: calc(82px + env(safe-area-inset-bottom));
+        }
+
+        .sidebar {
+          padding-inline: 10px;
+        }
+
+        .brand h1 {
+          font-size: 15px;
+        }
+
+        .brand p {
+          font-size: 11px;
+        }
+
+        .main {
+          padding-inline: 8px;
+        }
+
+        .home-hero,
+        .section {
+          padding: 18px 14px;
+        }
+
+        .home-page h3 {
+          font-size: 25px;
+        }
+
+        .profile-login-card {
+          padding: 18px 14px;
+        }
+
+        .profile-login-title,
+        .digest-intro h3 {
+          font-size: 20px;
+        }
+
+        .profile-login-steps,
+        .digest-intro p {
+          font-size: 14px;
+        }
+
+        .guest-nearby-card {
+          grid-template-columns: 48px minmax(0, 1fr) auto;
+          min-height: 62px;
+        }
+
+        .guest-nearby-photo {
+          width: 48px;
+          height: 62px;
+        }
+
+        .guest-nearby-name {
+          padding-inline: 10px 6px;
+          font-size: 14px;
+        }
+
+        .guest-nearby-distance {
+          padding-right: 10px;
+          font-size: 14px;
+        }
+
+        .step-list {
+          gap: 4px;
+          padding-inline: 8px;
+        }
+
+        .step-button {
+          min-height: 58px;
+          padding-inline: 2px;
+        }
+
+        .step-label {
+          font-size: 11px;
         }
       }
     </style>
@@ -1844,26 +2233,26 @@
   <body>
     <div class="app">
       <aside class="sidebar">
-        <div class="brand">
+        <button class="brand brand-home" data-step="home" type="button" aria-label="回首頁">
               <div class="brand-mark">附近</div>
               <div>
               <h1>一杯咖啡的時間</h1>
               <p>用一小時，認識一個人</p>
               </div>
-        </div>
+        </button>
 
         <nav class="step-list" aria-label="MVP steps">
           <button class="step-button active" data-step="home" type="button">
             <span class="step-icon">1</span>
             <span class="step-label">首頁</span>
           </button>
-          <button class="step-button" data-step="profile" type="button">
-            <span class="step-icon">2</span>
-            <span class="step-label">我的資料</span>
-          </button>
           <button class="step-button" data-step="digest" type="button">
-            <span class="step-icon">3</span>
+            <span class="step-icon">2</span>
             <span class="step-label">附近的人</span>
+          </button>
+          <button class="step-button" data-step="profile" type="button">
+            <span class="step-icon">3</span>
+            <span class="step-label">我的資料</span>
           </button>
           <button class="step-button hidden" data-step="emails" type="button">
             <span class="step-icon">5</span>
@@ -1901,7 +2290,10 @@
                     <div class="field">
                       <input id="homeLoginEmail" name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
                     </div>
-                    <button class="btn primary" id="homeLoginButton" type="button">開始</button>
+                    <button class="btn primary home-login-button" id="homeLoginButton" type="button">
+                      <span>立即開始</span>
+                      <small>Email登入</small>
+                    </button>
                     <div class="quick-login-buttons" id="quickLoginButtons"></div>
                     <span class="build-time">更新：2026-06-24 20:52</span>
                   </div>
@@ -1911,6 +2303,17 @@
 
             <section class="section page hidden" id="profilePage">
               <h3>建立個人資料</h3>
+              <div class="profile-login-card hidden" id="profileLoginCard">
+                <p class="profile-login-title">建立你的名片</p>
+                <ul class="profile-login-steps">
+                  <li>上傳照片</li>
+                  <li>填寫基本資料</li>
+                  <li>開始認識附近的人</li>
+                </ul>
+                <button class="btn primary" type="button" data-go="home">建立我的名片</button>
+                <p class="profile-login-copy">登入後即可開始建立資料</p>
+              </div>
+              <div class="profile-preview-note hidden" id="profilePreviewNote">登入後即可建立</div>
               <form id="profileForm">
                 <div class="form-grid">
                   <div class="form-section-title">照片</div>
@@ -1922,10 +2325,11 @@
                         <div class="photo-slot">3</div>
                       </div>
                       <div>
-                        <div class="field">
+                        <div class="field" data-photo-upload-field>
                           <label for="photoInput">匯入照片</label>
                           <input id="photoInput" type="file" accept="image/*" multiple />
                         </div>
+                        <div class="photo-login-placeholder hidden" data-photo-login-placeholder>登入後即可上傳照片</div>
                         <div class="hint-list" style="margin-top: 14px">
                           <div>最多可以放 3 張照片，第一張會作為主照片。</div>
                           <div>這裡顯示你上傳的原圖，方便確認照片是否正確。</div>
@@ -2199,6 +2603,12 @@
 
             <section class="section page hidden flush-section" id="digestPage">
               <div class="detail-panel hidden" id="candidateDetail"></div>
+              <div class="digest-intro">
+                <h3>開始認識附近的人</h3>
+                <p>依距離排序<br />從最近的人開始認識</p>
+                <button class="btn primary digest-login-cta" type="button" data-go="home">開始認識附近的人</button>
+                <p class="digest-login-copy">登入後即可查看完整名單</p>
+              </div>
               <div class="candidate-grid" id="candidateGrid"></div>
             </section>
 
@@ -3060,6 +3470,7 @@
         const subtitle = document.getElementById("pageSubtitle");
         subtitle.textContent = pages[step].subtitle;
         subtitle.classList.toggle("hidden", !pages[step].subtitle);
+        updateProfileAccessState();
         if (step === "digest") renderCandidates();
       }
 
@@ -3390,6 +3801,17 @@
         if (submitButton) submitButton.disabled = isSaving;
       }
 
+      function updateProfileAccessState() {
+        const isLoggedIn = Boolean(state.currentUser);
+        document.getElementById("profileLoginCard")?.classList.toggle("hidden", isLoggedIn);
+        document.getElementById("profilePreviewNote")?.classList.toggle("hidden", isLoggedIn);
+        document.getElementById("profileForm")?.classList.toggle("profile-form-preview", !isLoggedIn);
+        document.querySelector("[data-photo-upload-field]")?.classList.toggle("hidden", !isLoggedIn);
+        document.querySelector("[data-photo-login-placeholder]")?.classList.toggle("hidden", isLoggedIn);
+        document.querySelector(".digest-login-cta")?.classList.toggle("hidden", isLoggedIn);
+        document.querySelector(".digest-login-copy")?.classList.toggle("hidden", isLoggedIn);
+      }
+
       function renderLoginPanel() {
         const panel = document.getElementById("loginPanel");
         if (!panel) return;
@@ -3404,6 +3826,7 @@
           `;
           updateAdminVisibility();
           panel.classList.toggle("hidden", state.currentStep === "home");
+          updateProfileAccessState();
           return;
         }
         panel.classList.add("is-logged-in");
@@ -3417,6 +3840,7 @@
         `;
         updateAdminVisibility();
         panel.classList.toggle("hidden", state.currentStep === "home");
+        updateProfileAccessState();
       }
 
       function logoutCurrentUser() {
@@ -4175,7 +4599,30 @@
         }
         if (!state.currentUser) {
           closeCandidateDetail();
-          grid.innerHTML = `<div class="empty-state">無資料，請用Email登入</div>`;
+          grid.innerHTML = `
+            <div class="guest-nearby">
+              <article class="guest-nearby-card">
+                <div class="guest-nearby-photo" aria-hidden="true"></div>
+                <div class="guest-nearby-name">小雨</div>
+                <div class="guest-nearby-distance">2 km</div>
+              </article>
+              <article class="guest-nearby-card">
+                <div class="guest-nearby-photo" aria-hidden="true"></div>
+                <div class="guest-nearby-name">小安</div>
+                <div class="guest-nearby-distance">3 km</div>
+              </article>
+              <article class="guest-nearby-card">
+                <div class="guest-nearby-photo" aria-hidden="true"></div>
+                <div class="guest-nearby-name">Jenny</div>
+                <div class="guest-nearby-distance">5 km</div>
+              </article>
+              <article class="guest-nearby-card">
+                <div class="guest-nearby-photo" aria-hidden="true"></div>
+                <div class="guest-nearby-name">Mika</div>
+                <div class="guest-nearby-distance">6 km</div>
+              </article>
+            </div>
+          `;
           return;
         }
         const currentCoords = profileCoords(currentUserProfile());
@@ -5071,8 +5518,14 @@
         go("home");
       }
 
-      document.querySelectorAll("[data-step], [data-go]").forEach((button) => {
-        button.addEventListener("click", () => go(button.dataset.step || button.dataset.go));
+      document.querySelectorAll("[data-step]").forEach((button) => {
+        button.addEventListener("click", () => go(button.dataset.step));
+      });
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-go]");
+        if (!button) return;
+        go(button.dataset.go);
       });
 
       document.getElementById("city").addEventListener("change", () => updateDistrictOptions());
