@@ -230,6 +230,12 @@
         font-weight: 800;
       }
 
+      a.coffee-chip:hover,
+      a.coffee-chip:focus-visible {
+        background: #ffe7c7;
+        outline: none;
+      }
+
       section:not(.hero) {
         padding: clamp(72px, 10vw, 118px) clamp(22px, 5vw, 68px);
       }
@@ -445,10 +451,18 @@
       }
 
       .person-card {
+        display: block;
+        color: inherit;
         min-width: 0;
         overflow: hidden;
         scroll-snap-align: start;
         box-shadow: 0 14px 42px rgba(91, 62, 33, 0.08);
+      }
+
+      .person-card:hover,
+      .person-card:focus-visible {
+        transform: translateY(-2px);
+        outline: none;
       }
 
       .person-photo {
@@ -560,30 +574,138 @@
 
       @media (max-width: 560px) {
         .hero {
-          padding: 22px;
+          min-height: auto;
+          padding: 22px 20px 48px;
+          display: block;
+        }
+
+        .brand {
+          margin-bottom: 36px;
         }
 
         .hero h1 {
-          font-size: 42px;
+          font-size: 40px;
+          line-height: 1.12;
         }
 
         .hero-copy {
+          margin-top: 22px;
           font-size: 17px;
+          line-height: 1.75;
         }
 
-        .primary-cta {
+        .cta-row {
+          margin-top: 30px;
+        }
+
+        .primary-cta,
+        .coffee-chip {
           width: 100%;
-          min-height: 62px;
+          min-height: 58px;
           padding: 0 18px;
-          font-size: 21px;
+          font-size: 20px;
+        }
+
+        .cta-note {
+          text-align: center;
+          font-size: 14px;
         }
 
         .phone-wrap {
-          display: none;
+          display: block;
+          margin-top: 40px;
+        }
+
+        .phone {
+          width: min(280px, 82vw);
+          margin: 0 auto;
+        }
+
+        section:not(.hero) {
+          padding: 56px 20px;
+        }
+
+        .section-title {
+          font-size: 30px;
+          margin-bottom: 24px;
+        }
+
+        .story p,
+        .people-subtitle {
+          font-size: 17px;
+          line-height: 1.75;
+        }
+
+        .reason-item {
+          padding: 24px;
+        }
+
+        .reason-icon {
+          font-size: 30px;
+        }
+
+        .reason-item h3 {
+          margin: 16px 0 6px;
+          font-size: 22px;
+        }
+
+        .reason-item p {
+          font-size: 16px;
+        }
+
+        .step {
+          min-height: auto;
+          padding: 22px;
+        }
+
+        .step-number {
+          width: 36px;
+          height: 36px;
+        }
+
+        .step-icon {
+          font-size: 30px;
+        }
+
+        .step-label {
+          font-size: 20px;
+        }
+
+        .people-head {
+          gap: 18px;
+          margin-bottom: 22px;
+        }
+
+        .see-more {
+          width: 100%;
+          min-height: 48px;
+        }
+
+        .people-rail {
+          grid-auto-columns: 78vw;
+          gap: 14px;
+          padding-bottom: 16px;
+        }
+
+        .person-body {
+          padding: 16px;
+        }
+
+        .person-name {
+          font-size: 21px;
+        }
+
+        footer {
+          padding: 36px 20px;
+        }
+
+        .footer-inner {
+          gap: 22px;
         }
 
         .footer-links {
           text-align: left;
+          line-height: 1.9;
         }
       }
     </style>
@@ -600,17 +722,16 @@
           <h1>找對象，<br />不一定要跑很遠。</h1>
           <p class="hero-copy">
             附近的人，一杯咖啡，就能認識。<br />
-            不用一直聊天，不用跑半個城市。<br />
-            找一間公開咖啡店，一小時，認識一個人。
+            公開咖啡店，一小時，先聊聊。
           </p>
 
           <div class="cta-row">
             <a class="primary-cta" href="index.html" aria-label="開始認識附近的人">開始認識附近的人</a>
-            <div class="cta-note">公開咖啡店見面．附近優先排序</div>
+            <div class="cta-note">公開咖啡店．附近優先排序</div>
           </div>
         </div>
 
-        <div class="phone-wrap" aria-hidden="true">
+        <div class="phone-wrap">
           <div class="phone">
             <div class="phone-top">
               <span class="phone-brand"><span>☕</span><span>Coffee Meet</span></span>
@@ -626,19 +747,10 @@
               </div>
               <div class="preview-body">
                 <p class="preview-interest">興趣：散步、咖啡、電影</p>
-                <div class="coffee-chip">☕ 想喝咖啡</div>
+                <a class="coffee-chip" href="index.html">☕ 想喝咖啡</a>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section class="story" aria-labelledby="story-title">
-        <div class="story-inner">
-          <h2 class="section-title" id="story-title">我們都很忙。</h2>
-          <p>有人下班很累，有人有小孩，有人不想為了一次見面跑半個城市。</p>
-          <p>所以 Coffee Meet 從附近開始。</p>
-          <p>不用聊一個月，也不用想太遠。<br />先找一間公開咖啡店，用一小時，認識一個人。</p>
         </div>
       </section>
 
@@ -693,17 +805,6 @@
         </div>
       </section>
 
-      <section class="photo-note" aria-labelledby="photo-title">
-        <div class="photo-note-card">
-          <h2 class="section-title" id="photo-title">為什麼照片不需要太清楚？</h2>
-          <p>
-            我們希望你先認識一個人，<br />
-            不是先評論一張照片。<br />
-            Coffee Meet 更重視距離、聊天感覺，以及是否願意用一杯咖啡的時間見面。
-          </p>
-        </div>
-      </section>
-
       <section class="people" aria-labelledby="people-title">
         <div class="section-inner">
           <div class="people-head">
@@ -714,6 +815,15 @@
             <a class="see-more" href="index.html">查看更多</a>
           </div>
           <div class="people-rail" id="peopleRail" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="story" aria-labelledby="story-title">
+        <div class="story-inner">
+          <h2 class="section-title" id="story-title">我們都很忙。</h2>
+          <p>有人下班很累，有人有小孩，有人不想為了一次見面跑半個城市。</p>
+          <p>所以 Coffee Meet 從附近開始。</p>
+          <p>不用聊一個月，也不用想太遠。<br />先找一間公開咖啡店，用一小時，認識一個人。</p>
         </div>
       </section>
     </main>
@@ -803,7 +913,7 @@
         rail.innerHTML = people
           .map(
             (person) => `
-              <article class="person-card">
+              <a class="person-card" href="index.html" aria-label="前往 Coffee Meet 認識 ${escapeHtml(person.name)}">
                 <div class="person-photo" style="background-image:url('${escapeHtml(person.photo)}')"></div>
                 <div class="person-body">
                   <div class="person-top">
@@ -812,7 +922,7 @@
                   </div>
                   <div class="person-interest">${escapeHtml(person.interest)}</div>
                 </div>
-              </article>
+              </a>
             `,
           )
           .join("");
