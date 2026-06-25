@@ -166,6 +166,8 @@ async function getAppData() {
     receiverUserId: invite.receiver_user_id || "",
     status: statusToInviteStatus(invite.status),
     feedbackScore: invite.feedback_score || "",
+    maleFeedbackScore: invite.male_feedback_score || "",
+    femaleFeedbackScore: invite.female_feedback_score || "",
     createdAt: invite.created_at || "",
     updatedAt: invite.updated_at || "",
     note: stripAddressLines(invite.note) || [
@@ -314,6 +316,10 @@ async function createInvite(invite) {
     : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
   const placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
   const feedbackScore = String(invite.feedbackScore || invite.feedback_score || detailFromNote(note, "問卷分數").replace(/分$/, "") || "").trim();
+  const feedbackGender = String(invite.feedbackGender || invite.feedback_gender || "").trim();
+  const maleFeedbackScore = String(invite.maleFeedbackScore || invite.male_feedback_score || (feedbackGender === "男性" ? feedbackScore : "")).trim();
+  const femaleFeedbackScore = String(invite.femaleFeedbackScore || invite.female_feedback_score || (feedbackGender === "女性" ? feedbackScore : "")).trim();
+  const hasParticipantFeedbackScore = Boolean(maleFeedbackScore || femaleFeedbackScore);
   const suppliedInviteId = String(invite.inviteId || invite.invite_id || invite.id || "").trim();
   const inviteId = suppliedInviteId || `invite-${Date.now().toString(36)}`;
   const rows = rowsToObjects(current.values);
@@ -335,7 +341,9 @@ async function createInvite(invite) {
       ...existing,
       status: requestedStatus,
       note: note || stripAddressLines(requestedStatus === "confirmed" ? `已確認：${acceptedTime}；${existing.note || ""}` : existing.note || ""),
-      feedback_score: feedbackScore || existing.feedback_score || "",
+      feedback_score: hasParticipantFeedbackScore ? existing.feedback_score || "" : feedbackScore || existing.feedback_score || "",
+      male_feedback_score: maleFeedbackScore || existing.male_feedback_score || "",
+      female_feedback_score: femaleFeedbackScore || existing.female_feedback_score || "",
       accepted_at: acceptedTime || existing.accepted_at || "",
       updated_at: today,
     };
@@ -364,7 +372,9 @@ async function createInvite(invite) {
     selected_times: selectedTimes,
     place_name: placeName,
     note: note || `可選時段：${selectedTimes}；地點：${placeName}`,
-    feedback_score: feedbackScore,
+    feedback_score: hasParticipantFeedbackScore ? "" : feedbackScore,
+    male_feedback_score: maleFeedbackScore,
+    female_feedback_score: femaleFeedbackScore,
     created_at: today,
     updated_at: today,
     accepted_at: "",
@@ -585,6 +595,8 @@ async function ensureInviteHeaders(currentHeaders) {
     "place_name",
     "note",
     "feedback_score",
+    "male_feedback_score",
+    "female_feedback_score",
     "created_at",
     "updated_at",
     "accepted_at",

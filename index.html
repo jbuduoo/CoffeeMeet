@@ -1865,10 +1865,6 @@
             <span class="step-icon">3</span>
             <span class="step-label">附近的人</span>
           </button>
-          <button class="step-button hidden" data-step="invites" type="button">
-            <span class="step-icon">4</span>
-            <span class="step-label">我的邀約</span>
-          </button>
           <button class="step-button hidden" data-step="emails" type="button">
             <span class="step-icon">5</span>
             <span class="step-label">Email 範本</span>
@@ -2418,7 +2414,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvmV837MKEUsCGjkCtlNUwS-zylw79azLqvSE_T0N6W5hWFp1S35sDmB-a4T1rR2G3rg/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySM3odECWUJTxs5XwLkMK1sfmKgx4ZcOrtVZlvcNPqhI5AFYin-L_e68-3GXW09aPZvg/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -2454,34 +2450,6 @@
         console.log(`[CoffeeMeet invite] ${label}`, payload);
         window.coffeeMeetInviteLogs = window.coffeeMeetInviteLogs || [];
         window.coffeeMeetInviteLogs.unshift({ time: new Date().toLocaleTimeString(), label, payload });
-        if (!isAdminUser()) {
-          updateDebugPanelVisibility();
-          return;
-        }
-        let panel = document.getElementById("inviteDebugPanel");
-        if (!panel) {
-          panel = document.createElement("pre");
-          panel.id = "inviteDebugPanel";
-          panel.style.cssText = [
-            "background:rgba(20,20,20,.88)",
-            "border-radius:8px",
-            "box-sizing:border-box",
-            "color:#fff",
-            "font:12px/1.45 monospace",
-            "margin:16px auto",
-            "max-height:360px",
-            "max-width:min(980px, calc(100vw - 24px))",
-            "overflow:auto",
-            "padding:10px",
-            "position:static",
-            "user-select:text",
-            "white-space:pre-wrap",
-          ].join(";");
-          document.body.appendChild(panel);
-        }
-        const line = `${new Date().toLocaleTimeString()} ${label}\n${JSON.stringify(payload, null, 2)}`;
-        panel.textContent = `${line}\n\n${panel.textContent}`.slice(0, 12000);
-        updateDebugPanelVisibility();
       }
       const state = {
         profile: {},
@@ -3072,15 +3040,16 @@
       };
 
       function go(step) {
+        if (step === "invites") step = "digest";
         if (!pages[step]) step = "home";
-        if ((step === "invites" || step === "emails") && !isAdminUser()) step = "home";
+        if (step === "emails" && !isAdminUser()) step = "home";
         state.currentStep = step;
         Object.entries(pages).forEach(([key, page]) => {
           page.el.classList.toggle("hidden", key !== step);
         });
         document.querySelectorAll(".step-button").forEach((button) => {
           button.classList.toggle("active", button.dataset.step === step);
-          if (button.dataset.step === "invites" || button.dataset.step === "emails") {
+          if (button.dataset.step === "emails") {
             button.classList.toggle("hidden", !isAdminUser());
           }
         });
@@ -3091,7 +3060,6 @@
         const subtitle = document.getElementById("pageSubtitle");
         subtitle.textContent = pages[step].subtitle;
         subtitle.classList.toggle("hidden", !pages[step].subtitle);
-        if (step === "invites") renderInvites();
         if (step === "digest") renderCandidates();
       }
 
@@ -3460,7 +3428,6 @@
         renderCandidates();
         renderInvites();
         updateAdminVisibility();
-        updateDebugPanelVisibility();
         go("home");
         showToast("已登出");
       }
@@ -3475,21 +3442,13 @@
         return Boolean(state.currentUser && isAdminEmail(state.currentUser.email));
       }
 
-      function updateDebugPanelVisibility() {
-        const panel = document.getElementById("inviteDebugPanel");
-        if (!panel) return;
-        panel.classList.toggle("hidden", !isAdminUser());
-      }
-
       function updateAdminVisibility() {
-        document.querySelectorAll('[data-step="invites"], [data-step="emails"]').forEach((button) => {
+        document.querySelectorAll('[data-step="emails"]').forEach((button) => {
           button.classList.toggle("hidden", !isAdminUser());
         });
-        updateDebugPanelVisibility();
         if (
           !isAdminUser() &&
-          (!document.getElementById("invitesPage").classList.contains("hidden") ||
-            !document.getElementById("emailsPage").classList.contains("hidden"))
+          !document.getElementById("emailsPage").classList.contains("hidden")
         ) {
           go("home");
         }
@@ -4194,9 +4153,10 @@
           cancelled: "已取消",
         };
         const meta = inviteStatusMeta[related.status] || inviteStatusMeta.sent;
+        const className = related.status === "done" && !feedbackScoreFromInvite(related) ? "status-active" : meta.className;
         return {
           label: labels[related.status] || meta.label,
-          className: meta.className || "status-sent",
+          className: className || "status-sent",
         };
       }
 
@@ -4273,6 +4233,21 @@
       }
 
       function feedbackScoreFromInvite(invite) {
+        const gender = normalizeGender(state.currentUser?.gender);
+        const hasGenderScores =
+          invite?.maleFeedbackScore ||
+          invite?.male_feedback_score ||
+          invite?.femaleFeedbackScore ||
+          invite?.female_feedback_score;
+        if (gender === "男性") {
+          const maleScore = invite?.maleFeedbackScore || invite?.male_feedback_score;
+          if (maleScore) return String(maleScore).trim();
+        }
+        if (gender === "女性") {
+          const femaleScore = invite?.femaleFeedbackScore || invite?.female_feedback_score;
+          if (femaleScore) return String(femaleScore).trim();
+        }
+        if (hasGenderScores) return "";
         if (invite?.feedbackScore || invite?.feedback_score) return String(invite.feedbackScore || invite.feedback_score).trim();
         const match = String(invite?.note || "").match(/問卷分數：\s*(\d+)\s*分?/);
         return match ? match[1] : "";
@@ -4282,6 +4257,7 @@
         const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
         const score = feedbackScoreFromInvite(invite);
         if (invite.status === "done" && score) return `${score} ${meta.label}`;
+        if (invite.status === "done") return "待完成";
         return meta.label;
       }
 
@@ -4343,7 +4319,7 @@
           sent: "已送出邀約，等待對方回覆。對方接受前先不討論時間地點。",
           incoming: "對方邀請你喝咖啡。你可以同意，也可以婉拒；這 24 小時內其他人不能再邀約你。",
           confirmed: "對方已經答應，時間地點都已確認；見面前仍可取消。",
-          done: score ? `${score} 已完成` : "已完成見面。",
+          done: score ? `${score} 已完成` : "對方已完成見面紀錄，請按完成填寫你的分數。",
           cancelled: "這次邀約已取消，保留紀錄方便回顧。",
         };
         return messages[invite.status] || "";
@@ -4456,6 +4432,7 @@
             const candidate = candidates.find((item) => item.id === invite.candidateId);
             if (!candidate) return "";
             const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
+            const statusClassName = invite.status === "done" && !feedbackScoreFromInvite(invite) ? "status-active" : meta.className;
             return `
               <article class="invite-card" data-invite-card="${invite.id}">
                 <div class="invite-thumb">
@@ -4463,7 +4440,7 @@
                 </div>
                 <div class="invite-content">
                   <div class="invite-main">
-                    <h4>${candidate.name}<span class="status-label ${meta.className}">（${inviteStatusLabel(invite)}）</span></h4>
+                    <h4>${candidate.name}<span class="status-label ${statusClassName}">（${inviteStatusLabel(invite)}）</span></h4>
                   </div>
                   <div class="invite-row">
                     <div class="invite-field"><span>目前進度</span><strong>${inviteProgressContent(invite)}</strong></div>
@@ -4487,11 +4464,13 @@
         const relatedInvite = candidateInviteForCurrentUser(candidate.id);
         const inviteDisabled = ["sent", "incoming", "confirmed", "done"].includes(relatedInvite?.status);
         const inviteLabel = inviteDisabled ? "已進入邀約流程" : "一起喝杯咖啡";
+        const currentUserFeedbackScore = relatedInvite ? feedbackScoreFromInvite(relatedInvite) : "";
+        const canCompleteFeedback = relatedInvite && ["confirmed", "done"].includes(relatedInvite.status) && !currentUserFeedbackScore;
         const doneNote =
           relatedInvite?.status === "done"
             ? `<div class="email-note">
                 <strong>${inviteStatusLabel(relatedInvite)}</strong><br />
-                這次咖啡見面已完成，保留紀錄即可。
+                ${currentUserFeedbackScore ? "這次咖啡見面已完成，保留紀錄即可。" : "對方已完成見面紀錄，你也可以按完成填寫自己的分數。"}
               </div>`
             : "";
         const cancelledNote =
@@ -4538,9 +4517,9 @@
               </div>`
             : "";
         const confirmedActions =
-          relatedInvite?.status === "confirmed"
+          canCompleteFeedback
             ? `<button class="btn primary" type="button" data-complete-invite="${relatedInvite.id}">完成</button>
-               <button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">取消</button>`
+               ${relatedInvite.status === "confirmed" ? `<button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">取消</button>` : ""}`
             : "";
         const sentActions =
           relatedInvite?.status === "sent"
@@ -4771,7 +4750,11 @@
         const inviteId = state.pendingFeedbackInviteId;
         const sourceInvite = invites.find((item) => item.id === inviteId);
         const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
-        if (!invite || invite.status !== "confirmed") return;
+        const canSubmitFeedback = invite && ["confirmed", "done"].includes(invite.status) && !feedbackScoreFromInvite(invite);
+        if (!canSubmitFeedback) {
+          showToast(invite && feedbackScoreFromInvite(invite) ? "你已經完成這份問卷" : "目前不能送出問卷");
+          return;
+        }
         const answers = feedbackAnswers();
         if (answers.some((answer) => !answer)) {
           showToast("請完成 5 題問卷");
@@ -4785,17 +4768,20 @@
             return `${index + 1}. ${question.label}：${answer.label}`;
           })
           .join("；");
-        const note = `見面已完成；問卷分數：${score}分；${answerSummary}；6. 安全提醒：${safetyNote}`;
+        const note = `見面已完成；個人分數：${score}分；${answerSummary}；6. 安全提醒：${safetyNote}`;
         const cloudInviteId = sourceInvite.inviteId || sourceInvite.invite_id || sourceInvite.id || invite.id;
         setSaving(true, "\u9001\u51fa\u554f\u5377\u4e2d", "\u6b63\u5728\u66f4\u65b0\u898b\u9762\u7d50\u679c\uff0c\u8acb\u7a0d\u5019\u3002");
         try {
+          const feedbackGender = normalizeGender(state.currentUser?.gender);
           await saveInviteToCloud({
             id: cloudInviteId,
             inviteId: cloudInviteId,
             senderUserId: sourceInvite.senderUserId || invite.senderUserId || "",
             receiverUserId: sourceInvite.receiverUserId || invite.receiverUserId || "",
             status: "done",
-            feedbackScore: score,
+            feedbackGender,
+            maleFeedbackScore: feedbackGender === "男性" ? score : "",
+            femaleFeedbackScore: feedbackGender === "女性" ? score : "",
             note,
           });
         } catch (error) {
@@ -4805,9 +4791,11 @@
           return;
         }
         sourceInvite.status = "done";
-        sourceInvite.feedbackScore = score;
+        if (normalizeGender(state.currentUser?.gender) === "男性") sourceInvite.maleFeedbackScore = score;
+        if (normalizeGender(state.currentUser?.gender) === "女性") sourceInvite.femaleFeedbackScore = score;
         sourceInvite.note = note;
         closeFeedbackModal();
+        await loadSheetAppData(true);
         refreshInviteViews(inviteId, invite.candidateId);
         setSaving(false);
         showToast(`已完成，分數 ${score} 分`);
@@ -4892,6 +4880,8 @@
           invite.status === "done"
             ? `<div class="email-note"><strong>見面後問卷</strong><br />是否如約見面、聊天感受、是否願意再見面，以及有沒有安全疑慮。</div>`
             : "";
+        const currentUserFeedbackScore = feedbackScoreFromInvite(invite);
+        const canCompleteFeedback = ["confirmed", "done"].includes(invite.status) && !currentUserFeedbackScore;
         const cancelledNote =
           invite.status === "cancelled"
             ? `<div class="email-note">已取消的邀約保留紀錄即可，不需要再寄提醒信。之後可回到交友清單重新選擇。</div>`
@@ -4946,10 +4936,11 @@
                      }
                    </div>
                    ${
-                     ["incoming", "confirmed"].includes(invite.status)
+                     ["incoming", "confirmed"].includes(invite.status) || canCompleteFeedback
                        ? `<div class="email-actions">
                             ${invite.status === "incoming" ? `<button class="btn primary" type="button" data-accept-invite="${invite.id}">同意邀約</button>` : ""}
-                            <button class="btn secondary" type="button" data-cancel-invite="${invite.id}">${invite.status === "incoming" ? "婉拒邀約" : "取消邀約"}</button>
+                            ${canCompleteFeedback ? `<button class="btn primary" type="button" data-complete-invite="${invite.id}">完成</button>` : ""}
+                            ${["incoming", "confirmed"].includes(invite.status) ? `<button class="btn secondary" type="button" data-cancel-invite="${invite.id}">${invite.status === "incoming" ? "婉拒邀約" : "取消邀約"}</button>` : ""}
                           </div>`
                        : ""
                    }
@@ -5288,13 +5279,6 @@
         event.returnValue = "你有尚未儲存的修改，確定要離開嗎？";
       });
 
-      window.addEventListener("keydown", (event) => {
-        if (event.key.toLowerCase() !== "d" || event.altKey || event.ctrlKey || event.metaKey) return;
-        if (!isAdminUser()) return;
-        const panel = document.getElementById("inviteDebugPanel");
-        if (panel) panel.style.display = panel.style.display === "none" ? "block" : "none";
-      });
-
       document.getElementById("candidateGrid").addEventListener("click", (event) => {
         const button = event.target.closest("[data-invite]");
         if (button) {
@@ -5495,9 +5479,18 @@
         if (cancelButton) {
           logInviteDebug("invite detail cancel click", { inviteId: cancelButton.dataset.cancelInvite });
           cancelInvite(cancelButton.dataset.cancelInvite);
+          return;
         }
         const acceptButton = event.target.closest("[data-accept-invite]");
-        if (acceptButton) acceptInvite(acceptButton.dataset.acceptInvite);
+        if (acceptButton) {
+          acceptInvite(acceptButton.dataset.acceptInvite);
+          return;
+        }
+        const completeButton = event.target.closest("[data-complete-invite]");
+        if (completeButton) {
+          openFeedbackModal(completeButton.dataset.completeInvite);
+          return;
+        }
         const viewButton = event.target.closest("[data-view-invite]");
         if (viewButton) renderInviteDetail(viewButton.dataset.viewInvite);
         const candidateButton = event.target.closest("[data-view-candidate]");
