@@ -45,12 +45,12 @@
       }
 
       .hero {
-        min-height: 100vh;
+        min-height: 92vh;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
         align-items: center;
         gap: clamp(32px, 7vw, 96px);
-        padding: clamp(28px, 5vw, 68px);
+        padding: clamp(24px, 4vw, 48px) clamp(28px, 5vw, 68px);
         overflow: hidden;
       }
 
@@ -58,7 +58,7 @@
         display: inline-flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: clamp(44px, 8vh, 88px);
+        margin-bottom: clamp(32px, 6vh, 64px);
         font-size: 20px;
         font-weight: 800;
       }
@@ -133,7 +133,7 @@
       }
 
       .phone {
-        width: min(380px, 86vw);
+        width: min(290px, 86vw);
         aspect-ratio: 0.52;
         border: 12px solid #191716;
         border-radius: 44px;
@@ -160,47 +160,61 @@
       }
 
       .profile-preview {
-        margin-top: 38px;
+        margin-top: 34px;
         border: 1px solid var(--line);
-        border-radius: 22px;
+        border-radius: 20px;
         background: var(--paper);
         overflow: hidden;
+        box-shadow: 0 18px 46px rgba(91, 62, 33, 0.1);
       }
 
-      .preview-photo {
-        min-height: 245px;
-        background:
-          linear-gradient(180deg, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, 0.46) 100%),
-          url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center/cover;
-        display: flex;
-        align-items: flex-end;
+      .preview-card-head {
+        min-height: 176px;
+        display: grid;
+        align-content: end;
+        gap: 12px;
         padding: 20px;
-        color: #fff;
+        background:
+          linear-gradient(180deg, rgba(255, 248, 243, 0.42), rgba(154, 79, 5, 0.28)),
+          url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center 36%/cover;
+      }
+
+      .preview-distance {
+        width: fit-content;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--coffee-dark);
+        font-size: 13px;
+        font-weight: 800;
       }
 
       .preview-name {
-        font-size: 34px;
-        line-height: 1;
+        font-size: 28px;
+        line-height: 1.1;
         font-weight: 800;
+        color: #fff;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.32);
       }
 
       .preview-meta {
         margin-top: 8px;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 700;
-        opacity: 0.92;
+        color: #fff;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.32);
       }
 
       .preview-body {
-        padding: 18px 20px 22px;
+        padding: 20px;
       }
 
-      .distance {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--coffee-dark);
-        font-weight: 800;
+      .preview-interest {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.7;
+        font-weight: 700;
       }
 
       .coffee-chip {
@@ -231,6 +245,29 @@
         line-height: 1.16;
         font-weight: 800;
         letter-spacing: 0;
+      }
+
+      .story {
+        background: var(--paper);
+        text-align: center;
+      }
+
+      .story-inner {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+
+      .story p,
+      .photo-note p,
+      .people-subtitle {
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 21px);
+        line-height: 1.8;
+        font-weight: 500;
+      }
+
+      .story p {
+        margin: 0 auto 18px;
       }
 
       .reasons {
@@ -283,6 +320,7 @@
       }
 
       .step {
+        position: relative;
         min-height: 180px;
         display: grid;
         place-items: center;
@@ -292,6 +330,27 @@
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.58);
         text-align: center;
+      }
+
+      @media (min-width: 861px) {
+        .step:not(:last-child)::after {
+          content: "→";
+          position: absolute;
+          top: 50%;
+          right: -24px;
+          z-index: 2;
+          width: 32px;
+          height: 32px;
+          display: grid;
+          place-items: center;
+          border-radius: 50%;
+          background: var(--paper);
+          color: var(--coffee-dark);
+          border: 1px solid rgba(154, 79, 5, 0.18);
+          font-size: 22px;
+          font-weight: 800;
+          transform: translateY(-50%);
+        }
       }
 
       .step-number {
@@ -318,12 +377,43 @@
         background: var(--cream);
       }
 
+      .photo-note {
+        background: #fff8f3;
+      }
+
+      .photo-note-card {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: clamp(34px, 6vw, 56px);
+        border: 1px solid rgba(154, 79, 5, 0.12);
+        border-radius: 8px;
+        background: #fff3e8;
+        text-align: center;
+      }
+
+      .photo-note .section-title {
+        margin-bottom: 22px;
+      }
+
+      .photo-note p {
+        margin: 0;
+      }
+
       .people-head {
         display: flex;
         align-items: end;
         justify-content: space-between;
         gap: 20px;
         margin-bottom: 26px;
+      }
+
+      .people-head .people-title-wrap .section-title {
+        margin-bottom: 10px;
+      }
+
+      .people-subtitle {
+        margin: 0;
+        max-width: 620px;
       }
 
       .people-head .section-title {
@@ -396,7 +486,7 @@
       }
 
       footer {
-        padding: 36px clamp(22px, 5vw, 68px);
+        padding: 42px clamp(22px, 5vw, 68px);
         border-top: 1px solid var(--line);
         background: var(--paper);
       }
@@ -413,6 +503,20 @@
         font-weight: 700;
       }
 
+      .footer-brand {
+        color: var(--ink);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .footer-copy {
+        margin-top: 8px;
+      }
+
+      .footer-links {
+        text-align: right;
+      }
+
       @media (min-width: 1040px) {
         .people-rail {
           grid-auto-columns: calc((100% - 54px) / 4);
@@ -421,7 +525,7 @@
 
       @media (max-width: 860px) {
         .hero {
-          min-height: 100vh;
+          min-height: 92vh;
           grid-template-columns: 1fr;
           align-content: center;
           gap: 28px;
@@ -438,7 +542,7 @@
           padding: 20px 16px;
         }
 
-        .preview-photo {
+        .preview-card-head {
           min-height: 180px;
         }
 
@@ -477,6 +581,10 @@
         .phone-wrap {
           display: none;
         }
+
+        .footer-links {
+          text-align: left;
+        }
       }
     </style>
   </head>
@@ -489,12 +597,16 @@
             <span>Coffee Meet</span>
           </a>
 
-          <h1>附近的人，<br />一杯咖啡，<br />就能認識。</h1>
-          <p class="hero-copy">找一間公開咖啡店， 一小時， 認識一個人。</p>
+          <h1>找對象，<br />不一定要跑很遠。</h1>
+          <p class="hero-copy">
+            附近的人，一杯咖啡，就能認識。<br />
+            不用一直聊天，不用跑半個城市。<br />
+            找一間公開咖啡店，一小時，認識一個人。
+          </p>
 
           <div class="cta-row">
             <a class="primary-cta" href="index.html" aria-label="開始認識附近的人">開始認識附近的人</a>
-            <div class="cta-note">免費加入．30 秒完成</div>
+            <div class="cta-note">公開咖啡店見面．附近優先排序</div>
           </div>
         </div>
 
@@ -505,39 +617,49 @@
               <span>今天</span>
             </div>
             <div class="profile-preview">
-              <div class="preview-photo">
+              <div class="preview-card-head">
+                <div class="preview-distance">距離 1.2 km</div>
                 <div>
                   <div class="preview-name">小芸</div>
                   <div class="preview-meta">34 歲・今天可以聊天</div>
                 </div>
               </div>
               <div class="preview-body">
-                <div class="distance">📍 距離 1.2 km</div>
-                <div class="coffee-chip">☕ 喝咖啡</div>
+                <p class="preview-interest">興趣：散步、咖啡、電影</p>
+                <div class="coffee-chip">☕ 想喝咖啡</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      <section class="story" aria-labelledby="story-title">
+        <div class="story-inner">
+          <h2 class="section-title" id="story-title">我們都很忙。</h2>
+          <p>有人下班很累，有人有小孩，有人不想為了一次見面跑半個城市。</p>
+          <p>所以 Coffee Meet 從附近開始。</p>
+          <p>不用聊一個月，也不用想太遠。<br />先找一間公開咖啡店，用一小時，認識一個人。</p>
+        </div>
+      </section>
+
       <section class="reasons" aria-labelledby="why-title">
         <div class="section-inner">
-          <h2 class="section-title" id="why-title">為什麼不是一般交友網站？</h2>
+          <h2 class="section-title" id="why-title">為什麼從附近開始？</h2>
           <div class="reason-grid">
             <article class="reason-item">
               <div class="reason-icon" aria-hidden="true">📍</div>
               <h3>附近的人</h3>
-              <p>不用跨縣市。</p>
+              <p>不用為了一次見面，跑一個小時。</p>
             </article>
             <article class="reason-item">
               <div class="reason-icon" aria-hidden="true">☕</div>
               <h3>公開咖啡店</h3>
-              <p>第一次見面更安心。</p>
+              <p>第一次見面，更自在、更安心。</p>
             </article>
             <article class="reason-item">
               <div class="reason-icon" aria-hidden="true">⏰</div>
               <h3>一小時</h3>
-              <p>沒有壓力。</p>
+              <p>沒有壓力，聊得來再約下一次。</p>
             </article>
           </div>
         </div>
@@ -571,10 +693,24 @@
         </div>
       </section>
 
+      <section class="photo-note" aria-labelledby="photo-title">
+        <div class="photo-note-card">
+          <h2 class="section-title" id="photo-title">為什麼照片不需要太清楚？</h2>
+          <p>
+            我們希望你先認識一個人，<br />
+            不是先評論一張照片。<br />
+            Coffee Meet 更重視距離、聊天感覺，以及是否願意用一杯咖啡的時間見面。
+          </p>
+        </div>
+      </section>
+
       <section class="people" aria-labelledby="people-title">
         <div class="section-inner">
           <div class="people-head">
-            <h2 class="section-title" id="people-title">附近的人</h2>
+            <div class="people-title-wrap">
+              <h2 class="section-title" id="people-title">附近的人</h2>
+              <p class="people-subtitle">先看看誰離你比較近，再決定要不要聊幾句。</p>
+            </div>
             <a class="see-more" href="index.html">查看更多</a>
           </div>
           <div class="people-rail" id="peopleRail" aria-live="polite"></div>
@@ -584,8 +720,11 @@
 
     <footer>
       <div class="footer-inner">
-        <span>☕ Coffee Meet</span>
-        <span>附近的人，一杯咖啡，就能認識。</span>
+        <div>
+          <div class="footer-brand">☕ Coffee Meet</div>
+          <div class="footer-copy">附近的人，一杯咖啡，就能認識。</div>
+        </div>
+        <div class="footer-links">附近的人｜公開咖啡店｜一小時認識｜關於我們｜隱私權</div>
       </div>
     </footer>
 
