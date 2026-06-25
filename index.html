@@ -407,6 +407,22 @@
         font-weight: 700;
       }
 
+      .place-debug {
+        display: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border: 1px solid rgba(180, 35, 24, 0.25);
+        border-radius: 6px;
+        background: #fff7f5;
+        color: #7a271a;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+        padding: 8px;
+      }
+
+      .place-debug.visible {
+        display: block;
+      }
+
       .place-verify-button.verified {
         border-color: #16803c;
         background: #16803c;
@@ -1759,11 +1775,11 @@
             <span class="step-icon">3</span>
             <span class="step-label">附近的人</span>
           </button>
-          <button class="step-button" data-step="invites" type="button">
+          <button class="step-button hidden" data-step="invites" type="button">
             <span class="step-icon">4</span>
             <span class="step-label">我的邀約</span>
           </button>
-          <button class="step-button" data-step="emails" type="button">
+          <button class="step-button hidden" data-step="emails" type="button">
             <span class="step-icon">5</span>
             <span class="step-label">Email 範本</span>
           </button>
@@ -1800,10 +1816,7 @@
                       <input id="homeLoginEmail" name="email" type="email" autocomplete="email" aria-label="Email" placeholder="請輸入Email登入或建立資料" required />
                     </div>
                     <button class="btn primary" id="homeLoginButton" type="button">開始</button>
-                    <div class="quick-login-buttons">
-                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="jbuduoo@gmail.com">jbuduoo</button>
-                      <button class="btn secondary quick-login-button" type="button" data-quick-login-email="girl-01@example.com">girl-01</button>
-                    </div>
+                    <div class="quick-login-buttons" id="quickLoginButtons"></div>
                     <span class="build-time">更新：2026-06-24 20:52</span>
                   </div>
                 </div>
@@ -2005,10 +2018,12 @@
                         <button class="btn secondary place-verify-button" id="verifyMeetingPlace" type="button">驗證</button>
                       </div>
                       <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
+                      <input id="meetingPlaceAddress" name="meetingPlaceAddress" type="hidden" />
                       <input id="meetingPlaceUrl" name="meetingPlaceUrl" type="hidden" />
                       <input id="meetingLat" name="meetingLat" type="hidden" />
                       <input id="meetingLng" name="meetingLng" type="hidden" />
                       <div class="place-status" id="meetingPlaceStatus">請貼上完整 Google Maps 地點網址後按「驗證」。</div>
+                      <pre class="place-debug" id="meetingPlaceDebug" aria-live="polite"></pre>
                       <div class="map-shortcuts">
                         <span class="map-shortcuts-label">位置僅限：</span>
                         <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
@@ -2287,6 +2302,18 @@
         </div>
       </div>
     </div>
+    <div class="invite-modal-backdrop hidden" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+      <div class="invite-modal">
+        <h3 id="feedbackModalTitle">完成見面問卷</h3>
+        <div class="invite-modal-tip">用 1 到 5 分簡單記錄這次咖啡見面的感受，送出後會標記為已完成。</div>
+        <div class="invite-modal-fields" id="feedbackQuestions"></div>
+        <div class="invite-modal-tip" id="feedbackScorePreview">目前分數：0 / 25</div>
+        <div class="invite-modal-actions">
+          <button class="btn primary" type="button" id="submitFeedbackButton">送出問卷</button>
+          <button class="btn secondary" type="button" data-close-feedback-modal>取消</button>
+        </div>
+      </div>
+    </div>
 <div class="toast" id="toast">已儲存</div>
 <div class="saving-backdrop hidden" id="savingOverlay" role="alertdialog" aria-modal="true" aria-live="assertive" aria-labelledby="savingTitle">
   <div class="saving-dialog">
@@ -2297,9 +2324,13 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGeeFQICQ4St2YtiiFuHhoQ1bps_vzf7nGPqCyjeQIn7z0oG91JjRpQAAsq0fXRRARYA/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-GzVI34dpZxjyk-Pb9eBjzp-itQ3n7bVx4EHOT1LrBywfEg3MqMELMxgb2K-z_p8T-w/exec";
 
       function apiEndpoint(action) {
+        if (action === "places-verify" && GOOGLE_APPS_SCRIPT_URL) {
+          const baseUrl = GOOGLE_APPS_SCRIPT_URL.replace(/\/$/, "");
+          return `${baseUrl}?action=${encodeURIComponent(action)}`;
+        }
         if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
           return `/api/${encodeURIComponent(action)}`;
         }
@@ -2319,6 +2350,7 @@
         inviteFilter: "all",
         dailyInviteCount: 0,
         pendingInviteId: null,
+        pendingFeedbackInviteId: null,
         selectedIncomingTimes: {},
         currentUser: null,
         currentStep: "home",
@@ -2329,6 +2361,13 @@
 
       const DAILY_SENT_INVITE_LIMIT = 3;
       const DAILY_RECEIVED_INVITE_LIMIT = 3;
+      const feedbackQuestions = [
+        "對方是否準時、尊重約定？",
+        "聊天過程是否自在、有禮貌？",
+        "資料與實際感受是否一致？",
+        "地點與時間安排是否安全方便？",
+        "你是否願意再次見面或保持聯絡？",
+      ];
 
       const mockUsers = [
         {
@@ -2841,14 +2880,16 @@
 
       function go(step) {
         if (!pages[step]) step = "home";
-        if (step === "emails" && !isAdminUser()) step = "home";
+        if ((step === "invites" || step === "emails") && !isAdminUser()) step = "home";
         state.currentStep = step;
         Object.entries(pages).forEach(([key, page]) => {
           page.el.classList.toggle("hidden", key !== step);
         });
         document.querySelectorAll(".step-button").forEach((button) => {
           button.classList.toggle("active", button.dataset.step === step);
-          if (button.dataset.step === "emails") button.classList.toggle("hidden", !isAdminUser());
+          if (button.dataset.step === "invites" || button.dataset.step === "emails") {
+            button.classList.toggle("hidden", !isAdminUser());
+          }
         });
         const pageTitle = document.getElementById("pageTitle");
         pageTitle.textContent = pages[step].title;
@@ -2877,6 +2918,18 @@
         status.classList.toggle("error", type === "error");
       }
 
+      function setPlaceDebug(details = null) {
+        const panel = document.getElementById("meetingPlaceDebug");
+        if (!panel) return;
+        if (!details) {
+          panel.textContent = "";
+          panel.classList.remove("visible");
+          return;
+        }
+        panel.textContent = typeof details === "string" ? details : JSON.stringify(details, null, 2);
+        panel.classList.add("visible");
+      }
+
       function setMeetingPlaceButtonVerified(verified) {
         const button = document.getElementById("verifyMeetingPlace");
         button.textContent = verified ? "驗證成功" : "驗證";
@@ -2892,7 +2945,7 @@
       }
 
       function clearMeetingPlaceFields() {
-        ["meetingPlaceName", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
+        ["meetingPlaceName", "meetingPlaceAddress", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
         setMeetingPlaceButtonVerified(false);
       }
 
@@ -2912,8 +2965,10 @@
         const decodedPath = decodeURIComponent(url.pathname.replace(/\+/g, " "));
         const placeMatch = decodedPath.match(/\/place\/([^/]+)/);
         const verifiedNameMatch = input.match(/地點：([^｜\n]+)/);
+        const verifiedAddressMatch = input.match(/地址：([^｜\n]+)/);
         const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
         const name = rawName || "Google Maps 地點";
+        const address = verifiedAddressMatch ? verifiedAddressMatch[1].trim() : "";
         const verifiedCoordsMatch = input.match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
         const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
         const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
@@ -2922,21 +2977,68 @@
 
         return {
           name,
+          address,
           url: source,
           lat: coords[1],
           lng: coords[2],
         };
       }
 
+      async function verifyGoogleMapsPlaceRemotely(value) {
+        if (!hasRemoteApi()) return null;
+        const endpoint = apiEndpoint("places-verify");
+        const debug = {
+          step: "request",
+          endpoint,
+          action: "places-verify",
+          input: value,
+          userAgent: navigator.userAgent,
+          pageUrl: window.location.href,
+          time: new Date().toISOString(),
+        };
+        setPlaceDebug(debug);
+        console.info("[place-verify] request", debug);
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "content-type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ url: value }),
+        });
+        const responseText = await response.text();
+        let data = null;
+        try {
+          data = responseText ? JSON.parse(responseText) : null;
+        } catch (error) {
+          data = null;
+        }
+        const responseDebug = {
+          ...debug,
+          step: "response",
+          httpStatus: response.status,
+          ok: response.ok,
+          responseText,
+          responseJson: data,
+        };
+        setPlaceDebug(responseDebug);
+        console.info("[place-verify] response", responseDebug);
+        if (!response.ok || !data?.ok) {
+          const message = data?.error || responseText || "地點驗證失敗";
+          const error = new Error(message);
+          error.debug = responseDebug;
+          throw error;
+        }
+        return data.place || null;
+      }
+
       function formatVerifiedMeetingPlace(place) {
         return [
           `地點：${place.name}`,
+          place.address ? `地址：${place.address}` : "",
           `Google Maps：${place.url}`,
           `座標：${place.lat}, ${place.lng}`,
-        ].join("\n");
+        ].filter(Boolean).join("\n");
       }
 
-      function verifyMeetingPlace() {
+      async function verifyMeetingPlace() {
         if (
           document.getElementById("meetingPlaceName").value &&
           document.getElementById("meetingPlaceUrl").value &&
@@ -2945,6 +3047,7 @@
         ) {
           setFieldValue("meetingArea", formatVerifiedMeetingPlace({
             name: document.getElementById("meetingPlaceName").value,
+            address: document.getElementById("meetingPlaceAddress").value,
             url: document.getElementById("meetingPlaceUrl").value,
             lat: document.getElementById("meetingLat").value,
             lng: document.getElementById("meetingLng").value,
@@ -2954,19 +3057,34 @@
           return true;
         }
         const field = document.getElementById("meetingArea");
-        const parsed = parseGoogleMapsPlace(field.value);
+        const input = field.value.trim();
+        let parsed = parseGoogleMapsPlace(input);
+        if (!parsed && input.includes("maps.app.goo.gl")) {
+          setPlaceStatus("正在展開 Google Maps 短網址...");
+          try {
+            parsed = await verifyGoogleMapsPlaceRemotely(input);
+          } catch (error) {
+            clearMeetingPlaceFields();
+            setMeetingPlaceButtonInvalid(true);
+            setPlaceStatus(error.message || "Google Maps 短網址驗證失敗，請改貼完整網址。", "error");
+            showToast(error.message || "Google Maps 短網址驗證失敗");
+            return false;
+          }
+        }
         if (!parsed) {
           clearMeetingPlaceFields();
           setMeetingPlaceButtonInvalid(true);
-          setPlaceStatus("請貼上完整 Google Maps 地點網址後按「驗證」。", "error");
-          showToast("請貼上完整 Google Maps 地點網址");
+          setPlaceStatus("請貼上 Google Maps 地點網址後按「驗證」。", "error");
+          showToast("請貼上 Google Maps 地點網址");
           return false;
         }
         setFieldValue("meetingPlaceName", parsed.name);
+        setFieldValue("meetingPlaceAddress", parsed.address);
         setFieldValue("meetingPlaceUrl", parsed.url);
         setFieldValue("meetingLat", parsed.lat);
         setFieldValue("meetingLng", parsed.lng);
         field.value = formatVerifiedMeetingPlace(parsed);
+        setPlaceDebug(null);
         setPlaceStatus("");
         setMeetingPlaceButtonVerified(true);
         showToast("地點驗證成功");
@@ -2978,11 +3096,13 @@
         if (!place?.lat || !place?.lng || !place?.url) return false;
         const verifiedPlace = {
           name: place.name || "Google Maps 地點",
+          address: place.address || "",
           url: place.url,
           lat: place.lat,
           lng: place.lng,
         };
         setFieldValue("meetingPlaceName", verifiedPlace.name);
+        setFieldValue("meetingPlaceAddress", verifiedPlace.address);
         setFieldValue("meetingPlaceUrl", verifiedPlace.url);
         setFieldValue("meetingLat", verifiedPlace.lat);
         setFieldValue("meetingLng", verifiedPlace.lng);
@@ -3194,8 +3314,10 @@
         showToast("已登出");
       }
 
+      const adminEmails = new Set(["jbuduoo@gmail.com"]);
+
       function isAdminEmail(email) {
-        return String(email || "").trim().toLowerCase().endsWith("999");
+        return adminEmails.has(String(email || "").trim().toLowerCase());
       }
 
       function isAdminUser() {
@@ -3203,10 +3325,14 @@
       }
 
       function updateAdminVisibility() {
-        document.querySelectorAll('[data-step="emails"]').forEach((button) => {
+        document.querySelectorAll('[data-step="invites"], [data-step="emails"]').forEach((button) => {
           button.classList.toggle("hidden", !isAdminUser());
         });
-        if (!isAdminUser() && !document.getElementById("emailsPage").classList.contains("hidden")) {
+        if (
+          !isAdminUser() &&
+          (!document.getElementById("invitesPage").classList.contains("hidden") ||
+            !document.getElementById("emailsPage").classList.contains("hidden"))
+        ) {
           go("home");
         }
       }
@@ -3239,6 +3365,29 @@
         renderCandidates();
         go("digest");
         showToast("登入成功");
+      }
+
+      function quickLoginLabel(user) {
+        const email = String(user.email || "").trim();
+        return user.name || user.nickname || user.id || email.split("@")[0] || email;
+      }
+
+      function renderQuickLoginButtons() {
+        const container = document.getElementById("quickLoginButtons");
+        if (!container) return;
+        const usersByEmail = new Map();
+        [
+          { email: "jbuduoo@gmail.com", name: "jbuduoo" },
+          ...mockUsers,
+          ...candidates,
+        ].forEach((user) => {
+          const email = String(user.email || "").trim();
+          if (!email || usersByEmail.has(email.toLowerCase())) return;
+          usersByEmail.set(email.toLowerCase(), { ...user, email });
+        });
+        container.innerHTML = Array.from(usersByEmail.values())
+          .map((user) => `<button class="btn secondary quick-login-button" type="button" data-quick-login-email="${user.email}">${quickLoginLabel(user)}</button>`)
+          .join("");
       }
 
       function padTimePart(value) {
@@ -3485,6 +3634,26 @@
         return selectedInviteTimes();
       }
 
+      function firstLineValue(text, label) {
+        const match = String(text || "").match(new RegExp(`${label}：([^\\n]+)`));
+        return match ? match[1].trim() : "";
+      }
+
+      function profilePlaceText(profile) {
+        const place = profile?.place || profile?.meetingPlaceName || firstLineValue(profile?.meetingArea, "地點") || "";
+        const address = profile?.address || profile?.meetingPlaceAddress || firstLineValue(profile?.meetingArea, "地址") || "";
+        if (place && address && !place.includes(address)) return `${place}｜${address}`;
+        return place || address || "";
+      }
+
+      function invitePlaceForCandidate(candidate) {
+        if (candidateGender(candidate) === "女性") return candidatePlaceText(candidate);
+        if (normalizeGender(state.currentUser?.gender) === "女性") {
+          return profilePlaceText(currentUserProfile()) || profilePlaceText(state.profile) || document.getElementById("meetingPlaceName")?.value || "";
+        }
+        return candidatePlaceText(candidate);
+      }
+
       function updateSelectedInviteTimeSummary() {
         const summary = document.getElementById("selectedInviteTimeSummary");
         const times = selectedInviteTimeLabels();
@@ -3506,8 +3675,9 @@
         renderInviteTimeChoices(candidate);
         updateSelectedInviteTimeSummary();
         document.getElementById("candidateAvailableTime").textContent = candidate.time || "對方尚未填寫";
-        document.getElementById("invitePlace").value = candidate.place || "";
-        document.getElementById("invitePlaceDisplay").textContent = candidate.place || "";
+        const invitePlace = invitePlaceForCandidate(candidate);
+        document.getElementById("invitePlace").value = invitePlace;
+        document.getElementById("invitePlaceDisplay").textContent = invitePlace;
         updateInvitePlaceMapLink();
         document.getElementById("inviteModal").classList.remove("hidden");
       }
@@ -3660,6 +3830,7 @@
         setFieldValue("intro", user.intro || "");
         if (!setVerifiedMeetingPlace({
           name: user.meetingPlaceName || user.meetingArea || user.place || "",
+          address: user.meetingPlaceAddress || user.address || "",
           url: user.meetingPlaceUrl || "",
           lat: user.meetingLat || "",
           lng: user.meetingLng || "",
@@ -3793,10 +3964,10 @@
         return `<img alt="${alt}" src="${src}" ${fallback ? `data-fallback-src="${fallback}"` : ""} referrerpolicy="no-referrer" />`;
       }
 
-      function candidateInviteStatus(candidateId) {
+      function candidateInviteForCurrentUser(candidateId) {
         const currentUserId = String(state.currentUser?.userId || "").trim();
         if (!currentUserId) return null;
-        const related = dedupeInvitesForDisplay(
+        return dedupeInvitesForDisplay(
           invites
             .map((invite) => {
               const senderId = inviteUserId(invite, ["senderUserId", "sender_user_id", "senderId", "sender_id"]);
@@ -3811,6 +3982,10 @@
             })
             .filter(Boolean),
         )[0];
+      }
+
+      function candidateInviteStatus(candidateId) {
+        const related = candidateInviteForCurrentUser(candidateId);
         if (!related) return null;
         const labels = {
           sent: "已邀約",
@@ -3906,6 +4081,13 @@
 
       function invitePlaceText(invite, candidate) {
         return detailFromNote(invite.note, "地點") || candidate.place || "尚未確認";
+      }
+
+      function candidatePlaceText(candidate) {
+        const place = candidate.place || candidate.meetingPlaceName || "";
+        const address = candidate.address || candidate.meetingPlaceAddress || "";
+        if (place && address && !place.includes(address)) return `${place}｜${address}`;
+        return place || address || "尚未確認";
       }
 
       function inviteTimeOptions(invite, candidate) {
@@ -4067,8 +4249,57 @@
         const photos = candidatePhotos(candidate);
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const invited = state.invited.has(candidate.id);
-        const inviteDisabled = invited;
-        const inviteLabel = invited ? "已送出邀請" : "一起喝杯咖啡";
+        const relatedInvite = candidateInviteForCurrentUser(candidate.id);
+        const inviteDisabled = invited || ["sent", "incoming", "confirmed"].includes(relatedInvite?.status);
+        const inviteLabel = inviteDisabled ? "已進入邀約流程" : "一起喝杯咖啡";
+        const confirmedNote =
+          relatedInvite?.status === "confirmed"
+            ? `<div class="email-note">
+                <strong>待見面備註</strong><br />
+                時間：${inviteTimeText(relatedInvite, candidate)}<br />
+                地點：${invitePlaceText(relatedInvite, candidate)}
+              </div>`
+            : "";
+        const sentNote =
+          relatedInvite?.status === "sent"
+            ? `<div class="email-note">
+                <strong>已送出邀約，等待對方同意</strong><br />
+                邀約時間：${inviteTimeText(relatedInvite, candidate)}<br />
+                邀約地點：${invitePlaceText(relatedInvite, candidate)}<br />
+                對方同意前，時間與地點還不算成立；若 48 小時內沒有回覆，邀約會自動取消。
+              </div>`
+            : "";
+        const incomingNote =
+          relatedInvite?.status === "incoming"
+            ? `<div class="email-note">
+                <strong>收到咖啡邀約</strong><br />
+                對方邀約時間：${inviteTimeText(relatedInvite, candidate)}<br />
+                邀約地點：${invitePlaceText(relatedInvite, candidate)}<br />
+                請在 48 小時內同意或拒絕；逾時未回覆，邀約會自動取消。
+              </div>
+              <div class="detail-item full">
+                <span>選擇這次見面的時間</span>
+                <div class="mini-availability">
+                  ${preciseInviteTimeOptions(relatedInvite, candidate)
+                    .map((time) => `<button class="mini-time-chip incoming-time-choice ${state.selectedIncomingTimes[relatedInvite.id] === time ? "active" : ""}" type="button" data-incoming-time="${time}">${time}</button>`)
+                    .join("")}
+                </div>
+              </div>`
+            : "";
+        const confirmedActions =
+          relatedInvite?.status === "confirmed"
+            ? `<button class="btn primary" type="button" data-complete-invite="${relatedInvite.id}">完成</button>
+               <button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">取消</button>`
+            : "";
+        const sentActions =
+          relatedInvite?.status === "sent"
+            ? `<button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">取消邀約</button>`
+            : "";
+        const incomingActions =
+          relatedInvite?.status === "incoming"
+            ? `<button class="btn primary" type="button" data-accept-invite="${relatedInvite.id}">同意</button>
+               <button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">拒絕</button>`
+            : "";
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -4104,7 +4335,7 @@
                 <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                 <div class="detail-item">
                   <span>咖啡店</span>
-                  <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
+                  <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || candidate.address || "")}" target="_blank" rel="noreferrer">定位</a></strong>
                 </div>
                 <div class="detail-item full">
                   <span>通常方便時段</span>
@@ -4113,8 +4344,11 @@
                   </div>
                 </div>
               </div>
+              ${sentNote}
+              ${incomingNote}
+              ${confirmedNote}
               <div class="email-actions">
-                <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>
+                ${sentActions || incomingActions || confirmedActions || `<button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? "disabled" : ""}>${inviteLabel}</button>`}
               </div>
             </div>
           </div>
@@ -4146,20 +4380,125 @@
         renderCandidateDetail(candidateId, card || null);
       }
 
-      function cancelInvite(inviteId) {
+      function refreshInviteViews(inviteId, candidateId) {
+        const candidatePanel = document.getElementById("candidateDetail");
+        const focusedCandidateId = candidateId || candidatePanel?.dataset.candidateId || "";
+        const shouldKeepCandidateOpen =
+          focusedCandidateId &&
+          candidatePanel &&
+          !candidatePanel.classList.contains("hidden") &&
+          state.currentStep === "digest";
+        const invitePanel = document.getElementById("inviteDetail");
+        const shouldKeepInviteOpen =
+          inviteId &&
+          invitePanel &&
+          !invitePanel.classList.contains("hidden") &&
+          invitePanel.dataset.inviteId === inviteId;
+
+        renderCandidates();
+        renderInvites();
+
+        if (shouldKeepCandidateOpen) {
+          const candidateCard = document.querySelector(`[data-candidate-card="${focusedCandidateId}"]`);
+          if (candidateCard) renderCandidateDetail(focusedCandidateId, candidateCard);
+        }
+        if (shouldKeepInviteOpen) {
+          const inviteCard = document.querySelector(`[data-invite-card="${inviteId}"]`);
+          if (inviteCard) renderInviteDetail(inviteId, inviteCard);
+        }
+      }
+
+      async function cancelInvite(inviteId) {
         const sourceInvite = invites.find((item) => item.id === inviteId);
         const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite || !["sent", "incoming", "confirmed"].includes(invite.status)) return;
         const previousStatus = invite.status;
+        const note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
+        try {
+          await saveInviteToCloud({
+            id: sourceInvite.id || invite.id,
+            inviteId: sourceInvite.id || invite.id,
+            senderUserId: sourceInvite.senderUserId || invite.senderUserId || "",
+            receiverUserId: sourceInvite.receiverUserId || invite.receiverUserId || "",
+            status: "cancelled",
+            note,
+          });
+        } catch (error) {
+          console.warn("邀約取消同步失敗", error);
+          showToast("取消同步失敗，請稍後再試");
+          return;
+        }
         sourceInvite.status = "cancelled";
-        sourceInvite.note = previousStatus === "incoming" ? "你已婉拒這次咖啡邀約" : "這次咖啡邀約已取消";
+        sourceInvite.note = note;
         state.invited.delete(invite.candidateId);
-        const panel = document.getElementById("inviteDetail");
-        panel?.classList.add("hidden");
-        document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
-        renderCandidates();
-        renderInvites();
+        refreshInviteViews(inviteId, invite.candidateId);
         showToast("已取消邀約");
+      }
+
+      function feedbackAnswers() {
+        return feedbackQuestions.map((_, index) => Number(document.querySelector(`input[name="feedback-q-${index}"]:checked`)?.value || 0));
+      }
+
+      function updateFeedbackScorePreview() {
+        const score = feedbackAnswers().reduce((sum, value) => sum + value, 0);
+        document.getElementById("feedbackScorePreview").textContent = `目前分數：${score} / 25`;
+      }
+
+      function openFeedbackModal(inviteId) {
+        state.pendingFeedbackInviteId = inviteId;
+        document.getElementById("feedbackQuestions").innerHTML = feedbackQuestions
+          .map((question, index) => `
+            <label>${index + 1}. ${question}</label>
+            <div class="quick-time-row">
+              ${[1, 2, 3, 4, 5].map((score) => `
+                <label class="mini-time-chip">
+                  <input type="radio" name="feedback-q-${index}" value="${score}" />
+                  ${score}
+                </label>
+              `).join("")}
+            </div>
+          `)
+          .join("");
+        updateFeedbackScorePreview();
+        document.getElementById("feedbackModal").classList.remove("hidden");
+      }
+
+      function closeFeedbackModal() {
+        state.pendingFeedbackInviteId = null;
+        document.getElementById("feedbackModal").classList.add("hidden");
+      }
+
+      async function submitFeedback() {
+        const inviteId = state.pendingFeedbackInviteId;
+        const sourceInvite = invites.find((item) => item.id === inviteId);
+        const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
+        if (!invite || invite.status !== "confirmed") return;
+        const answers = feedbackAnswers();
+        if (answers.some((value) => !value)) {
+          showToast("請完成 5 題問卷");
+          return;
+        }
+        const score = answers.reduce((sum, value) => sum + value, 0);
+        const note = `見面已完成；問卷分數：${score}/25；${feedbackQuestions.map((question, index) => `${index + 1}. ${question} ${answers[index]}分`).join("；")}`;
+        try {
+          await saveInviteToCloud({
+            id: sourceInvite.id || invite.id,
+            inviteId: sourceInvite.id || invite.id,
+            senderUserId: sourceInvite.senderUserId || invite.senderUserId || "",
+            receiverUserId: sourceInvite.receiverUserId || invite.receiverUserId || "",
+            status: "done",
+            note,
+          });
+        } catch (error) {
+          console.warn("問卷同步失敗", error);
+          showToast("問卷同步失敗，請稍後再試");
+          return;
+        }
+        sourceInvite.status = "done";
+        sourceInvite.note = note;
+        closeFeedbackModal();
+        refreshInviteViews(inviteId, invite.candidateId);
+        showToast(`已完成，分數 ${score}/25`);
       }
 
       function closeInviteDetail() {
@@ -4185,6 +4524,7 @@
         const sourceInvite = invites.find((item) => item.id === inviteId);
         const invite = sourceInvite ? inviteForCurrentUser(sourceInvite) : null;
         if (!invite || invite.status !== "incoming") return;
+        const candidateId = invite.candidateId;
         const selectedTime = state.selectedIncomingTimes[inviteId];
         if (!selectedTime) {
           showToast("請先選擇這次見面的時間");
@@ -4210,8 +4550,7 @@
         sourceInvite.note = note;
         delete state.selectedIncomingTimes[inviteId];
         await loadSheetAppData(true);
-        renderInvites();
-        renderInviteDetail(inviteId, document.querySelector(`[data-invite-card="${inviteId}"]`));
+        refreshInviteViews(inviteId, candidateId);
         showToast("已同意邀約，已進入待見面");
       }
 
@@ -4384,6 +4723,7 @@
                 photos: (candidate.photos || []).map(normalizeSheetPhotoPath),
               })),
             );
+            renderQuickLoginButtons();
           }
           if (Array.isArray(data.invites)) {
             invites.splice(0, invites.length, ...data.invites.map(normalizeSheetInvite));
@@ -4402,6 +4742,7 @@
         renderLoginPanel();
         updateAdminVisibility();
         renderPhotoGrid();
+        renderQuickLoginButtons();
         initBirthdayOptions();
         initCityOptions();
         updateDistrictOptions();
@@ -4459,7 +4800,7 @@
       document.getElementById("profileForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         if (state.isSaving) return;
-        if (!verifyMeetingPlace()) return;
+        if (!(await verifyMeetingPlace())) return;
         syncInterestKeywords();
         state.profile = formToObject(event.currentTarget);
         state.profile.photos = state.photos.slice(0, 3);
@@ -4665,8 +5006,33 @@
           return;
         }
         const button = event.target.closest("[data-invite]");
-        if (!button) return;
-        openInviteModal(button.dataset.invite);
+        if (button) {
+          openInviteModal(button.dataset.invite);
+          return;
+        }
+        const cancelButton = event.target.closest("[data-cancel-invite]");
+        if (cancelButton) {
+          cancelInvite(cancelButton.dataset.cancelInvite);
+          return;
+        }
+        const timeButton = event.target.closest("[data-incoming-time]");
+        if (timeButton) {
+          const panel = document.getElementById("candidateDetail");
+          const inviteId = candidateInviteForCurrentUser(panel.dataset.candidateId)?.id;
+          if (inviteId) {
+            state.selectedIncomingTimes[inviteId] = timeButton.dataset.incomingTime;
+            const currentCard = panel.previousElementSibling?.classList.contains("candidate-card") ? panel.previousElementSibling : null;
+            renderCandidateDetail(panel.dataset.candidateId, currentCard, Number(panel.dataset.photoIndex || 0));
+          }
+          return;
+        }
+        const acceptButton = event.target.closest("[data-accept-invite]");
+        if (acceptButton) {
+          acceptInvite(acceptButton.dataset.acceptInvite);
+          return;
+        }
+        const completeButton = event.target.closest("[data-complete-invite]");
+        if (completeButton) openFeedbackModal(completeButton.dataset.completeInvite);
         });
       }
 
@@ -4677,6 +5043,14 @@
           closeInviteModal();
         }
       });
+
+      document.getElementById("feedbackModal").addEventListener("click", (event) => {
+        if (event.target.id === "feedbackModal" || event.target.closest("[data-close-feedback-modal]")) {
+          closeFeedbackModal();
+        }
+      });
+      document.getElementById("feedbackQuestions").addEventListener("change", updateFeedbackScorePreview);
+      document.getElementById("submitFeedbackButton").addEventListener("click", submitFeedback);
 
       document.getElementById("confirmInviteButton").addEventListener("click", confirmInvite);
       document.getElementById("invitePlace").addEventListener("input", updateInvitePlaceMapLink);
@@ -4729,11 +5103,12 @@
           }
         };
         homeLoginButton.addEventListener("click", submitHomeLogin);
-        document.querySelectorAll("[data-quick-login-email]").forEach((button) => {
-          button.addEventListener("click", () => {
+        document.getElementById("quickLoginButtons")?.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-quick-login-email]");
+          if (button) {
             homeLoginEmail.value = button.dataset.quickLoginEmail || "";
             submitHomeLogin();
-          });
+          }
         });
         homeLoginEmail.addEventListener("keydown", (event) => {
           if (event.key !== "Enter") return;

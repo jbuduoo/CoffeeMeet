@@ -3,25 +3,33 @@ const BOY_FOLDER_ID = "12M91XLYJ7seBNhrsGL2JZNJZlSGlL9ri";
 const GIRL_FOLDER_ID = "1r_6bPvf-R5lHM92g379al71G8zzmj-of";
 
 function doGet(event) {
-  const action = event.parameter.action || "";
+  const params = (event && event.parameter) || {};
+  const action = params.action || "";
   if (action === "app-data") return jsonResponse(getAppData());
   if (action === "sheets") return jsonResponse(getSheetMeta());
   if (action === "version") return jsonResponse(getVersion());
   if (action === "photo-storage") return jsonResponse(getPhotoStorageMeta());
-  if (action === "publish-seed-photos") return jsonResponse(publishSeedPhotos(event.parameter.token || ""));
-  if (action === "clear-photo-urls") return jsonResponse(clearPhotoUrls(event.parameter.token || ""));
-  return jsonResponse({ ok: false, error: "Unknown action" });
+  if (action === "publish-seed-photos") return jsonResponse(publishSeedPhotos(params.token || ""));
+  if (action === "clear-photo-urls") return jsonResponse(clearPhotoUrls(params.token || ""));
+  return jsonResponse(debugError("Unknown action", action, "GET"));
 }
 
 function doPost(event) {
   try {
-    const action = event.parameter.action || "";
-    const body = JSON.parse(event.postData.contents || "{}");
+    const params = (event && event.parameter) || {};
+    const action = params.action || "";
+    const body = JSON.parse((event && event.postData && event.postData.contents) || "{}");
+    if (action === "places-verify" || action === "places/verify") return jsonResponse(verifyGoogleMapsPlace(body));
     if (action === "users") return jsonResponse(saveUserProfile(body));
     if (action === "invites") return jsonResponse(saveInvite(body));
-    return jsonResponse({ ok: false, error: "Unknown action" });
+    return jsonResponse(debugError("Unknown action", action, "POST", body));
   } catch (error) {
-    return jsonResponse({ ok: false, error: error.message || String(error) });
+    return jsonResponse({
+      ok: false,
+      error: error.message || String(error),
+      debug: error.debug || null,
+      stack: error.stack || "",
+    });
   }
 }
 
@@ -29,6 +37,113 @@ function jsonResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function verifyGoogleMapsPlace(payload) {
+  const input = String((payload && payload.url) || "").trim();
+  const debug = {
+    action: "places-verify",
+    input: input,
+    startedAt: new Date().toISOString(),
+  };
+  const expandedUrl = expandGoogleMapsShortUrl(input);
+  debug.expandedUrl = expandedUrl;
+  const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
+  debug.parsedPlace = place;
+  if (!place) {
+    const error = new Error("請貼上有效的 Google Maps 地點網址");
+    error.debug = debug;
+    throw error;
+  }
+  return { ok: true, place, debug: debug };
+}
+
+function expandGoogleMapsShortUrl(input) {
+  const source = extractGoogleMapsUrl(input);
+  const urlParts = parseUrlParts(source);
+  if (!urlParts) {
+    const error = new Error("請貼上有效的 Google Maps 地點網址");
+    error.debug = {
+      step: "parse-url",
+      source: source,
+      reason: "Apps Script could not parse the submitted URL string.",
+    };
+    throw error;
+  }
+  if (!/google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(urlParts.hostname + urlParts.pathname)) {
+    throw new Error("請貼上 Google Maps 地點網址");
+  }
+  if (urlParts.hostname.indexOf("maps.app.goo.gl") < 0) return source;
+
+  const response = UrlFetchApp.fetch(source, {
+    method: "get",
+    followRedirects: false,
+    muteHttpExceptions: true,
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+    },
+  });
+  const headers = response.getAllHeaders();
+  const location = headers.Location || headers.location;
+  if (!location) {
+    const error = new Error("無法展開 Google Maps 短網址，請改貼完整網址");
+    error.debug = {
+      source: source,
+      responseCode: response.getResponseCode(),
+      headers: headers,
+      bodyPreview: response.getContentText().slice(0, 500),
+    };
+    throw error;
+  }
+  return location;
+}
+
+function debugError(message, action, method, body) {
+  return {
+    ok: false,
+    error: message,
+    debug: {
+      method: method,
+      receivedAction: action,
+      body: body || null,
+      availableActions: ["app-data", "sheets", "version", "photo-storage", "publish-seed-photos", "clear-photo-urls", "places-verify", "users", "invites"],
+      deployedAtHint: "If places-verify is missing here, redeploy the latest Apps Script code.",
+    },
+  };
+}
+
+function parseGoogleMapsPlaceUrl(source, originalInput) {
+  const decodedPath = decodeURIComponent(source.replace(/\+/g, " "));
+  const placeMatch = decodedPath.match(/\/place\/([^/@?]+)/);
+  const verifiedNameMatch = String(originalInput || "").match(/地點：([^｜\n]+)/);
+  const verifiedAddressMatch = String(originalInput || "").match(/地址：([^｜\n]+)/);
+  const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
+  const verifiedCoordsMatch = String(originalInput || "").match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const coords = verifiedCoordsMatch || preciseMatch || atMatch;
+  if (!coords) return null;
+  return {
+    name: rawName || "Google Maps 地點",
+    address: verifiedAddressMatch ? verifiedAddressMatch[1].trim() : "",
+    url: source,
+    lat: coords[1],
+    lng: coords[2],
+  };
+}
+
+function extractGoogleMapsUrl(input) {
+  const verifiedUrlMatch = String(input || "").match(/Google Maps：(\S+)/);
+  return verifiedUrlMatch ? verifiedUrlMatch[1].trim() : String(input || "").trim();
+}
+
+function parseUrlParts(value) {
+  const match = String(value || "").trim().match(/^https?:\/\/([^/?#]+)([^?#]*)/i);
+  if (!match) return null;
+  return {
+    hostname: match[1].toLowerCase(),
+    pathname: match[2] || "/",
+  };
 }
 
 function sheetRows(sheetName) {
@@ -104,8 +219,10 @@ function getAppData() {
         time: user.available_times,
         availabilityNote: user.available_times,
         place: place.place_name || "",
+        address: place.address || "",
         meetingArea: place.place_name || "",
         meetingPlaceName: place.place_name || "",
+        meetingPlaceAddress: place.address || "",
         meetingPlaceUrl: place.map_url || "",
         meetingLat: place.lat || "",
         meetingLng: place.lng || "",
@@ -162,13 +279,14 @@ function saveInvite(invite) {
         ["sent", "pending", "incoming", "confirmed"].indexOf(status) >= 0;
     });
   }
-  if (existingIndex >= 0 && String(invite.status || "").toLowerCase() === "confirmed") {
+  var requestedStatus = String(invite.status || "").toLowerCase();
+  if (existingIndex >= 0 && ["confirmed", "cancelled", "done"].indexOf(requestedStatus) >= 0) {
     var existing = rows[existingIndex];
     var acceptedTime = String(invite.acceptedTime || invite.accepted_at || detailFromNote(note, "已確認") || "").trim();
     var updated = Object.assign({}, existing, {
-      status: "confirmed",
-      note: note || "已確認：" + acceptedTime + "；" + (existing.note || ""),
-      accepted_at: acceptedTime,
+      status: requestedStatus,
+      note: note || (requestedStatus === "confirmed" ? "已確認：" + acceptedTime + "；" + (existing.note || "") : existing.note || ""),
+      accepted_at: acceptedTime || existing.accepted_at || "",
       updated_at: today,
     });
     sheet.getRange(existingIndex + 2, 1, 1, headers.length).setValues([headers.map(function(header) {
@@ -486,7 +604,7 @@ function saveMeetingPlace({ placeId, userId, profile, today }) {
   const values = {
     place_id: placeId,
     place_name: profile.meetingPlaceName || firstLineValue(profile.meetingArea, "地點") || profile.meetingArea || "",
-    address: existing ? existing.address || "" : "",
+    address: profile.meetingPlaceAddress || firstLineValue(profile.meetingArea, "地址") || (existing ? existing.address || "" : ""),
     city: profile.city || "",
     district: profile.district || "",
     map_url: profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "",

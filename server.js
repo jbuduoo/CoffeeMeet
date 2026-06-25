@@ -6,6 +6,71 @@ const { appendSheetValues, getSpreadsheetMeta, getSheetValues, updateSheetValues
 const port = Number(process.env.PORT || 3000);
 const rootDir = __dirname;
 
+function extractGoogleMapsUrl(input = "") {
+  const verifiedUrlMatch = String(input || "").match(/Google Maps：(\S+)/);
+  return verifiedUrlMatch ? verifiedUrlMatch[1].trim() : String(input || "").trim();
+}
+
+function parseGoogleMapsPlaceUrl(source, originalInput = "") {
+  const decodedPath = decodeURIComponent(source.replace(/\+/g, " "));
+  const placeMatch = decodedPath.match(/\/place\/([^/@?]+)/);
+  const verifiedNameMatch = String(originalInput || "").match(/地點：([^｜\n]+)/);
+  const verifiedAddressMatch = String(originalInput || "").match(/地址：([^｜\n]+)/);
+  const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
+  const verifiedCoordsMatch = String(originalInput || "").match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const coords = verifiedCoordsMatch || preciseMatch || atMatch;
+  if (!coords) return null;
+  return {
+    name: rawName || "Google Maps 地點",
+    address: verifiedAddressMatch ? verifiedAddressMatch[1].trim() : "",
+    url: source,
+    lat: coords[1],
+    lng: coords[2],
+  };
+}
+
+async function expandGoogleMapsShortUrl(input) {
+  const source = extractGoogleMapsUrl(input);
+  const urlParts = parseUrlParts(source);
+  if (!urlParts) {
+    const error = new Error("請貼上有效的 Google Maps 地點網址");
+    error.debug = {
+      step: "parse-url",
+      source,
+      reason: "Could not parse the submitted URL string.",
+    };
+    throw error;
+  }
+  if (!/google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(urlParts.hostname + urlParts.pathname)) {
+    throw new Error("請貼上 Google Maps 地點網址");
+  }
+  if (!urlParts.hostname.includes("maps.app.goo.gl")) return source;
+
+  const response = await fetch(source, { method: "HEAD", redirect: "manual" });
+  const location = response.headers.get("location");
+  if (!location) throw new Error("無法展開 Google Maps 短網址，請改貼完整網址");
+  return location;
+}
+
+function parseUrlParts(value) {
+  const match = String(value || "").trim().match(/^https?:\/\/([^/?#]+)([^?#]*)/i);
+  if (!match) return null;
+  return {
+    hostname: match[1].toLowerCase(),
+    pathname: match[2] || "/",
+  };
+}
+
+async function verifyGoogleMapsPlace(payload) {
+  const input = String(payload?.url || "").trim();
+  const expandedUrl = await expandGoogleMapsShortUrl(input);
+  const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
+  if (!place) throw new Error("請貼上有效的 Google Maps 地點網址");
+  return { place };
+}
+
 function rowsToObjects(values = []) {
   const [headers = [], ...rows] = values;
   return rows
@@ -81,8 +146,10 @@ async function getAppData() {
         time: user.available_times,
         availabilityNote: user.available_times,
         place: place.place_name || user.meeting_place_id || "",
+        address: place.address || "",
         meetingArea: place.place_name || "",
         meetingPlaceName: place.place_name || "",
+        meetingPlaceAddress: place.address || "",
         meetingPlaceUrl: place.map_url || "",
         meetingLat: place.lat || "",
         meetingLng: place.lng || "",
@@ -256,14 +323,14 @@ async function createInvite(invite) {
       ["sent", "pending", "incoming", "confirmed"].includes(statusToInviteStatus(row.status)),
     );
   }
-  if (existingIndex >= 0 && requestedStatus === "confirmed") {
+  if (existingIndex >= 0 && ["confirmed", "cancelled", "done"].includes(requestedStatus)) {
     const existing = rows[existingIndex];
     const acceptedTime = String(invite.acceptedTime || invite.accepted_at || detailFromNote(note, "已確認") || "").trim();
     const valuesByHeader = {
       ...existing,
-      status: "confirmed",
-      note: note || `已確認：${acceptedTime}；${existing.note || ""}`,
-      accepted_at: acceptedTime,
+      status: requestedStatus,
+      note: note || (requestedStatus === "confirmed" ? `已確認：${acceptedTime}；${existing.note || ""}` : existing.note || ""),
+      accepted_at: acceptedTime || existing.accepted_at || "",
       updated_at: today,
     };
     const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
@@ -364,7 +431,7 @@ async function saveMeetingPlace({ placeId, userId, profile, today, existingPlace
   const valuesByHeader = {
     place_id: placeId,
     place_name: placeName,
-    address: existing?.address || "",
+    address: profile.meetingPlaceAddress || firstLineValue(profile.meetingArea, "地址") || existing?.address || "",
     city: profile.city || existing?.city || "",
     district: profile.district || existing?.district || "",
     map_url: mapUrl,
@@ -588,6 +655,13 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (["/api/places-verify", "/api/places%2Fverify", "/api/places/verify"].includes(url.pathname) && req.method === "POST") {
+      const payload = await readRequestBody(req);
+      const result = await verifyGoogleMapsPlace(payload);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+
     if (url.pathname === "/api/users" && req.method === "POST") {
       const profile = await readRequestBody(req);
       const result = await createUserFromProfile(profile);
@@ -602,9 +676,18 @@ async function handleApi(req, res, url) {
       return;
     }
 
-    sendJson(res, 404, { ok: false, error: "API not found" });
+    sendJson(res, 404, {
+      ok: false,
+      error: "API not found",
+      debug: {
+        method: req.method,
+        pathname: url.pathname,
+        search: url.search,
+        availablePaths: ["/api/app-data", "/api/sheets", "/api/sheets/values", "/api/places-verify", "/api/users", "/api/invites"],
+      },
+    });
   } catch (error) {
-    sendJson(res, 500, { ok: false, error: error.message });
+    sendJson(res, 500, { ok: false, error: error.message, debug: error.debug || null, stack: error.stack || "" });
   }
 }
 
