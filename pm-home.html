@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coffee Meet | 附近的人，一杯咖啡，就能認識</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --cream: #fff8f3;
+        --paper: #ffffff;
+        --ink: #222222;
+        --muted: #6f655e;
+        --coffee: #d97706;
+        --coffee-dark: #9a4f05;
+        --line: rgba(34, 34, 34, 0.1);
+        --shadow: 0 24px 70px rgba(91, 62, 33, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
+        align-items: center;
+        gap: clamp(32px, 7vw, 96px);
+        padding: clamp(28px, 5vw, 68px);
+        overflow: hidden;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: clamp(44px, 8vh, 88px);
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .logo {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: var(--coffee);
+        color: #fff;
+        box-shadow: 0 12px 28px rgba(217, 119, 6, 0.24);
+      }
+
+      .hero h1 {
+        max-width: 760px;
+        margin: 0;
+        font-size: clamp(42px, 6vw, 76px);
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .hero-copy {
+        max-width: 520px;
+        margin: 28px 0 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 24px);
+        line-height: 1.65;
+        font-weight: 500;
+      }
+
+      .cta-row {
+        margin-top: 40px;
+      }
+
+      .primary-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 68px;
+        padding: 0 34px;
+        border-radius: 8px;
+        background: var(--coffee);
+        color: #fff;
+        box-shadow: 0 18px 34px rgba(217, 119, 6, 0.28);
+        font-size: clamp(20px, 2.3vw, 26px);
+        font-weight: 800;
+        transition:
+          transform 160ms ease,
+          background 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .primary-cta:hover {
+        transform: translateY(-2px);
+        background: var(--coffee-dark);
+        box-shadow: 0 22px 42px rgba(154, 79, 5, 0.3);
+      }
+
+      .cta-note {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .phone-wrap {
+        justify-self: center;
+        position: relative;
+      }
+
+      .phone {
+        width: min(380px, 86vw);
+        aspect-ratio: 0.52;
+        border: 12px solid #191716;
+        border-radius: 44px;
+        background: #fffdfb;
+        box-shadow: var(--shadow);
+        padding: 26px 22px;
+        overflow: hidden;
+      }
+
+      .phone-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .phone-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+      }
+
+      .profile-preview {
+        margin-top: 38px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+
+      .preview-photo {
+        min-height: 245px;
+        background:
+          linear-gradient(180deg, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, 0.46) 100%),
+          url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center/cover;
+        display: flex;
+        align-items: flex-end;
+        padding: 20px;
+        color: #fff;
+      }
+
+      .preview-name {
+        font-size: 34px;
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .preview-meta {
+        margin-top: 8px;
+        font-size: 15px;
+        font-weight: 700;
+        opacity: 0.92;
+      }
+
+      .preview-body {
+        padding: 18px 20px 22px;
+      }
+
+      .distance {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--coffee-dark);
+        font-weight: 800;
+      }
+
+      .coffee-chip {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        border-radius: 8px;
+        background: #fff2e2;
+        color: var(--coffee-dark);
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      section:not(.hero) {
+        padding: clamp(72px, 10vw, 118px) clamp(22px, 5vw, 68px);
+      }
+
+      .section-inner {
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+
+      .section-title {
+        margin: 0 0 36px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.16;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .reasons {
+        background: var(--paper);
+      }
+
+      .reason-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+
+      .reason-item,
+      .person-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+      }
+
+      .reason-item {
+        padding: 34px;
+      }
+
+      .reason-icon {
+        font-size: 36px;
+        line-height: 1;
+      }
+
+      .reason-item h3 {
+        margin: 22px 0 8px;
+        font-size: 24px;
+      }
+
+      .reason-item p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.6;
+      }
+
+      .steps {
+        background: #f7eee7;
+      }
+
+      .step-line {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .step {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        gap: 14px;
+        padding: 28px;
+        border: 1px solid rgba(34, 34, 34, 0.08);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.58);
+        text-align: center;
+      }
+
+      .step-number {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--ink);
+        color: #fff;
+        font-weight: 800;
+      }
+
+      .step-icon {
+        font-size: 34px;
+      }
+
+      .step-label {
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .people {
+        background: var(--cream);
+      }
+
+      .people-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 26px;
+      }
+
+      .people-head .section-title {
+        margin-bottom: 0;
+      }
+
+      .see-more {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        color: var(--coffee-dark);
+        font-weight: 800;
+      }
+
+      .people-rail {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(240px, 1fr);
+        gap: 18px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: 4px 2px 18px;
+        scroll-snap-type: x mandatory;
+      }
+
+      .person-card {
+        min-width: 0;
+        overflow: hidden;
+        scroll-snap-align: start;
+        box-shadow: 0 14px 42px rgba(91, 62, 33, 0.08);
+      }
+
+      .person-photo {
+        aspect-ratio: 1 / 1.05;
+        background: #ead7c6 center/cover;
+      }
+
+      .person-body {
+        padding: 18px;
+      }
+
+      .person-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .person-name {
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .person-distance {
+        color: var(--coffee-dark);
+        font-size: 14px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .person-interest {
+        margin-top: 10px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      footer {
+        padding: 36px clamp(22px, 5vw, 68px);
+        border-top: 1px solid var(--line);
+        background: var(--paper);
+      }
+
+      .footer-inner {
+        max-width: 1160px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      @media (min-width: 1040px) {
+        .people-rail {
+          grid-auto-columns: calc((100% - 54px) / 4);
+        }
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          min-height: 100vh;
+          grid-template-columns: 1fr;
+          align-content: center;
+          gap: 28px;
+        }
+
+        .brand {
+          margin-bottom: 32px;
+        }
+
+        .phone {
+          width: min(300px, 74vw);
+          border-width: 10px;
+          border-radius: 36px;
+          padding: 20px 16px;
+        }
+
+        .preview-photo {
+          min-height: 180px;
+        }
+
+        .reason-grid,
+        .step-line {
+          grid-template-columns: 1fr;
+        }
+
+        .people-head,
+        .footer-inner {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .hero {
+          padding: 22px;
+        }
+
+        .hero h1 {
+          font-size: 42px;
+        }
+
+        .hero-copy {
+          font-size: 17px;
+        }
+
+        .primary-cta {
+          width: 100%;
+          min-height: 62px;
+          padding: 0 18px;
+          font-size: 21px;
+        }
+
+        .phone-wrap {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero" aria-label="Coffee Meet">
+        <div>
+          <a class="brand" href="pm-home.html" aria-label="Coffee Meet 首頁">
+            <span class="logo">☕</span>
+            <span>Coffee Meet</span>
+          </a>
+
+          <h1>附近的人，<br />一杯咖啡，<br />就能認識。</h1>
+          <p class="hero-copy">找一間公開咖啡店， 一小時， 認識一個人。</p>
+
+          <div class="cta-row">
+            <a class="primary-cta" href="index.html" aria-label="開始認識附近的人">開始認識附近的人</a>
+            <div class="cta-note">免費加入．30 秒完成</div>
+          </div>
+        </div>
+
+        <div class="phone-wrap" aria-hidden="true">
+          <div class="phone">
+            <div class="phone-top">
+              <span class="phone-brand"><span>☕</span><span>Coffee Meet</span></span>
+              <span>今天</span>
+            </div>
+            <div class="profile-preview">
+              <div class="preview-photo">
+                <div>
+                  <div class="preview-name">小芸</div>
+                  <div class="preview-meta">34 歲・今天可以聊天</div>
+                </div>
+              </div>
+              <div class="preview-body">
+                <div class="distance">📍 距離 1.2 km</div>
+                <div class="coffee-chip">☕ 喝咖啡</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reasons" aria-labelledby="why-title">
+        <div class="section-inner">
+          <h2 class="section-title" id="why-title">為什麼不是一般交友網站？</h2>
+          <div class="reason-grid">
+            <article class="reason-item">
+              <div class="reason-icon" aria-hidden="true">📍</div>
+              <h3>附近的人</h3>
+              <p>不用跨縣市。</p>
+            </article>
+            <article class="reason-item">
+              <div class="reason-icon" aria-hidden="true">☕</div>
+              <h3>公開咖啡店</h3>
+              <p>第一次見面更安心。</p>
+            </article>
+            <article class="reason-item">
+              <div class="reason-icon" aria-hidden="true">⏰</div>
+              <h3>一小時</h3>
+              <p>沒有壓力。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="steps" aria-labelledby="steps-title">
+        <div class="section-inner">
+          <h2 class="section-title" id="steps-title">使用流程</h2>
+          <div class="step-line">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div class="step-icon" aria-hidden="true">📍</div>
+              <div class="step-label">附近的人</div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-icon" aria-hidden="true">💬</div>
+              <div class="step-label">聊幾句</div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-icon" aria-hidden="true">☕</div>
+              <div class="step-label">喝咖啡</div>
+            </div>
+            <div class="step">
+              <div class="step-number">4</div>
+              <div class="step-icon" aria-hidden="true">✨</div>
+              <div class="step-label">決定是否繼續</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="people" aria-labelledby="people-title">
+        <div class="section-inner">
+          <div class="people-head">
+            <h2 class="section-title" id="people-title">附近的人</h2>
+            <a class="see-more" href="index.html">查看更多</a>
+          </div>
+          <div class="people-rail" id="peopleRail" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <span>☕ Coffee Meet</span>
+        <span>附近的人，一杯咖啡，就能認識。</span>
+      </div>
+    </footer>
+
+    <script>
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvmV837MKEUsCGjkCtlNUwS-zylw79azLqvSE_T0N6W5hWFp1S35sDmB-a4T1rR2G3rg/exec";
+
+      const fallbackPeople = [
+        {
+          name: "Jacky",
+          distance: "2 km",
+          interest: "喜歡電影",
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=82",
+        },
+        {
+          name: "Mika",
+          distance: "1.6 km",
+          interest: "老屋咖啡",
+          photo: "https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=700&q=82",
+        },
+        {
+          name: "Nora",
+          distance: "2.4 km",
+          interest: "週末看展",
+          photo: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=82",
+        },
+        {
+          name: "Leo",
+          distance: "3 km",
+          interest: "城市散步",
+          photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=700&q=82",
+        },
+        {
+          name: "Yuna",
+          distance: "1.9 km",
+          interest: "甜點咖啡",
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=82",
+        },
+      ];
+
+      function apiEndpoint(action) {
+        if (GOOGLE_APPS_SCRIPT_URL) {
+          return `${GOOGLE_APPS_SCRIPT_URL.replace(/\/$/, "")}?action=${encodeURIComponent(action)}`;
+        }
+        if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+          return `/api/${encodeURIComponent(action)}`;
+        }
+        return "";
+      }
+
+      function escapeHtml(value) {
+        return String(value || "").replace(/[&<>"']/g, (char) => {
+          const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+          return entities[char];
+        });
+      }
+
+      function displayInterest(person) {
+        const raw = person.interest || person.interestKeywords || person.looking || person.intro || "想喝咖啡";
+        return String(raw).split(/[,，、\n]/).filter(Boolean)[0].slice(0, 16);
+      }
+
+      function normalizePeople(candidates) {
+        return candidates
+          .filter((person) => person && person.name)
+          .slice(0, 8)
+          .map((person, index) => ({
+            name: person.name,
+            distance: person.distance || `${index + 1}.${index % 3} km`,
+            interest: displayInterest(person),
+            photo: person.photo || person.photos?.[0] || fallbackPeople[index % fallbackPeople.length].photo,
+          }));
+      }
+
+      function renderPeople(people) {
+        const rail = document.getElementById("peopleRail");
+        rail.innerHTML = people
+          .map(
+            (person) => `
+              <article class="person-card">
+                <div class="person-photo" style="background-image:url('${escapeHtml(person.photo)}')"></div>
+                <div class="person-body">
+                  <div class="person-top">
+                    <div class="person-name">${escapeHtml(person.name)}</div>
+                    <div class="person-distance">${escapeHtml(person.distance)}</div>
+                  </div>
+                  <div class="person-interest">${escapeHtml(person.interest)}</div>
+                </div>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      async function loadPeople() {
+        renderPeople(fallbackPeople);
+
+        const endpoint = apiEndpoint("app-data");
+        if (!endpoint) {
+          return;
+        }
+
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 3500);
+
+        try {
+          const response = await fetch(endpoint, { signal: controller.signal });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const people = normalizePeople(data.candidates || data.users || []);
+          if (people.length) renderPeople(people);
+        } catch (error) {
+          // Keep the visible fallback cards when the remote sheet is slow or unavailable.
+        } finally {
+          window.clearTimeout(timeout);
+        }
+      }
+
+      loadPeople();
+    </script>
+  </body>
+</html>
