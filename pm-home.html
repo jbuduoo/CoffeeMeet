@@ -169,14 +169,29 @@
       }
 
       .preview-card-head {
+        position: relative;
+        overflow: hidden;
         min-height: 176px;
         display: grid;
         align-content: end;
         gap: 12px;
         padding: 20px;
+      }
+
+      .preview-card-head::before {
+        content: "";
+        position: absolute;
+        inset: 0;
         background:
-          linear-gradient(180deg, rgba(255, 248, 243, 0.42), rgba(154, 79, 5, 0.28)),
+          linear-gradient(180deg, rgba(255, 248, 243, 0.28), rgba(154, 79, 5, 0.36)),
           url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center 36%/cover;
+        filter: blur(8px);
+        transform: scale(1.08);
+      }
+
+      .preview-card-head > * {
+        position: relative;
+        z-index: 1;
       }
 
       .preview-distance {
@@ -234,6 +249,15 @@
       a.coffee-chip:focus-visible {
         background: #ffe7c7;
         outline: none;
+      }
+
+      .mockup-note {
+        margin: 18px auto 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+        font-weight: 700;
+        text-align: center;
       }
 
       section:not(.hero) {
@@ -466,8 +490,19 @@
       }
 
       .person-photo {
+        position: relative;
         aspect-ratio: 1 / 1.05;
         background: #ead7c6 center/cover;
+        overflow: hidden;
+      }
+
+      .person-photo::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        backdrop-filter: blur(7px);
+        -webkit-backdrop-filter: blur(7px);
+        background: rgba(255, 248, 243, 0.08);
       }
 
       .person-body {
@@ -497,6 +532,20 @@
         margin-top: 10px;
         color: var(--muted);
         font-weight: 700;
+      }
+
+      .person-coffee {
+        margin-top: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 8px;
+        background: #fff2e2;
+        color: var(--coffee-dark);
+        font-size: 14px;
+        font-weight: 800;
       }
 
       footer {
@@ -751,6 +800,7 @@
               </div>
             </div>
           </div>
+          <p class="mockup-note">先看距離，再看照片。</p>
         </div>
       </section>
 
@@ -789,7 +839,7 @@
             <div class="step">
               <div class="step-number">2</div>
               <div class="step-icon" aria-hidden="true">💬</div>
-              <div class="step-label">聊幾句</div>
+              <div class="step-label">看資料</div>
             </div>
             <div class="step">
               <div class="step-number">3</div>
@@ -810,7 +860,7 @@
           <div class="people-head">
             <div class="people-title-wrap">
               <h2 class="section-title" id="people-title">附近的人</h2>
-              <p class="people-subtitle">先看看誰離你比較近，再決定要不要聊幾句。</p>
+              <p class="people-subtitle">先看距離，再看感覺。想認識，就從一杯咖啡開始。</p>
             </div>
             <a class="see-more" href="index.html">查看更多</a>
           </div>
@@ -921,6 +971,7 @@
                     <div class="person-distance">${escapeHtml(person.distance)}</div>
                   </div>
                   <div class="person-interest">${escapeHtml(person.interest)}</div>
+                  <div class="person-coffee">☕ 想喝咖啡</div>
                 </div>
               </a>
             `,
