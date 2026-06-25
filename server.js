@@ -159,10 +159,15 @@ async function getAppData() {
   const fallbackPlace = (placeId) => placesById[placeId]?.place_name || "";
   const invites = inviteRows.map((invite, index) => ({
     id: invite.invite_id || `sheet-invite-${index + 1}`,
+    inviteId: invite.invite_id || "",
+    rowIndex: index + 1,
     candidateId: invite.receiver_user_id || invite.sender_user_id,
     senderUserId: invite.sender_user_id || "",
     receiverUserId: invite.receiver_user_id || "",
     status: statusToInviteStatus(invite.status),
+    feedbackScore: invite.feedback_score || "",
+    createdAt: invite.created_at || "",
+    updatedAt: invite.updated_at || "",
     note: stripAddressLines(invite.note) || [
       invite.accepted_at ? `已確認：${invite.accepted_at}` : "",
       invite.selected_times ? `可選時段：${invite.selected_times}` : "",
@@ -308,11 +313,15 @@ async function createInvite(invite) {
     ? invite.selectedTimes.join("、")
     : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
   const placeName = String(invite.placeName || invite.place_name || detailFromNote(note, "地點") || "").trim();
-  const inviteId = String(invite.id || invite.inviteId || invite.invite_id || `invite-${Date.now().toString(36)}`).trim();
+  const feedbackScore = String(invite.feedbackScore || invite.feedback_score || detailFromNote(note, "問卷分數").replace(/分$/, "") || "").trim();
+  const suppliedInviteId = String(invite.inviteId || invite.invite_id || invite.id || "").trim();
+  const inviteId = suppliedInviteId || `invite-${Date.now().toString(36)}`;
   const rows = rowsToObjects(current.values);
   const requestedStatus = statusToInviteStatus(invite.status || "");
-  let existingIndex = rows.findIndex((row) => row.invite_id === inviteId);
-  if (existingIndex < 0) {
+  let existingIndex = suppliedInviteId
+    ? rows.findIndex((row) => String(row.invite_id || "").trim() === suppliedInviteId)
+    : -1;
+  if (existingIndex < 0 && !suppliedInviteId) {
     existingIndex = rows.findIndex((row) =>
       row.sender_user_id === senderUserId &&
       row.receiver_user_id === receiverUserId &&
@@ -326,12 +335,22 @@ async function createInvite(invite) {
       ...existing,
       status: requestedStatus,
       note: note || stripAddressLines(requestedStatus === "confirmed" ? `已確認：${acceptedTime}；${existing.note || ""}` : existing.note || ""),
+      feedback_score: feedbackScore || existing.feedback_score || "",
       accepted_at: acceptedTime || existing.accepted_at || "",
       updated_at: today,
     };
     const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
     await updateSheetValues(`invites!A${existingIndex + 2}:${columnName(headers.length)}${existingIndex + 2}`, [row]);
-    return { inviteId, updated: true };
+    return {
+      inviteId: existing.invite_id || inviteId,
+      updated: true,
+      rowIndex: existingIndex + 1,
+      beforeStatus: existing.status || "",
+      afterStatus: requestedStatus,
+    };
+  }
+  if (existingIndex < 0 && ["confirmed", "cancelled", "done"].includes(requestedStatus)) {
+    throw new Error("Invite update target not found");
   }
   if (existingIndex >= 0) {
     return { inviteId: rows[existingIndex].invite_id || inviteId, duplicate: true };
@@ -345,6 +364,7 @@ async function createInvite(invite) {
     selected_times: selectedTimes,
     place_name: placeName,
     note: note || `可選時段：${selectedTimes}；地點：${placeName}`,
+    feedback_score: feedbackScore,
     created_at: today,
     updated_at: today,
     accepted_at: "",
@@ -564,6 +584,7 @@ async function ensureInviteHeaders(currentHeaders) {
     "selected_times",
     "place_name",
     "note",
+    "feedback_score",
     "created_at",
     "updated_at",
     "accepted_at",
