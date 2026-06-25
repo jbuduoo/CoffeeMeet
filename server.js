@@ -15,7 +15,6 @@ function parseGoogleMapsPlaceUrl(source, originalInput = "") {
   const decodedPath = decodeURIComponent(source.replace(/\+/g, " "));
   const placeMatch = decodedPath.match(/\/place\/([^/@?]+)/);
   const verifiedNameMatch = String(originalInput || "").match(/地點：([^｜\n]+)/);
-  const verifiedAddressMatch = String(originalInput || "").match(/地址：([^｜\n]+)/);
   const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
   const verifiedCoordsMatch = String(originalInput || "").match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
   const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
@@ -24,7 +23,6 @@ function parseGoogleMapsPlaceUrl(source, originalInput = "") {
   if (!coords) return null;
   return {
     name: rawName || "Google Maps 地點",
-    address: verifiedAddressMatch ? verifiedAddressMatch[1].trim() : "",
     url: source,
     lat: coords[1],
     lng: coords[2],
@@ -146,10 +144,8 @@ async function getAppData() {
         time: user.available_times,
         availabilityNote: user.available_times,
         place: place.place_name || user.meeting_place_id || "",
-        address: place.address || "",
         meetingArea: place.place_name || "",
         meetingPlaceName: place.place_name || "",
-        meetingPlaceAddress: place.address || "",
         meetingPlaceUrl: place.map_url || "",
         meetingLat: place.lat || "",
         meetingLng: place.lng || "",
@@ -167,7 +163,7 @@ async function getAppData() {
     senderUserId: invite.sender_user_id || "",
     receiverUserId: invite.receiver_user_id || "",
     status: statusToInviteStatus(invite.status),
-    note: invite.note || [
+    note: stripAddressLines(invite.note) || [
       invite.accepted_at ? `已確認：${invite.accepted_at}` : "",
       invite.selected_times ? `可選時段：${invite.selected_times}` : "",
       `地點：${invite.place_name || fallbackPlace(invite.receiver_place_id || invite.sender_place_id)}`,
@@ -307,7 +303,7 @@ async function createInvite(invite) {
   const current = await getSheetValues("invites!A1:Z1000");
   const headers = await ensureInviteHeaders(current.values?.[0] || []);
   const today = todayString();
-  const note = String(invite.note || "").trim();
+  const note = stripAddressLines(invite.note).trim();
   const selectedTimes = Array.isArray(invite.selectedTimes)
     ? invite.selectedTimes.join("、")
     : String(invite.selected_times || invite.selectedTimes || detailFromNote(note, "可選時段") || "").trim();
@@ -329,7 +325,7 @@ async function createInvite(invite) {
     const valuesByHeader = {
       ...existing,
       status: requestedStatus,
-      note: note || (requestedStatus === "confirmed" ? `已確認：${acceptedTime}；${existing.note || ""}` : existing.note || ""),
+      note: note || stripAddressLines(requestedStatus === "confirmed" ? `已確認：${acceptedTime}；${existing.note || ""}` : existing.note || ""),
       accepted_at: acceptedTime || existing.accepted_at || "",
       updated_at: today,
     };
@@ -426,12 +422,12 @@ async function saveMeetingPlace({ placeId, userId, profile, today, existingPlace
     (place) => place.place_id === existingPlaceId || place.place_id === placeId || place.owner_user_id === userId,
   );
   const existing = existingIndex >= 0 ? places[existingIndex] : null;
-  const placeName = profile.meetingPlaceName || firstLineValue(profile.meetingArea, "地點") || profile.meetingArea || "";
+  const sanitizedMeetingArea = stripAddressLines(profile.meetingArea);
+  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
   const mapUrl = profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "";
   const valuesByHeader = {
     place_id: placeId,
     place_name: placeName,
-    address: profile.meetingPlaceAddress || firstLineValue(profile.meetingArea, "地址") || existing?.address || "",
     city: profile.city || existing?.city || "",
     district: profile.district || existing?.district || "",
     map_url: mapUrl,
@@ -443,7 +439,7 @@ async function saveMeetingPlace({ placeId, userId, profile, today, existingPlace
     owner_user_id: userId,
     created_at: existing?.created_at || today,
     updated_at: today,
-    raw_input: profile.meetingArea || "",
+    raw_input: sanitizedMeetingArea,
   };
   const row = headers.map((header) => (valuesByHeader[header] !== undefined ? valuesByHeader[header] : ""));
   if (existing) {
@@ -458,6 +454,13 @@ function firstLineValue(value, label) {
   return match ? match[1].trim() : "";
 }
 
+function stripAddressLines(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .filter((line) => !/^地址：/.test(line.trim()))
+    .join("\n");
+}
+
 function firstLineCoords(value) {
   const match = String(value || "").match(/^座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/m);
   return match ? { lat: match[1], lng: match[2] } : null;
@@ -467,7 +470,6 @@ async function ensureMeetingPlaceHeaders(currentHeaders) {
   const requiredHeaders = [
     "place_id",
     "place_name",
-    "address",
     "city",
     "district",
     "map_url",

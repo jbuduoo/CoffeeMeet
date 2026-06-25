@@ -407,22 +407,6 @@
         font-weight: 700;
       }
 
-      .place-debug {
-        display: none;
-        white-space: pre-wrap;
-        word-break: break-word;
-        border: 1px solid rgba(180, 35, 24, 0.25);
-        border-radius: 6px;
-        background: #fff7f5;
-        color: #7a271a;
-        font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-        padding: 8px;
-      }
-
-      .place-debug.visible {
-        display: block;
-      }
-
       .place-verify-button.verified {
         border-color: #16803c;
         background: #16803c;
@@ -2018,12 +2002,10 @@
                         <button class="btn secondary place-verify-button" id="verifyMeetingPlace" type="button">驗證</button>
                       </div>
                       <input id="meetingPlaceName" name="meetingPlaceName" type="hidden" />
-                      <input id="meetingPlaceAddress" name="meetingPlaceAddress" type="hidden" />
                       <input id="meetingPlaceUrl" name="meetingPlaceUrl" type="hidden" />
                       <input id="meetingLat" name="meetingLat" type="hidden" />
                       <input id="meetingLng" name="meetingLng" type="hidden" />
                       <div class="place-status" id="meetingPlaceStatus">請貼上完整 Google Maps 地點網址後按「驗證」。</div>
-                      <pre class="place-debug" id="meetingPlaceDebug" aria-live="polite"></pre>
                       <div class="map-shortcuts">
                         <span class="map-shortcuts-label">位置僅限：</span>
                         <a class="map-link" data-map-query="全家" href="https://www.google.com/maps/search/%E5%85%A8%E5%AE%B6/" target="_blank" rel="noreferrer">↗ 全家</a>
@@ -2918,18 +2900,6 @@
         status.classList.toggle("error", type === "error");
       }
 
-      function setPlaceDebug(details = null) {
-        const panel = document.getElementById("meetingPlaceDebug");
-        if (!panel) return;
-        if (!details) {
-          panel.textContent = "";
-          panel.classList.remove("visible");
-          return;
-        }
-        panel.textContent = typeof details === "string" ? details : JSON.stringify(details, null, 2);
-        panel.classList.add("visible");
-      }
-
       function setMeetingPlaceButtonVerified(verified) {
         const button = document.getElementById("verifyMeetingPlace");
         button.textContent = verified ? "驗證成功" : "驗證";
@@ -2945,7 +2915,7 @@
       }
 
       function clearMeetingPlaceFields() {
-        ["meetingPlaceName", "meetingPlaceAddress", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
+        ["meetingPlaceName", "meetingPlaceUrl", "meetingLat", "meetingLng"].forEach((id) => setFieldValue(id, ""));
         setMeetingPlaceButtonVerified(false);
       }
 
@@ -2965,10 +2935,8 @@
         const decodedPath = decodeURIComponent(url.pathname.replace(/\+/g, " "));
         const placeMatch = decodedPath.match(/\/place\/([^/]+)/);
         const verifiedNameMatch = input.match(/地點：([^｜\n]+)/);
-        const verifiedAddressMatch = input.match(/地址：([^｜\n]+)/);
         const rawName = verifiedNameMatch ? verifiedNameMatch[1].trim() : placeMatch ? placeMatch[1].trim() : "";
         const name = rawName || "Google Maps 地點";
-        const address = verifiedAddressMatch ? verifiedAddressMatch[1].trim() : "";
         const verifiedCoordsMatch = input.match(/座標：\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
         const preciseMatch = source.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
         const atMatch = source.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
@@ -2977,7 +2945,6 @@
 
         return {
           name,
-          address,
           url: source,
           lat: coords[1],
           lng: coords[2],
@@ -2987,17 +2954,6 @@
       async function verifyGoogleMapsPlaceRemotely(value) {
         if (!hasRemoteApi()) return null;
         const endpoint = apiEndpoint("places-verify");
-        const debug = {
-          step: "request",
-          endpoint,
-          action: "places-verify",
-          input: value,
-          userAgent: navigator.userAgent,
-          pageUrl: window.location.href,
-          time: new Date().toISOString(),
-        };
-        setPlaceDebug(debug);
-        console.info("[place-verify] request", debug);
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "content-type": "text/plain;charset=utf-8" },
@@ -3010,21 +2966,9 @@
         } catch (error) {
           data = null;
         }
-        const responseDebug = {
-          ...debug,
-          step: "response",
-          httpStatus: response.status,
-          ok: response.ok,
-          responseText,
-          responseJson: data,
-        };
-        setPlaceDebug(responseDebug);
-        console.info("[place-verify] response", responseDebug);
         if (!response.ok || !data?.ok) {
           const message = data?.error || responseText || "地點驗證失敗";
-          const error = new Error(message);
-          error.debug = responseDebug;
-          throw error;
+          throw new Error(message);
         }
         return data.place || null;
       }
@@ -3032,8 +2976,6 @@
       function formatVerifiedMeetingPlace(place) {
         return [
           `地點：${place.name}`,
-          place.address ? `地址：${place.address}` : "",
-          `Google Maps：${place.url}`,
           `座標：${place.lat}, ${place.lng}`,
         ].filter(Boolean).join("\n");
       }
@@ -3047,7 +2989,6 @@
         ) {
           setFieldValue("meetingArea", formatVerifiedMeetingPlace({
             name: document.getElementById("meetingPlaceName").value,
-            address: document.getElementById("meetingPlaceAddress").value,
             url: document.getElementById("meetingPlaceUrl").value,
             lat: document.getElementById("meetingLat").value,
             lng: document.getElementById("meetingLng").value,
@@ -3079,12 +3020,10 @@
           return false;
         }
         setFieldValue("meetingPlaceName", parsed.name);
-        setFieldValue("meetingPlaceAddress", parsed.address);
         setFieldValue("meetingPlaceUrl", parsed.url);
         setFieldValue("meetingLat", parsed.lat);
         setFieldValue("meetingLng", parsed.lng);
         field.value = formatVerifiedMeetingPlace(parsed);
-        setPlaceDebug(null);
         setPlaceStatus("");
         setMeetingPlaceButtonVerified(true);
         showToast("地點驗證成功");
@@ -3096,13 +3035,11 @@
         if (!place?.lat || !place?.lng || !place?.url) return false;
         const verifiedPlace = {
           name: place.name || "Google Maps 地點",
-          address: place.address || "",
           url: place.url,
           lat: place.lat,
           lng: place.lng,
         };
         setFieldValue("meetingPlaceName", verifiedPlace.name);
-        setFieldValue("meetingPlaceAddress", verifiedPlace.address);
         setFieldValue("meetingPlaceUrl", verifiedPlace.url);
         setFieldValue("meetingLat", verifiedPlace.lat);
         setFieldValue("meetingLng", verifiedPlace.lng);
@@ -3641,9 +3578,7 @@
 
       function profilePlaceText(profile) {
         const place = profile?.place || profile?.meetingPlaceName || firstLineValue(profile?.meetingArea, "地點") || "";
-        const address = profile?.address || profile?.meetingPlaceAddress || firstLineValue(profile?.meetingArea, "地址") || "";
-        if (place && address && !place.includes(address)) return `${place}｜${address}`;
-        return place || address || "";
+        return place || "";
       }
 
       function invitePlaceForCandidate(candidate) {
@@ -3830,7 +3765,6 @@
         setFieldValue("intro", user.intro || "");
         if (!setVerifiedMeetingPlace({
           name: user.meetingPlaceName || user.meetingArea || user.place || "",
-          address: user.meetingPlaceAddress || user.address || "",
           url: user.meetingPlaceUrl || "",
           lat: user.meetingLat || "",
           lng: user.meetingLng || "",
@@ -4085,9 +4019,7 @@
 
       function candidatePlaceText(candidate) {
         const place = candidate.place || candidate.meetingPlaceName || "";
-        const address = candidate.address || candidate.meetingPlaceAddress || "";
-        if (place && address && !place.includes(address)) return `${place}｜${address}`;
-        return place || address || "尚未確認";
+        return place || "尚未確認";
       }
 
       function inviteTimeOptions(invite, candidate) {
@@ -4335,7 +4267,7 @@
                 <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                 <div class="detail-item">
                   <span>咖啡店</span>
-                  <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || candidate.address || "")}" target="_blank" rel="noreferrer">定位</a></strong>
+                  <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || "")}" target="_blank" rel="noreferrer">定位</a></strong>
                 </div>
                 <div class="detail-item full">
                   <span>通常方便時段</span>
