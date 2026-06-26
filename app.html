@@ -330,51 +330,8 @@
         line-height: 1.6;
       }
 
-      .profile-login-card {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: var(--panel-strong);
-        box-shadow: var(--shadow);
-        padding: 24px;
-        margin-bottom: 18px;
-        display: grid;
-        gap: 16px;
-      }
-
-      .profile-login-title {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 900;
-      }
-
-      .profile-login-copy {
-        margin: 0;
-        color: var(--muted);
-      }
-
-      .profile-login-steps {
-        margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 8px;
-        color: #3d362f;
-        font-weight: 800;
-        list-style: none;
-      }
-
-      .profile-login-card .btn,
       .digest-login-cta {
         width: fit-content;
-      }
-
-      .profile-preview-note {
-        border: 1px dashed #c9bda9;
-        border-radius: 8px;
-        background: #fff8e8;
-        color: #7c4a03;
-        font-weight: 800;
-        padding: 10px 12px;
-        margin-bottom: 14px;
       }
 
       .profile-form-preview {
@@ -672,12 +629,12 @@
       }
 
       .map-link {
-        min-height: 32px;
+        min-height: 30px;
         border: 1px solid #1d4ed8;
         border-radius: 999px;
         background: #2563eb;
         color: white;
-        padding: 5px 10px;
+        padding: 4px 10px;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
@@ -1966,18 +1923,15 @@
           font-size: 16px;
         }
 
-        .profile-login-card,
         .digest-intro {
           padding-inline: 16px;
         }
 
-        .profile-login-title,
         .digest-intro h3 {
           font-size: 22px;
           line-height: 1.25;
         }
 
-        .profile-login-card .btn,
         .digest-login-cta,
         .home-login-button {
           max-width: 100%;
@@ -2184,16 +2138,10 @@
           font-size: 25px;
         }
 
-        .profile-login-card {
-          padding: 18px 14px;
-        }
-
-        .profile-login-title,
         .digest-intro h3 {
           font-size: 20px;
         }
 
-        .profile-login-steps,
         .digest-intro p {
           font-size: 14px;
         }
@@ -2274,17 +2222,6 @@
           <div>
             <section class="section page hidden" id="profilePage">
               <h3>建立個人資料</h3>
-              <div class="profile-login-card hidden" id="profileLoginCard">
-                <p class="profile-login-title">建立你的名片</p>
-                <ul class="profile-login-steps">
-                  <li>上傳照片</li>
-                  <li>填寫基本資料</li>
-                  <li>開始認識附近的人</li>
-                </ul>
-                <button class="btn primary" type="button" data-go="digest">建立我的名片</button>
-                <p class="profile-login-copy">登入後即可開始建立資料</p>
-              </div>
-              <div class="profile-preview-note hidden" id="profilePreviewNote">登入後即可建立</div>
               <form id="profileForm">
                 <div class="form-grid">
                   <div class="form-section-title">基本資料</div>
@@ -3771,8 +3708,6 @@
 
       function updateProfileAccessState() {
         const isLoggedIn = Boolean(state.currentUser);
-        document.getElementById("profileLoginCard")?.classList.toggle("hidden", isLoggedIn);
-        document.getElementById("profilePreviewNote")?.classList.toggle("hidden", isLoggedIn);
         document.getElementById("profileForm")?.classList.toggle("profile-form-preview", !isLoggedIn);
         document.querySelector("[data-photo-upload-field]")?.classList.toggle("hidden", !isLoggedIn);
         document.querySelector("[data-photo-login-placeholder]")?.classList.toggle("hidden", isLoggedIn);
@@ -3814,7 +3749,7 @@
         renderCandidates();
         renderInvites();
         updateAdminVisibility();
-        go("digest");
+        returnToHome();
         showToast("已登出");
       }
 
@@ -5208,6 +5143,14 @@
         delete panel.dataset.inviteId;
         document.querySelectorAll(".invite-card.is-focused").forEach((card) => card.classList.remove("is-focused"));
         document.getElementById("invitesPage").insertBefore(panel, document.getElementById("inviteList"));
+      }
+
+      function returnToHome() {
+        closeCandidateDetail();
+        closeInviteDetail();
+        document.querySelector("[data-user-menu-panel]")?.classList.add("hidden");
+        go("digest");
+        window.scrollTo({ top: 0, behavior: "auto" });
       }
 
       function toggleInviteDetail(inviteId, card) {
