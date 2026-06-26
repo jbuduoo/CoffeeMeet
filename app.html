@@ -623,11 +623,6 @@
         gap: 8px;
       }
 
-      .verify-status {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
       .map-link {
         min-height: 30px;
         border: 1px solid #1d4ed8;
@@ -2221,17 +2216,12 @@
         <div class="layout">
           <div>
             <section class="section page hidden" id="profilePage">
-              <h3>建立個人資料</h3>
               <form id="profileForm">
                 <div class="form-grid">
                   <div class="form-section-title">基本資料</div>
                   <div class="field">
                     <label for="email">Email</label>
-                    <div class="inline-action">
-                      <input id="email" name="email" type="email" placeholder="you@example.com" />
-                      <button class="btn secondary" id="verifyEmail" type="button">寄送認證信</button>
-                    </div>
-                    <div class="verify-status" id="emailVerifyStatus">尚未認證</div>
+                    <input id="email" name="email" type="email" placeholder="you@example.com" />
                   </div>
                   <div class="field">
                     <label for="nickname">暱稱</label>
@@ -3744,12 +3734,14 @@
         state.currentUser = null;
         state.profile = {};
         state.profileDirty = false;
+        localStorage.removeItem("coffeemeet.loginEmail");
+        localStorage.removeItem("loginEmail");
         resetProfileFormForNewUser();
         renderLoginPanel();
         renderCandidates();
         renderInvites();
         updateAdminVisibility();
-        returnToHome();
+        window.location.href = "index.html";
         showToast("已登出");
       }
 
@@ -3785,12 +3777,18 @@
           candidates.find((item) => item.email && item.email.toLowerCase() === normalizedEmail) ||
           (!hasRemoteApi() ? mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail) : null);
         if (!user) {
-          state.currentUser = null;
+          state.currentUser = {
+            userId: normalizedEmail,
+            email: email.trim(),
+            name: email.trim(),
+            reviewStatus: "新會員",
+          };
           resetProfileFormForNewUser(email.trim());
           renderLoginPanel();
+          updateAdminVisibility();
           renderCandidates();
           go("profile");
-          showToast("找不到這個 Email，請先建立資料");
+          showToast("請先建立我的資料");
           return;
         }
         state.currentUser = {
@@ -5423,16 +5421,6 @@
       });
 
       document.getElementById("city").addEventListener("change", () => updateDistrictOptions());
-      document.getElementById("verifyEmail").addEventListener("click", () => {
-        const email = document.getElementById("email").value.trim();
-        const status = document.getElementById("emailVerifyStatus");
-        if (!email) {
-          showToast("請先輸入 Email");
-          return;
-        }
-        status.textContent = "認證信已寄出，請到信箱確認";
-        showToast("認證信已寄出");
-      });
       document.getElementById("meetingArea").addEventListener("input", updateMapLinks);
       document.getElementById("meetingArea").addEventListener("input", () => {
         clearMeetingPlaceFields();
