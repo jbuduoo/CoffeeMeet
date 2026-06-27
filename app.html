@@ -3987,8 +3987,11 @@
           email: user.email,
           name: user.name || user.nickname || user.email,
           gender: user.gender,
+          meetingLat: user.meetingLat || user.lat || "",
+          meetingLng: user.meetingLng || user.lng || "",
           reviewStatus: user.reviewStatus || "已登入",
         };
+        state.profile = user;
         populateProfileForm(user);
         rememberCurrentUser();
         renderLoginPanel();
@@ -4539,7 +4542,9 @@
       function profileCoords(profile) {
         const lat = Number(profile?.lat ?? profile?.meetingLat);
         const lng = Number(profile?.lng ?? profile?.meetingLng);
-        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+        return { lat, lng };
       }
 
       function distanceKm(a, b) {
@@ -4558,7 +4563,11 @@
       function currentUserProfile() {
         const email = state.currentUser?.email?.toLowerCase();
         if (!email) return null;
-        return candidates.find((candidate) => candidate.email?.toLowerCase() === email) || null;
+        const sheetProfile = candidates.find((candidate) => candidate.email?.toLowerCase() === email);
+        if (profileCoords(sheetProfile)) return sheetProfile;
+        if (state.profile?.email?.toLowerCase?.() === email && profileCoords(state.profile)) return state.profile;
+        if (profileCoords(state.currentUser)) return state.currentUser;
+        return sheetProfile || state.profile || state.currentUser || null;
       }
 
       function formatDistance(distance) {
@@ -5332,10 +5341,15 @@
         if (normalizeGender(state.currentUser?.gender) === "女性") sourceInvite.femaleFeedbackScore = score;
         sourceInvite.note = note;
         closeFeedbackModal();
-        await loadSheetAppData(true);
         refreshInviteViews(inviteId, invite.candidateId);
         setSaving(false);
         showToast(`已完成，分數 ${score} 分`);
+        try {
+          await loadSheetAppData(true);
+          refreshInviteViews(inviteId, invite.candidateId);
+        } catch (error) {
+          console.warn("問卷送出後重新整理失敗", error);
+        }
       }
 
       function closeInviteDetail() {
@@ -5696,6 +5710,8 @@
             email: state.profile.email,
             name: state.profile.nickname || state.profile.email,
             gender: state.profile.gender,
+            meetingLat: state.profile.meetingLat || "",
+            meetingLng: state.profile.meetingLng || "",
             reviewStatus: data.created ? "已建立資料" : "已登入",
           };
           rememberCurrentUser();
@@ -5713,6 +5729,8 @@
             email: state.profile.email,
             name: state.profile.nickname || state.profile.email || "新會員",
             gender: state.profile.gender,
+            meetingLat: state.profile.meetingLat || "",
+            meetingLng: state.profile.meetingLng || "",
             reviewStatus: "本機暫存",
           };
           rememberCurrentUser();
