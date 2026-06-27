@@ -25,6 +25,7 @@
 
       html {
         scroll-behavior: smooth;
+        overflow-x: hidden;
       }
 
       body {
@@ -32,6 +33,7 @@
         background: var(--cream);
         color: var(--ink);
         font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        overflow-x: hidden;
       }
 
       a {
@@ -177,6 +179,10 @@
         color: var(--muted);
         font-size: 14px;
         font-weight: 700;
+      }
+
+      .mobile-cta-text {
+        display: none;
       }
 
       .phone-wrap {
@@ -526,6 +532,14 @@
         scroll-snap-type: x mandatory;
       }
 
+      .people-swipe-hint {
+        display: none;
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
       .person-card {
         display: block;
         color: inherit;
@@ -674,29 +688,47 @@
       }
 
       @media (max-width: 560px) {
+        main {
+          display: flex;
+          flex-direction: column;
+        }
+
         .hero {
           min-height: auto;
-          padding: 22px 20px 48px;
+          order: 1;
+          padding: 18px 18px 36px;
           display: block;
         }
 
         .brand {
-          margin-bottom: 36px;
+          margin-bottom: 28px;
+          gap: 10px;
+          font-size: 18px;
+        }
+
+        .logo {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
         }
 
         .hero h1 {
-          font-size: 40px;
+          font-size: 34px;
           line-height: 1.12;
         }
 
         .hero-copy {
-          margin-top: 22px;
-          font-size: 17px;
-          line-height: 1.75;
+          margin-top: 18px;
+          font-size: 16px;
+          line-height: 1.6;
+        }
+
+        .hero-copy-extra {
+          display: none;
         }
 
         .cta-row {
-          margin-top: 30px;
+          margin-top: 24px;
         }
 
         .primary-cta,
@@ -707,25 +739,43 @@
           font-size: 20px;
         }
 
+        .primary-cta {
+          font-size: 18px;
+        }
+
+        .desktop-cta-text {
+          display: none;
+        }
+
+        .mobile-cta-text {
+          display: inline;
+        }
+
         .cta-note {
-          text-align: center;
-          font-size: 14px;
+          display: none;
         }
 
 
         .email-start-form {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr) 78px;
           max-width: none;
+          gap: 10px;
         }
 
         .landing-email-input {
           min-height: 56px;
           font-size: 16px;
+          min-width: 0;
+          padding: 0 14px;
+        }
+
+        .email-start-hint {
+          margin-top: 10px;
+          font-size: 13px;
         }
 
         .phone-wrap {
-          display: block;
-          margin-top: 40px;
+          display: none;
         }
 
         .phone {
@@ -735,6 +785,22 @@
 
         section:not(.hero) {
           padding: 56px 20px;
+        }
+
+        .people {
+          order: 2;
+        }
+
+        .reasons {
+          order: 3;
+        }
+
+        .steps {
+          order: 4;
+        }
+
+        .story {
+          order: 5;
         }
 
         .section-title {
@@ -785,7 +851,7 @@
 
         .people-head {
           gap: 18px;
-          margin-bottom: 22px;
+          margin-bottom: 12px;
         }
 
         .see-more {
@@ -794,9 +860,13 @@
         }
 
         .people-rail {
-          grid-auto-columns: 78vw;
+          grid-auto-columns: 82%;
           gap: 14px;
-          padding-bottom: 16px;
+          padding: 4px 18px 16px 0;
+        }
+
+        .people-swipe-hint {
+          display: block;
         }
 
         .person-body {
@@ -808,6 +878,7 @@
         }
 
         footer {
+          order: 6;
           padding: 36px 20px;
         }
 
@@ -816,8 +887,7 @@
         }
 
         .footer-links {
-          text-align: left;
-          line-height: 1.9;
+          display: none;
         }
       }
 
@@ -851,16 +921,16 @@
           <h1>找對象，<br />不一定要跑很遠。</h1>
           <p class="hero-copy">
             附近的人，一杯咖啡，就能認識。<br />
-            公開咖啡店，一小時，先聊聊。
+            <span class="hero-copy-extra">公開咖啡店，一小時，先聊聊。</span>
           </p>
 
           <div class="cta-row">
             <form class="email-start-form" id="landingEmailForm">
               <input class="landing-email-input" id="landingEmail" name="email" type="email" autocomplete="email" placeholder="輸入 Email，開始認識附近的人" required />
-              <button class="primary-cta" type="submit" aria-label="開始認識附近的人">開始認識附近的人</button>
+              <button class="primary-cta" type="submit" aria-label="開始認識附近的人"><span class="desktop-cta-text">開始認識附近的人</span><span class="mobile-cta-text">GO</span></button>
             </form>
             <div class="cta-note">用一杯咖啡的時間，認識附近的人。</div>
-            <div class="email-start-hint">輸入 Email，即可查看完整資料並開始邀約。</div>
+            <div class="email-start-hint">輸入後直接查看附近的人</div>
           </div>
         </div>
 
@@ -884,7 +954,7 @@
               </div>
             </div>
           </div>
-          <p class="mockup-note">先看距離，再看照片。</p>
+          <p class="mockup-note">先看距離，再決定要不要喝杯咖啡。</p>
         </div>
       </section>
 
@@ -950,6 +1020,7 @@
             </div>
             <a class="see-more" href="#landingEmail" data-landing-cta>查看更多</a>
           </div>
+          <p class="people-swipe-hint">左右滑動查看更多附近的人</p>
           <div class="people-rail" id="peopleRail" aria-live="polite"></div>
         </div>
       </section>
@@ -1091,6 +1162,13 @@
 
       const landingEmailForm = document.getElementById("landingEmailForm");
       const landingEmail = document.getElementById("landingEmail");
+      const desktopEmailPlaceholder = "輸入 Email，開始認識附近的人";
+      const mobileEmailPlaceholder = "輸入 Email";
+
+      function syncLandingEmailPlaceholder() {
+        if (!landingEmail) return;
+        landingEmail.placeholder = window.matchMedia("(max-width: 560px)").matches ? mobileEmailPlaceholder : desktopEmailPlaceholder;
+      }
 
       function focusLandingEmail() {
         landingEmail?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1103,6 +1181,9 @@
       }
 
       if (landingEmailForm && landingEmail) {
+        syncLandingEmailPlaceholder();
+        window.addEventListener("resize", syncLandingEmailPlaceholder);
+
         landingEmailForm.addEventListener("submit", (event) => {
           event.preventDefault();
           const email = landingEmail.value.trim();
