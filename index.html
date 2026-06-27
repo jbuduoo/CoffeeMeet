@@ -400,6 +400,21 @@
         background: #f7eee7;
       }
 
+      .steps .section-title {
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      .section-kicker {
+        margin: 0 auto 30px;
+        max-width: 620px;
+        color: var(--muted);
+        font-size: clamp(17px, 1.8vw, 20px);
+        line-height: 1.7;
+        font-weight: 700;
+        text-align: center;
+      }
+
       .step-line {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -409,56 +424,45 @@
 
       .step {
         position: relative;
-        min-height: 180px;
+        min-height: 0;
         display: grid;
-        place-items: center;
-        gap: 14px;
-        padding: 28px;
+        gap: 10px;
+        justify-items: start;
+        padding: 22px;
         border: 1px solid rgba(34, 34, 34, 0.08);
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.58);
-        text-align: center;
-      }
-
-      @media (min-width: 861px) {
-        .step:not(:last-child)::after {
-          content: "→";
-          position: absolute;
-          top: 50%;
-          right: -24px;
-          z-index: 2;
-          width: 32px;
-          height: 32px;
-          display: grid;
-          place-items: center;
-          border-radius: 50%;
-          background: var(--paper);
-          color: var(--coffee-dark);
-          border: 1px solid rgba(154, 79, 5, 0.18);
-          font-size: 22px;
-          font-weight: 800;
-          transform: translateY(-50%);
-        }
+        text-align: left;
       }
 
       .step-number {
-        width: 42px;
-        height: 42px;
+        width: 34px;
+        height: 34px;
         display: grid;
         place-items: center;
         border-radius: 50%;
-        background: var(--ink);
+        background: rgba(34, 34, 34, 0.9);
         color: #fff;
+        font-size: 15px;
         font-weight: 800;
       }
 
       .step-icon {
-        font-size: 34px;
+        font-size: 42px;
+        line-height: 1;
       }
 
       .step-label {
-        font-size: 22px;
+        font-size: 21px;
         font-weight: 800;
+      }
+
+      .step-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.55;
+        font-weight: 700;
       }
 
       .people {
@@ -675,9 +679,8 @@
           min-height: 180px;
         }
 
-        .reason-grid,
         .step-line {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .people-head,
@@ -791,16 +794,12 @@
           order: 2;
         }
 
-        .reasons {
+        .steps {
           order: 3;
         }
 
-        .steps {
-          order: 4;
-        }
-
         .story {
-          order: 5;
+          order: 4;
         }
 
         .section-title {
@@ -831,22 +830,43 @@
           font-size: 16px;
         }
 
+        .section-kicker {
+          margin-bottom: 18px;
+          font-size: 16px;
+        }
+
+        .step-line {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
         .step {
           min-height: auto;
-          padding: 22px;
+          grid-template-columns: 32px 44px minmax(0, 1fr);
+          column-gap: 12px;
+          row-gap: 4px;
+          align-items: center;
+          padding: 16px;
         }
 
         .step-number {
-          width: 36px;
-          height: 36px;
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
         }
 
         .step-icon {
-          font-size: 30px;
+          font-size: 38px;
         }
 
         .step-label {
-          font-size: 20px;
+          font-size: 19px;
+        }
+
+        .step-copy {
+          grid-column: 3;
+          font-size: 15px;
+          line-height: 1.5;
         }
 
         .people-head {
@@ -958,59 +978,6 @@
         </div>
       </section>
 
-      <section class="reasons" aria-labelledby="why-title">
-        <div class="section-inner">
-          <h2 class="section-title demo-title" id="why-title">
-<span data-demo="boy-01@example.com">為</span><span data-demo="boy-02@example.com">什</span><span data-demo="boy-03@example.com">麼</span><span data-demo="boy-04@example.com">從</span><span data-demo="girl-01@example.com">附</span><span data-demo="girl-02@example.com">近</span><span data-demo="girl-03@example.com">開</span><span data-demo="girl-04@example.com">始</span>？
-</h2>
-          <div class="reason-grid">
-            <article class="reason-item">
-              <div class="reason-icon" aria-hidden="true">📍</div>
-              <h3>附近的人</h3>
-              <p>不用為了一次見面，跑一個小時。</p>
-            </article>
-            <article class="reason-item">
-              <div class="reason-icon" aria-hidden="true">☕</div>
-              <h3>公開咖啡店</h3>
-              <p>第一次見面，更自在、更安心。</p>
-            </article>
-            <article class="reason-item">
-              <div class="reason-icon" aria-hidden="true">⏰</div>
-              <h3>一小時</h3>
-              <p>沒有壓力，聊得來再約下一次。</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="steps" aria-labelledby="steps-title">
-        <div class="section-inner">
-          <h2 class="section-title" id="steps-title">使用流程</h2>
-          <div class="step-line">
-            <div class="step">
-              <div class="step-number">1</div>
-              <div class="step-icon" aria-hidden="true">📍</div>
-              <div class="step-label">附近的人</div>
-            </div>
-            <div class="step">
-              <div class="step-number">2</div>
-              <div class="step-icon" aria-hidden="true">💬</div>
-              <div class="step-label">看資料</div>
-            </div>
-            <div class="step">
-              <div class="step-number">3</div>
-              <div class="step-icon" aria-hidden="true">☕</div>
-              <div class="step-label">喝咖啡</div>
-            </div>
-            <div class="step">
-              <div class="step-number">4</div>
-              <div class="step-icon" aria-hidden="true">✨</div>
-              <div class="step-label">決定是否繼續</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section class="people" aria-labelledby="people-title">
         <div class="section-inner">
           <div class="people-head">
@@ -1022,6 +989,39 @@
           </div>
           <p class="people-swipe-hint">左右滑動查看更多附近的人</p>
           <div class="people-rail" id="peopleRail" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="steps" aria-labelledby="steps-title">
+        <div class="section-inner">
+          <h2 class="section-title" id="steps-title">從附近開始，很簡單</h2>
+          <p class="section-kicker">先看距離，再決定要不要喝杯咖啡。</p>
+          <div class="step-line">
+            <article class="step">
+              <div class="step-number">1</div>
+              <div class="step-icon" aria-hidden="true">📍</div>
+              <div class="step-label">附近的人</div>
+              <p class="step-copy">不用為了一次見面，跑一個小時。</p>
+            </article>
+            <article class="step">
+              <div class="step-number">2</div>
+              <div class="step-icon" aria-hidden="true">👀</div>
+              <div class="step-label">看資料</div>
+              <p class="step-copy">先看看對方的生活感與可約時間。</p>
+            </article>
+            <article class="step">
+              <div class="step-number">3</div>
+              <div class="step-icon" aria-hidden="true">☕</div>
+              <div class="step-label">喝咖啡</div>
+              <p class="step-copy">公開咖啡店，一小時，先聊聊。</p>
+            </article>
+            <article class="step">
+              <div class="step-number">4</div>
+              <div class="step-icon" aria-hidden="true">✨</div>
+              <div class="step-label">決定是否繼續</div>
+              <p class="step-copy">聊得來再約下一次，沒有壓力。</p>
+            </article>
+          </div>
         </div>
       </section>
 
