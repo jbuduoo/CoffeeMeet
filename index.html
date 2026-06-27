@@ -236,7 +236,7 @@
         inset: 0;
         background:
           linear-gradient(180deg, rgba(255, 248, 243, 0.28), rgba(154, 79, 5, 0.36)),
-          url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center 36%/cover;
+          url("https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=900&q=82") center 36%/cover;
         filter: blur(4px);
         transform: scale(1.08);
       }
@@ -982,31 +982,31 @@
           name: "Jacky",
           distance: "2 km",
           interest: "喜歡電影",
-          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=82",
+          photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=700&q=82",
         },
         {
           name: "Mika",
           distance: "1.6 km",
           interest: "老屋咖啡",
-          photo: "https://images.unsplash.com/photo-1512316609839-ce289d3eba0a?auto=format&fit=crop&w=700&q=82",
+          photo: "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=700&q=82",
         },
         {
           name: "Nora",
           distance: "2.4 km",
           interest: "週末看展",
-          photo: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=700&q=82",
+          photo: "https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?auto=format&fit=crop&w=700&q=82",
         },
         {
           name: "Leo",
           distance: "3 km",
           interest: "城市散步",
-          photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=700&q=82",
+          photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=700&q=82",
         },
         {
           name: "Yuna",
           distance: "1.9 km",
           interest: "甜點咖啡",
-          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=82",
+          photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=700&q=82",
         },
       ];
 
@@ -1124,11 +1124,9 @@
 
 
       document.querySelectorAll("[data-demo]").forEach((item) => {
-        item.addEventListener("click", () => {
-          const email = item.dataset.demo;
-          localStorage.setItem("loginEmail", email);
-          localStorage.setItem("coffeemeet.loginEmail", email);
-          window.location.href = `app.html?email=${encodeURIComponent(email)}`;
+        item.addEventListener("click", (event) => {
+          event.preventDefault();
+          focusLandingEmail();
         });
       });
 
