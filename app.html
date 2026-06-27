@@ -721,6 +721,10 @@
         flex-wrap: wrap;
       }
 
+      #profileForm .actions {
+        justify-content: center;
+      }
+
       .btn {
         border: 1px solid transparent;
         min-height: 42px;
@@ -1045,6 +1049,19 @@
         margin-bottom: 14px;
         display: grid;
         gap: 14px;
+      }
+
+      .my-card-view {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+
+      .my-card-panel {
+        margin-bottom: 12px;
+      }
+
+      .my-card-actions {
+        justify-content: center;
       }
 
       .invite-detail-panel {
@@ -2085,7 +2102,7 @@
 
         #profileForm .actions .btn {
           justify-content: center;
-          width: 100%;
+          flex: 0 1 160px;
         }
 
         .interest-world {
@@ -2308,7 +2325,7 @@
           </button>
           <button class="step-button" data-step="profile" type="button">
             <span class="step-icon">2</span>
-            <span class="step-label">我的資料</span>
+            <span class="step-label">我的名片</span>
           </button>
           <button class="step-button hidden" data-step="emails" type="button">
             <span class="step-icon">3</span>
@@ -2329,6 +2346,12 @@
         <div class="layout">
           <div>
             <section class="section page hidden" id="profilePage">
+              <div class="my-card-view hidden" id="myCardView">
+                <div class="detail-panel my-card-panel" id="myCardPanel"></div>
+                <div class="actions my-card-actions">
+                  <button class="btn primary" type="button" id="editProfileButton">編輯資料</button>
+                </div>
+              </div>
               <form id="profileForm">
                 <div class="form-grid">
                   <div class="form-section-title">基本資料</div>
@@ -2415,25 +2438,6 @@
                       <option>開放看看</option>
                     </select>
                   </div>
-                  <div class="field">
-                    <label for="smoking">是否抽菸</label>
-                    <select id="smoking" name="smoking">
-                      <option value="">請選擇</option>
-                      <option>不抽菸</option>
-                      <option>偶爾</option>
-                      <option>會抽菸</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="drinking">是否喝酒</label>
-                    <select id="drinking" name="drinking">
-                      <option value="">請選擇</option>
-                      <option>不喝酒</option>
-                      <option>偶爾小酌</option>
-                      <option>會喝酒</option>
-                    </select>
-                  </div>
-
                   <div class="form-section-title">自我介紹</div>
                   <div class="field full">
                     <textarea id="intro" name="intro" maxlength="300" placeholder="最多 300 字，簡單說明你的生活感、想認識的人與第一次見面的期待。"></textarea>
@@ -2617,6 +2621,7 @@
                 </div>
                 <div class="actions">
                   <button class="btn primary" type="submit">✓ 儲存</button>
+                  <button class="btn secondary" type="button" id="leaveProfileButton">離開</button>
                 </div>
               </form>
             </section>
@@ -3448,8 +3453,8 @@
 
       const pages = {
         profile: {
-          title: "我的資料",
-          subtitle: "",
+          title: "我的名片",
+          subtitle: "這張名片會出現在附近的人列表中。",
           el: document.getElementById("profilePage"),
         },
         digest: {
@@ -3493,6 +3498,7 @@
         subtitle.classList.toggle("hidden", !pages[step].subtitle);
         updateProfileAccessState();
         if (step === "digest") renderCandidates();
+        if (step === "profile") renderProfilePage();
       }
 
       function formToObject(form) {
@@ -3890,6 +3896,47 @@
         document.querySelector("[data-photo-login-placeholder]")?.classList.toggle("hidden", isLoggedIn);
         document.querySelector(".digest-login-cta")?.classList.toggle("hidden", isLoggedIn);
         document.querySelector(".digest-login-copy")?.classList.toggle("hidden", isLoggedIn);
+      }
+
+      function profileForMyCard() {
+        const profile = currentUserProfile() || state.profile || {};
+        const savedProfilePhotos = profilePhotos(state.profile || {});
+        const photos = state.photos.length ? state.photos : savedProfilePhotos.length ? savedProfilePhotos : profilePhotos(profile);
+        return publicProfileForDetail({
+          ...profile,
+          photo: photos[0] || profile.photo || state.profile?.photo || "",
+          photos,
+        });
+      }
+
+      function showProfileForm() {
+        document.getElementById("myCardView")?.classList.add("hidden");
+        document.getElementById("profileForm")?.classList.remove("hidden");
+      }
+
+      function showMyCard() {
+        const card = document.getElementById("myCardPanel");
+        const profile = profileForMyCard();
+        const detail = {
+          occupation: profile.occupation || "",
+          education: profile.education || "",
+          relationshipStatus: profile.relationshipStatus || "",
+          hasChildren: profile.hasChildren || "",
+          interestKeywords: profile.interestKeywords || profile.interests || "",
+          socialStyleKeywords: profile.socialStyleKeywords || profile.socialStyles || "",
+        };
+        card.innerHTML = profileDetailHtml(profile, detail, { showPhotoControls: false });
+        document.getElementById("profileForm")?.classList.add("hidden");
+        document.getElementById("myCardView")?.classList.remove("hidden");
+      }
+
+      function renderProfilePage() {
+        const profile = profileForMyCard();
+        if (state.currentUser && isProfileComplete(profile)) {
+          showMyCard();
+        } else {
+          showProfileForm();
+        }
       }
 
       function renderLoginPanel() {
@@ -4482,8 +4529,6 @@
         setSelectValue("relationshipStatus", user.relationshipStatus || "");
         setSelectValue("hasChildren", user.hasChildren || "");
         setSelectValue("coffeeGoal", user.coffeeGoal || user.looking || "");
-        setSelectValue("smoking", user.smoking || "");
-        setSelectValue("drinking", user.drinking || "");
         setFieldValue("intro", user.intro || "");
         if (!setVerifiedMeetingPlace({
           name: user.meetingPlaceName || user.meetingArea || user.place || "",
@@ -4607,15 +4652,11 @@
         const educations = ["大學", "研究所以上", "大學", "專科"];
         const relationships = ["單身", "單身", "離婚", "單身"];
         const children = ["沒有", "沒有", "有，未同住", "沒有"];
-        const smoking = ["不抽菸", "不抽菸", "偶爾", "不抽菸"];
-        const drinking = ["偶爾小酌", "不喝酒", "偶爾小酌", "不喝酒"];
         return {
           occupation: candidate.occupation || occupations[index % occupations.length],
           education: candidate.education || educations[index % educations.length],
           relationshipStatus: candidate.relationshipStatus || relationships[index % relationships.length],
           hasChildren: candidate.hasChildren || children[index % children.length],
-          smoking: candidate.smoking || smoking[index % smoking.length],
-          drinking: candidate.drinking || drinking[index % drinking.length],
           interestKeywords: candidate.interestKeywords || candidate.interests || "",
           socialStyleKeywords: candidate.socialStyleKeywords || candidate.socialStyles || "",
         };
@@ -4827,6 +4868,103 @@
       function candidatePlaceText(candidate) {
         const place = candidate.place || candidate.meetingPlaceName || "";
         return place || "尚未確認";
+      }
+
+      function profileAge(profile) {
+        if (profile?.age) return profile.age;
+        const year = Number(profile?.birthYear);
+        if (!Number.isFinite(year) || year <= 0) return "";
+        return String(new Date().getFullYear() - year);
+      }
+
+      function profileArea(profile) {
+        return profile?.area || [profile?.city, profile?.district].filter(Boolean).join(" ");
+      }
+
+      function publicProfileForDetail(profile) {
+        const photos = profilePhotos(profile || {});
+        const fallbackPhoto = profile?.photo || "";
+        const publicPhotos = photos.length ? photos : [fallbackPhoto].filter(Boolean);
+        return {
+          ...profile,
+          name: profile?.name || profile?.nickname || "",
+          age: profileAge(profile),
+          area: profileArea(profile),
+          looking: profile?.looking || profile?.coffeeGoal || "",
+          time: profile?.time || profile?.availableTime || profile?.availabilityNote || "",
+          place: profile?.place || profile?.meetingPlaceName || profilePlaceText(profile) || profile?.meetingArea || "",
+          photo: publicPhotos[0] || "",
+          photos: publicPhotos,
+        };
+      }
+
+      function isProfileComplete(profile) {
+        const publicProfile = publicProfileForDetail(profile || {});
+        return [
+          publicProfile.name,
+          publicProfile.gender,
+          publicProfile.age,
+          publicProfile.area,
+          publicProfile.looking,
+          publicProfile.intro,
+          publicProfile.time,
+          publicProfile.place,
+        ].every((value) => String(value || "").trim());
+      }
+
+      function profileDetailHtml(profile, detail, options = {}) {
+        const photos = candidatePhotos(profile);
+        const safePhotos = photos.length ? photos : [""];
+        const activePhotoIndex = ((Number(options.photoIndex || 0) % safePhotos.length) + safePhotos.length) % safePhotos.length;
+        const showPhotoControls = options.showPhotoControls !== false && safePhotos.filter(Boolean).length > 1;
+        const mapQuery = profile.place || profile.meetingPlaceName || "";
+        return `
+          <div class="detail-head">
+            <div>
+              <h3>${profile.name}</h3>
+            </div>
+          </div>
+          <div class="detail-layout">
+            <div class="detail-media">
+              <div class="detail-photo">
+                ${safePhotos[activePhotoIndex] ? photoImgTag(safePhotos[activePhotoIndex], `${profile.name} photo`) : ""}
+              </div>
+              ${
+                showPhotoControls
+                  ? `<div class="photo-controls">
+                       <button class="photo-nav prev" type="button" data-photo-step="-1" aria-label="上一張照片">&lsaquo;</button>
+                       <button class="photo-nav next" type="button" data-photo-step="1" aria-label="下一張照片">&rsaquo;</button>
+                     </div>`
+                  : ""
+              }
+            </div>
+            <div class="detail-copy">
+              <p>${profile.intro || ""}</p>
+              <div class="detail-grid">
+                <div class="detail-item"><span>年齡</span><strong>${profile.age} 歲</strong></div>
+                <div class="detail-item"><span>地區</span><strong>${profile.area}</strong></div>
+                <div class="detail-item"><span>咖啡目的</span><strong>${profile.looking}</strong></div>
+                <div class="detail-item"><span>職業</span><strong>${detail.occupation}</strong></div>
+                <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
+                <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
+                <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
+                ${detail.socialStyleKeywords ? `<div class="detail-item"><span>社交風格</span><strong>${detail.socialStyleKeywords}</strong></div>` : ""}
+                ${detail.interestKeywords ? `<div class="detail-item"><span>興趣與話題</span><strong>${detail.interestKeywords}</strong></div>` : ""}
+                <div class="detail-item">
+                  <span>咖啡地點</span>
+                  <strong>${candidatePlaceText(profile)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(mapQuery)}" target="_blank" rel="noreferrer">定位</a></strong>
+                </div>
+                <div class="detail-item full">
+                  <span>方便的見面時間</span>
+                  <div class="mini-availability">
+                    ${availabilityLabels(profile).map((label) => `<span class="mini-time-chip">${label}</span>`).join("")}
+                  </div>
+                </div>
+              </div>
+              ${options.extraHtml || ""}
+            </div>
+          </div>
+        `;
       }
 
       function inviteTimeOptions(invite, candidate) {
@@ -5105,8 +5243,6 @@
                 <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
                 <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
                 <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
-                <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
-                <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                 ${detail.socialStyleKeywords ? `<div class="detail-item"><span>相處方式</span><strong>${detail.socialStyleKeywords}</strong></div>` : ""}
                 ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                 <div class="detail-item">
@@ -5472,8 +5608,6 @@
                      <div class="detail-item"><span>學歷</span><strong>${detail.education}</strong></div>
                      <div class="detail-item"><span>感情狀態</span><strong>${detail.relationshipStatus}</strong></div>
                      <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
-                     <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
-                     <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
                      ${detail.socialStyleKeywords ? `<div class="detail-item"><span>相處方式</span><strong>${detail.socialStyleKeywords}</strong></div>` : ""}
                      ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                      <div class="detail-item">
@@ -5633,6 +5767,9 @@
         button.addEventListener("click", () => go(button.dataset.step));
       });
 
+      document.getElementById("editProfileButton")?.addEventListener("click", showProfileForm);
+      document.getElementById("leaveProfileButton")?.addEventListener("click", () => go("profile"));
+
       document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-go]");
         if (!button) return;
@@ -5742,7 +5879,7 @@
         updateSummary();
         const saveMessage = savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存";
         showToast(saveMessage, 2600);
-        go("digest");
+        go("profile");
       });
 
       document.getElementById("emailTabs").addEventListener("click", (event) => {
