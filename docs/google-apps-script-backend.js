@@ -363,12 +363,20 @@ function sendInviteCreatedEmail(invite) {
     var usersById = usersByUserId();
     var sender = usersById[invite.sender_user_id] || {};
     var receiver = usersById[invite.receiver_user_id] || {};
+    console.log("[Invite] create success", {
+      inviteId: invite.invite_id || "",
+      senderUserId: invite.sender_user_id || "",
+      receiverUserId: invite.receiver_user_id || "",
+      senderEmail: sender.email || "",
+      receiverEmail: receiver.email || "",
+    });
     if (!receiver.email) return;
 
     var senderName = displayUserName(sender, "對方");
+    var subject = "有人邀請你喝咖啡 ☕";
     var viewUrl = inviteViewUrl(invite.invite_id, receiver.email);
     var htmlBody = emailLayout(
-      "有人邀請你喝咖啡 ☕",
+      subject,
       [
         detailRow("對方姓名", senderName),
         detailRow("咖啡店", invite.place_name || "尚未填寫"),
@@ -378,13 +386,18 @@ function sendInviteCreatedEmail(invite) {
     );
 
     sendCoffeeMeetEmail({
+      inviteId: invite.invite_id || "",
       to: receiver.email,
-      subject: "有人邀請你喝咖啡 ☕",
+      subject: subject,
       htmlBody: htmlBody,
       body: senderName + " 邀請你喝咖啡。\n咖啡店：" + (invite.place_name || "尚未填寫") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
     });
   } catch (error) {
-    console.warn("sendInviteCreatedEmail failed", error);
+    console.error("sendInviteCreatedEmail failed", {
+      inviteId: invite && invite.invite_id ? invite.invite_id : "",
+      message: error && error.message ? error.message : String(error),
+      stack: error && error.stack ? error.stack : "",
+    });
   }
 }
 
@@ -393,16 +406,24 @@ function sendInviteConfirmedEmails(invite) {
     var usersById = usersByUserId();
     var sender = usersById[invite.sender_user_id] || {};
     var receiver = usersById[invite.receiver_user_id] || {};
+    console.log("[Email] invite confirmed");
+    console.log("to sender", sender.email || "");
+    console.log("to receiver", receiver.email || "");
     sendInviteConfirmedEmailTo(sender, receiver, invite);
     sendInviteConfirmedEmailTo(receiver, sender, invite);
   } catch (error) {
-    console.warn("sendInviteConfirmedEmails failed", error);
+    console.error("sendInviteConfirmedEmails failed", {
+      inviteId: invite && invite.invite_id ? invite.invite_id : "",
+      message: error && error.message ? error.message : String(error),
+      stack: error && error.stack ? error.stack : "",
+    });
   }
 }
 
 function sendInviteConfirmedEmailTo(recipient, counterpart, invite) {
   if (!recipient.email) return;
   var counterpartName = displayUserName(counterpart, "對方");
+  var subject = "咖啡邀約已成立 ☕";
   var viewUrl = inviteViewUrl(invite.invite_id, recipient.email);
   var notes = [
     "第一次請約公開咖啡店",
@@ -410,7 +431,7 @@ function sendInviteConfirmedEmailTo(recipient, counterpart, invite) {
     "見面完成後請記得填寫回饋",
   ];
   var htmlBody = emailLayout(
-    "咖啡邀約已成立 ☕",
+    subject,
     [
       detailRow("對方姓名", counterpartName),
       detailRow("見面地點", invite.place_name || "尚未填寫"),
@@ -424,32 +445,71 @@ function sendInviteConfirmedEmailTo(recipient, counterpart, invite) {
   );
 
   sendCoffeeMeetEmail({
+    inviteId: invite.invite_id || "",
     to: recipient.email,
-    subject: "咖啡邀約已成立 ☕",
+    subject: subject,
     htmlBody: htmlBody,
     body: "你和 " + counterpartName + " 的咖啡邀約已成立。\n見面地點：" + (invite.place_name || "尚未填寫") + "\n見面時間：" + (invite.accepted_at || invite.selected_times || "尚未填寫") + "\n注意事項：\n- " + notes.join("\n- ") + "\n查看邀約：" + viewUrl,
   });
 }
 
 function sendCoffeeMeetEmail(message) {
+  var inviteId = message.inviteId || "";
+  var to = message.to || "";
+  var subject = message.subject || "";
+  var plainText = message.body || "";
+  var htmlBody = message.htmlBody || "";
+  console.log("[Email] send start", {
+    inviteId: inviteId,
+    to: to,
+    subject: subject,
+  });
   try {
-    MailApp.sendEmail(message);
+    GmailApp.sendEmail(to, subject, plainText, {
+      htmlBody: htmlBody,
+    });
+    console.log("[Email] send success", {
+      inviteId: inviteId,
+      to: to,
+    });
   } catch (error) {
-    console.warn("MailApp.sendEmail failed; sending fallback email", error);
-    MailApp.sendEmail({
-      to: EMAIL_FALLBACK_TO,
-      subject: "[CoffeeMeet 寄信失敗] " + (message.subject || ""),
-      htmlBody: '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;">' +
-        '<p><strong>原收件者：</strong>' + escapeHtml(message.to || "") + '</p>' +
-        '<p><strong>錯誤：</strong>' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
-        '<hr />' +
-        (message.htmlBody || "").replace(/<script[\s\S]*?<\/script>/gi, "") +
-      '</div>',
-      body: "原收件者：" + (message.to || "") +
+    console.error("[Email] send failed", {
+      inviteId: inviteId,
+      to: to,
+      message: error && error.message ? error.message : String(error),
+      stack: error && error.stack ? error.stack : "",
+    });
+    console.warn("GmailApp.sendEmail failed; sending fallback email", error);
+    GmailApp.sendEmail(
+      EMAIL_FALLBACK_TO,
+      "[CoffeeMeet 寄信失敗] " + subject,
+      "原收件者：" + to +
         "\n錯誤：" + (error && error.message ? error.message : String(error)) +
-        "\n\n--- 原信內容 ---\n" + (message.body || ""),
+        "\n\n--- 原信內容 ---\n" + plainText,
+      {
+        htmlBody: '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;">' +
+          '<p><strong>原收件者：</strong>' + escapeHtml(to) + '</p>' +
+          '<p><strong>錯誤：</strong>' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
+          '<hr />' +
+          htmlBody.replace(/<script[\s\S]*?<\/script>/gi, "") +
+        '</div>',
+      }
+    );
+    console.log("[Email] fallback send success", {
+      inviteId: inviteId,
+      to: EMAIL_FALLBACK_TO,
+      originalTo: to,
     });
   }
+}
+
+function testSendMail() {
+  GmailApp.sendEmail(
+    EMAIL_FALLBACK_TO,
+    "Coffee Meet Test",
+    "這是一封測試信"
+  );
+  console.log("test mail success");
 }
 
 function usersByUserId() {
