@@ -4420,6 +4420,8 @@
           hasChildren: candidate.hasChildren || children[index % children.length],
           smoking: candidate.smoking || smoking[index % smoking.length],
           drinking: candidate.drinking || drinking[index % drinking.length],
+          interestKeywords: candidate.interestKeywords || candidate.interests || "",
+          socialStyleKeywords: candidate.socialStyleKeywords || candidate.socialStyles || "",
         };
       }
 
@@ -4909,6 +4911,8 @@
                 <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
                 <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
                 <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
+                ${detail.socialStyleKeywords ? `<div class="detail-item"><span>相處方式</span><strong>${detail.socialStyleKeywords}</strong></div>` : ""}
+                ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                 <div class="detail-item">
                   <span>咖啡店</span>
                   <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || "")}" target="_blank" rel="noreferrer">定位</a></strong>
@@ -5269,6 +5273,8 @@
                      <div class="detail-item"><span>是否有小孩</span><strong>${detail.hasChildren}</strong></div>
                      <div class="detail-item"><span>是否抽菸</span><strong>${detail.smoking}</strong></div>
                      <div class="detail-item"><span>是否喝酒</span><strong>${detail.drinking}</strong></div>
+                     ${detail.socialStyleKeywords ? `<div class="detail-item"><span>相處方式</span><strong>${detail.socialStyleKeywords}</strong></div>` : ""}
+                     ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                      <div class="detail-item">
                        <span>咖啡店</span>
                        <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
