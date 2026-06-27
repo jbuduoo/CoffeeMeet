@@ -1771,6 +1771,7 @@
         position: fixed;
         right: 22px;
         bottom: 22px;
+        z-index: 70;
         background: #25211c;
         color: white;
         border-radius: 8px;
@@ -1873,6 +1874,12 @@
       @media (max-width: 620px) {
         body {
           padding-bottom: calc(76px + env(safe-area-inset-bottom));
+          background: #2b251f;
+        }
+
+        .app {
+          min-height: calc(100dvh - 76px - env(safe-area-inset-bottom));
+          background: #2b251f;
         }
 
         .sidebar {
@@ -1899,6 +1906,10 @@
 
         .main {
           padding: 14px 10px 18px;
+          min-height: 0;
+          background:
+            linear-gradient(180deg, #fbf8f1 0, var(--bg) 260px),
+            var(--bg);
         }
 
         .topbar {
@@ -1983,12 +1994,16 @@
           right: 0;
           bottom: 0;
           z-index: 50;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 6px;
           padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
           background: rgba(43, 37, 31, 0.96);
           border-top: 1px solid rgba(255, 255, 255, 0.11);
           box-shadow: 0 -12px 28px rgba(43, 36, 27, 0.18);
+        }
+
+        .step-list.has-admin-step {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .form-grid {
@@ -2133,6 +2148,10 @@
       @media (max-width: 380px) {
         body {
           padding-bottom: calc(82px + env(safe-area-inset-bottom));
+        }
+
+        .app {
+          min-height: calc(100dvh - 82px - env(safe-area-inset-bottom));
         }
 
         .sidebar {
@@ -3388,6 +3407,7 @@
             button.classList.toggle("hidden", !isAdminUser());
           }
         });
+        document.querySelector(".step-list")?.classList.toggle("has-admin-step", isAdminUser());
         const pageTitle = document.getElementById("pageTitle");
         pageTitle.textContent = pages[step].title;
         pageTitle.classList.remove("hidden");
@@ -3751,11 +3771,12 @@
         }
       }
 
-      function showToast(message) {
+      function showToast(message, duration = 1800) {
         const toast = document.getElementById("toast");
         toast.textContent = message;
         toast.classList.add("show");
-        window.setTimeout(() => toast.classList.remove("show"), 1800);
+        window.clearTimeout(showToast.hideTimer);
+        showToast.hideTimer = window.setTimeout(() => toast.classList.remove("show"), duration);
       }
 
       function setSaving(isSaving, title = "儲存中", copy = "正在把資料寫入試算表與雲端硬碟，請稍候。") {
@@ -3827,11 +3848,13 @@
       }
 
       function updateAdminVisibility() {
+        const isAdmin = isAdminUser();
         document.querySelectorAll('[data-step="emails"]').forEach((button) => {
-          button.classList.toggle("hidden", !isAdminUser());
+          button.classList.toggle("hidden", !isAdmin);
         });
+        document.querySelector(".step-list")?.classList.toggle("has-admin-step", isAdmin);
         if (
-          !isAdminUser() &&
+          !isAdmin &&
           !document.getElementById("emailsPage").classList.contains("hidden")
         ) {
           go("digest");
@@ -5594,8 +5617,7 @@
         }
         updateSummary();
         const saveMessage = savedToCloud ? (cloudWarning || "儲存成功") : "資料已暫存在本機，雲端尚未完成儲存";
-        showToast(saveMessage);
-        window.alert(saveMessage);
+        showToast(saveMessage, 2600);
         go("digest");
       });
 
