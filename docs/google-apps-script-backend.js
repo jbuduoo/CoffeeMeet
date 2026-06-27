@@ -42,12 +42,40 @@ function jsonResponse(data) {
 }
 
 function verifyGoogleMapsPlace(payload) {
-  const input = String((payload && payload.url) || "").trim();
+  const input = String((payload && (payload.url || payload.input || payload.keyword || payload.query)) || "").trim();
+  const city = String((payload && payload.city) || "").trim();
+  const district = String((payload && payload.district) || "").trim();
+  const query = String((payload && payload.query) || [input, city, district].filter(Boolean).join(" ")).trim();
   const debug = {
     action: "places-verify",
     input: input,
+    query: query,
     startedAt: new Date().toISOString(),
   };
+  if (!input) {
+    const error = new Error("請輸入 Google Maps 地點網址、短網址、店名或地點描述");
+    error.debug = debug;
+    throw error;
+  }
+  if (!isGoogleMapsInput(input)) {
+    const places = searchGooglePlacesByText(query || input);
+    debug.searchResultsCount = places.length;
+    debug.searchMode = "text";
+    if (!places.length) {
+      return {
+        ok: true,
+        place: null,
+        results: [],
+        debug: debug,
+      };
+    }
+    return {
+      ok: true,
+      place: places[0],
+      results: places,
+      debug: debug,
+    };
+  }
   const expandedUrl = expandGoogleMapsShortUrl(input);
   debug.expandedUrl = expandedUrl;
   const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
@@ -58,6 +86,61 @@ function verifyGoogleMapsPlace(payload) {
     throw error;
   }
   return { ok: true, place, debug: debug };
+}
+
+function isGoogleMapsInput(input) {
+  const source = extractGoogleMapsUrl(input);
+  const urlParts = parseUrlParts(source);
+  return Boolean(urlParts && /google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(urlParts.hostname + urlParts.pathname));
+}
+
+function searchGooglePlacesByText(query) {
+  const normalizedQuery = String(query || "").trim();
+  if (!normalizedQuery) return [];
+  const apiKey = PropertiesService.getScriptProperties().getProperty("GOOGLE_MAPS_API_KEY");
+  if (!apiKey) {
+    const error = new Error("尚未設定 GOOGLE_MAPS_API_KEY");
+    error.debug = {
+      step: "places-text-search",
+      reason: "Missing script property GOOGLE_MAPS_API_KEY.",
+    };
+    throw error;
+  }
+  const url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+    + "?query=" + encodeURIComponent(normalizedQuery)
+    + "&language=zh-TW"
+    + "&region=tw"
+    + "&key=" + encodeURIComponent(apiKey);
+  const response = UrlFetchApp.fetch(url, {
+    method: "get",
+    muteHttpExceptions: true,
+  });
+  const data = JSON.parse(response.getContentText() || "{}");
+  if (data.status === "ZERO_RESULTS") return [];
+  if (data.status !== "OK") {
+    const error = new Error(data.error_message || data.status || "Google Places 查詢失敗");
+    error.debug = {
+      step: "places-text-search",
+      query: normalizedQuery,
+      responseCode: response.getResponseCode(),
+      status: data.status || "",
+      bodyPreview: response.getContentText().slice(0, 500),
+    };
+    throw error;
+  }
+  return (data.results || []).slice(0, 3).map(function(place) {
+    const location = place.geometry && place.geometry.location ? place.geometry.location : {};
+    return {
+      name: place.name || "Google Maps 地點",
+      address: place.formatted_address || "",
+      url: place.place_id ? "https://www.google.com/maps/place/?q=place_id:" + place.place_id : "",
+      lat: location.lat,
+      lng: location.lng,
+      googlePlaceId: place.place_id || "",
+    };
+  }).filter(function(place) {
+    return place.name && place.lat !== undefined && place.lng !== undefined;
+  });
 }
 
 function expandGoogleMapsShortUrl(input) {
