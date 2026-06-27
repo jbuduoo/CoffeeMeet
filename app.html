@@ -1257,6 +1257,28 @@
         padding: 18px;
       }
 
+      .loading-state {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        gap: 10px;
+        text-align: center;
+      }
+
+      .loading-state .saving-spinner {
+        width: 30px;
+        height: 30px;
+      }
+
+      .loading-state strong {
+        color: var(--ink);
+      }
+
+      .loading-state span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
       .digest-intro {
         border-bottom: 1px solid var(--line);
         margin-bottom: 14px;
@@ -2285,7 +2307,7 @@
       <main class="main">
         <div class="topbar">
           <div class="title-block">
-            <h2 class="hidden" id="pageTitle">從最近的人開始認識</h2>
+            <h2 id="pageTitle">從最近的人開始認識</h2>
             <p id="pageSubtitle" class="hidden"></p>
           </div>
           <div class="login-panel hidden" id="loginPanel"></div>
@@ -2586,9 +2608,15 @@
               </form>
             </section>
 
-            <section class="section page hidden flush-section" id="digestPage">
+            <section class="section page flush-section" id="digestPage">
               <div class="detail-panel hidden" id="candidateDetail"></div>
-              <div class="candidate-grid" id="candidateGrid"></div>
+              <div class="candidate-grid" id="candidateGrid">
+                <div class="empty-state loading-state">
+                  <div class="saving-spinner" aria-hidden="true"></div>
+                  <strong>正在載入附近的人</strong>
+                  <span>請稍候一下，正在整理最新資料。</span>
+                </div>
+              </div>
             </section>
 
             <section class="section page hidden" id="invitesPage">
