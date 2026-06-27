@@ -2733,7 +2733,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyAtyrM0zDZn2ZmOdOVAULZxqm9xC8oz3Y_s96bzOP-pi-4YTrk6vWmSCOgIy83VJqi1w/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoBzExzgdsUxNUXOKmtVzN_86vBbkzw5LZYKKfLtIa2g5OHcO8yDZQ--G7btLmRpWpPg/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3447,11 +3447,15 @@
 
       async function verifyGoogleMapsPlaceRemotely(value) {
         if (!hasRemoteApi()) return null;
+        const keyword = String(value || "").trim();
+        const city = document.getElementById("city").value.trim();
+        const district = document.getElementById("district").value.trim();
+        const query = `${keyword} ${city} ${district}`.trim();
         const endpoint = apiEndpoint("places-verify");
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "content-type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ url: value }),
+          body: JSON.stringify({ url: keyword, input: keyword, keyword, query, city, district }),
         });
         const responseText = await response.text();
         let data = null;
@@ -3465,6 +3469,17 @@
           throw new Error(message);
         }
         return data.place || null;
+      }
+
+      function isGoogleMapsInput(value) {
+        const input = String(value || "").trim();
+        let url;
+        try {
+          url = new URL(input);
+        } catch {
+          return false;
+        }
+        return /google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(url.hostname + url.pathname);
       }
 
       function formatVerifiedMeetingPlace(place) {
@@ -3494,19 +3509,32 @@
         const field = document.getElementById("meetingArea");
         const input = field.value.trim();
         let parsed = parseGoogleMapsPlace(input);
-        if (!parsed && input.includes("maps.app.goo.gl")) {
-          setPlaceStatus("正在展開 Google Maps 短網址...");
+        if (!parsed && hasRemoteApi()) {
+          setPlaceStatus(isGoogleMapsInput(input) ? "正在驗證 Google Maps 地點..." : "正在查詢地點...");
           try {
             parsed = await verifyGoogleMapsPlaceRemotely(input);
           } catch (error) {
             clearMeetingPlaceFields();
-            setMeetingPlaceButtonInvalid(true);
-            setPlaceStatus(error.message || "Google Maps 短網址驗證失敗，請改貼完整網址。", "error");
-            showToast(error.message || "Google Maps 短網址驗證失敗");
-            return false;
+            if (isGoogleMapsInput(input)) {
+              setMeetingPlaceButtonInvalid(true);
+              setPlaceStatus(error.message || "Google Maps 地點驗證失敗，請確認連結。", "error");
+              showToast(error.message || "Google Maps 地點驗證失敗");
+              return false;
+            }
+            setMeetingPlaceButtonInvalid(false);
+            setPlaceStatus("找不到精確地點，仍可先儲存文字描述。");
+            showToast("可先儲存文字地點");
+            return true;
           }
         }
         if (!parsed) {
+          if (!isGoogleMapsInput(input) && input) {
+            clearMeetingPlaceFields();
+            setMeetingPlaceButtonInvalid(false);
+            setPlaceStatus("找不到精確地點，仍可先儲存文字描述。");
+            showToast("可先儲存文字地點");
+            return true;
+          }
           clearMeetingPlaceFields();
           setMeetingPlaceButtonInvalid(true);
           setPlaceStatus("請貼上 Google Maps 地點網址後按「驗證」。", "error");

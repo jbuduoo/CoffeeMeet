@@ -106,37 +106,43 @@ function searchGooglePlacesByText(query) {
     };
     throw error;
   }
-  const url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-    + "?query=" + encodeURIComponent(normalizedQuery)
-    + "&language=zh-TW"
-    + "&region=tw"
-    + "&key=" + encodeURIComponent(apiKey);
-  const response = UrlFetchApp.fetch(url, {
-    method: "get",
+  const response = UrlFetchApp.fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "post",
+    contentType: "application/json",
     muteHttpExceptions: true,
+    headers: {
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri",
+    },
+    payload: JSON.stringify({
+      textQuery: normalizedQuery,
+      languageCode: "zh-TW",
+      regionCode: "TW",
+      maxResultCount: 3,
+    }),
   });
   const data = JSON.parse(response.getContentText() || "{}");
-  if (data.status === "ZERO_RESULTS") return [];
-  if (data.status !== "OK") {
-    const error = new Error(data.error_message || data.status || "Google Places 查詢失敗");
+  if (response.getResponseCode() >= 400 || data.error) {
+    const error = new Error((data.error && data.error.message) || "Google Places 查詢失敗");
     error.debug = {
       step: "places-text-search",
       query: normalizedQuery,
       responseCode: response.getResponseCode(),
-      status: data.status || "",
+      status: data.error && data.error.status ? data.error.status : "",
       bodyPreview: response.getContentText().slice(0, 500),
     };
     throw error;
   }
-  return (data.results || []).slice(0, 3).map(function(place) {
-    const location = place.geometry && place.geometry.location ? place.geometry.location : {};
+  return (data.places || []).slice(0, 3).map(function(place) {
+    const location = place.location || {};
+    const displayName = place.displayName || {};
     return {
-      name: place.name || "Google Maps 地點",
-      address: place.formatted_address || "",
-      url: place.place_id ? "https://www.google.com/maps/place/?q=place_id:" + place.place_id : "",
-      lat: location.lat,
-      lng: location.lng,
-      googlePlaceId: place.place_id || "",
+      name: displayName.text || "Google Maps 地點",
+      address: place.formattedAddress || "",
+      url: place.googleMapsUri || (place.id ? "https://www.google.com/maps/place/?q=place_id:" + place.id : ""),
+      lat: location.latitude,
+      lng: location.longitude,
+      googlePlaceId: place.id || "",
     };
   }).filter(function(place) {
     return place.name && place.lat !== undefined && place.lng !== undefined;
