@@ -1995,6 +1995,22 @@
           grid-template-columns: 1fr;
         }
 
+        #profileForm .actions {
+          position: sticky;
+          bottom: calc(76px + env(safe-area-inset-bottom));
+          z-index: 45;
+          margin: 18px -10px -18px;
+          padding: 10px;
+          background: rgba(250, 247, 240, 0.96);
+          border-top: 1px solid var(--line);
+          box-shadow: 0 -10px 22px rgba(43, 36, 27, 0.12);
+        }
+
+        #profileForm .actions .btn {
+          justify-content: center;
+          width: 100%;
+        }
+
         .interest-world {
           align-items: flex-start;
           gap: 6px;
@@ -2133,6 +2149,11 @@
 
         .main {
           padding-inline: 8px;
+        }
+
+        #profileForm .actions {
+          bottom: calc(82px + env(safe-area-inset-bottom));
+          margin-inline: -8px;
         }
 
         .home-hero,
@@ -3622,6 +3643,17 @@
         return `coffeemeet.photos.${String(email || "").trim().toLowerCase()}`;
       }
 
+      function safeLocalStorageSet(key, value) {
+        try {
+          localStorage.setItem(key, value);
+          return true;
+        } catch (error) {
+          console.warn("本機暫存失敗：", error);
+          showToast("本機暫存空間不足，會直接儲存到雲端");
+          return false;
+        }
+      }
+
       function loadStoredPhotos(email) {
         try {
           return JSON.parse(localStorage.getItem(photoStorageKey(email)) || "[]").slice(0, 3);
@@ -3632,7 +3664,7 @@
 
       function saveStoredPhotos(email) {
         if (!email) return;
-        localStorage.setItem(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 3)));
+        safeLocalStorageSet(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 3)));
       }
 
       function profileDraftKey(email) {
@@ -3645,14 +3677,14 @@
         updateAvailabilityNoteFromChoices();
         return {
           profile: formToObject(document.getElementById("profileForm")),
-          photos: state.photos.slice(0, 3),
+          photos: [],
           savedAt: new Date().toISOString(),
         };
       }
 
       function saveProfileDraft() {
         const draft = currentProfileDraft();
-        localStorage.setItem(profileDraftKey(draft.profile.email), JSON.stringify(draft));
+        safeLocalStorageSet(profileDraftKey(draft.profile.email), JSON.stringify(draft));
       }
 
       function scheduleProfileDraftSave() {
