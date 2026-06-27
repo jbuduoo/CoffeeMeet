@@ -225,6 +225,8 @@ function getAppData() {
         meetingLat: place.lat || "",
         meetingLng: place.lng || "",
         interestKeywords: user.interest_keywords,
+        socialStyleKeywords: user.social_style_keywords || user.social_styles || "",
+        socialStyles: user.social_style_keywords || user.social_styles || "",
       photo: driveImageUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
       photos: userPhotos.map((photo) => driveImageUrl(photo.file_id, photo.photo_url)).filter(Boolean),
       };
@@ -616,6 +618,7 @@ function saveUserProfile(profile) {
     drinking: profile.drinking || "",
     intro: profile.intro || "",
     interest_keywords: profile.interestKeywords || "",
+    social_style_keywords: profile.socialStyleKeywords || profile.socialStyles || "",
     available_times: profile.availabilityNote || "",
     meeting_place_id: placeId,
     lock_until: existing ? existing.lock_until || "" : "",
@@ -740,8 +743,8 @@ function savePhotoFile(photoValue, { userId, order, gender }) {
 function getVersion() {
   return {
     ok: true,
-    version: "profile-persistence-2026-06-24-5",
-    features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback", "photo-delete-all", "photo-storage-diagnostics", "drive-authorization-helper"],
+    version: "profile-persistence-2026-06-27-social-style-keywords",
+    features: ["birthday-age", "photo-drive-upload", "photo-error-isolated", "location-owner-fallback", "photo-delete-all", "photo-storage-diagnostics", "drive-authorization-helper", "social-style-keywords"],
   };
 }
 
@@ -976,6 +979,7 @@ function ensureUserHeaders(sheet) {
     "drinking",
     "intro",
     "interest_keywords",
+    "social_style_keywords",
     "available_times",
     "meeting_place_id",
     "lock_until",

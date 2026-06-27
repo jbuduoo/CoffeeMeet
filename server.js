@@ -96,10 +96,10 @@ function normalizePhotoUrl(fileId = "", photoUrl = "") {
 
 async function getAppData() {
   const [usersSheet, placesSheet, photosSheet, invitesSheet] = await Promise.all([
-    getSheetValues("users!A1:Z1000"),
-    getSheetValues("meeting_places!A1:Z1000"),
-    getSheetValues("user_photos!A1:Z1000"),
-    getSheetValues("invites!A1:Z1000"),
+    getSheetValues("users!A1:AZ1000"),
+    getSheetValues("meeting_places!A1:AZ1000"),
+    getSheetValues("user_photos!A1:AZ1000"),
+    getSheetValues("invites!A1:AZ1000"),
   ]);
 
   const users = rowsToObjects(usersSheet.values);
@@ -151,6 +151,8 @@ async function getAppData() {
         meetingLng: place.lng || "",
         openingQuestion: user.opening_question,
         interestKeywords: user.interest_keywords || user.interests || "",
+        socialStyleKeywords: user.social_style_keywords || user.social_styles || "",
+        socialStyles: user.social_style_keywords || user.social_styles || "",
         photo: normalizePhotoUrl(primaryPhoto.file_id, primaryPhoto.photo_url),
         photos: userPhotos.map((photo) => normalizePhotoUrl(photo.file_id, photo.photo_url)).filter(Boolean),
       };
@@ -213,7 +215,7 @@ async function createUserFromProfile(profile) {
   const email = String(profile.email || "").trim().toLowerCase();
   if (!email) throw new Error("Email is required");
 
-  const current = await getSheetValues("users!A1:Z1000");
+  const current = await getSheetValues("users!A1:AZ1000");
   const headers = await ensureUserHeaders(current.values?.[0] || []);
   const users = rowsToObjects(current.values);
   const existingIndex = users.findIndex((user) => String(user.email || "").toLowerCase() === email);
@@ -255,6 +257,8 @@ async function createUserFromProfile(profile) {
     intro: profile.intro || "",
     interest_keywords: profile.interestKeywords || "",
     interests: profile.interestKeywords || "",
+    social_style_keywords: profile.socialStyleKeywords || profile.socialStyles || "",
+    social_styles: profile.socialStyleKeywords || profile.socialStyles || "",
     available_times: profile.availabilityNote || "",
     meeting_place_id: placeId,
     lock_until: existing?.lock_until || "",
@@ -307,7 +311,7 @@ async function createInvite(invite) {
   const receiverUserId = String(invite.receiverUserId || invite.receiver_user_id || "").trim();
   if (!senderUserId || !receiverUserId) throw new Error("senderUserId and receiverUserId are required");
 
-  const current = await getSheetValues("invites!A1:Z1000");
+  const current = await getSheetValues("invites!A1:AZ1000");
   const headers = await ensureInviteHeaders(current.values?.[0] || []);
   const today = todayString();
   const note = stripAddressLines(invite.note).trim();
@@ -390,7 +394,7 @@ function detailFromNote(note, label) {
 }
 async function saveUserPhotos({ userId, profile, today }) {
   const photos = Array.isArray(profile.photos) ? profile.photos.filter(Boolean).slice(0, 3) : [];
-  const current = await getSheetValues("user_photos!A1:Z1000");
+  const current = await getSheetValues("user_photos!A1:AZ1000");
   const headers = await ensurePhotoHeaders(current.values?.[0] || []);
   const rows = rowsToObjects(current.values);
   const existingIndexes = rows
@@ -445,7 +449,7 @@ function extractDriveFileId(value) {
 }
 
 async function saveMeetingPlace({ placeId, userId, profile, today, existingPlaceId }) {
-  const current = await getSheetValues("meeting_places!A1:Z1000");
+  const current = await getSheetValues("meeting_places!A1:AZ1000");
   const headers = await ensureMeetingPlaceHeaders(current.values?.[0] || []);
   const places = rowsToObjects(current.values);
   const existingIndex = places.findIndex(
@@ -564,6 +568,7 @@ async function ensureUserHeaders(currentHeaders) {
     "drinking",
     "intro",
     "interest_keywords",
+    "social_style_keywords",
     "available_times",
     "meeting_place_id",
     "lock_until",
