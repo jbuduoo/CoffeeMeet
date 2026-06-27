@@ -1124,9 +1124,11 @@
 
 
       document.querySelectorAll("[data-demo]").forEach((item) => {
-        item.addEventListener("click", (event) => {
-          event.preventDefault();
-          focusLandingEmail();
+        item.addEventListener("click", () => {
+          const email = item.dataset.demo;
+          localStorage.setItem("loginEmail", email);
+          localStorage.setItem("coffeemeet.loginEmail", email);
+          window.location.href = `app.html?email=${encodeURIComponent(email)}`;
         });
       });
 
