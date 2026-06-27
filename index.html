@@ -1164,6 +1164,18 @@
       const landingEmail = document.getElementById("landingEmail");
       const desktopEmailPlaceholder = "輸入 Email，開始認識附近的人";
       const mobileEmailPlaceholder = "輸入 Email";
+      const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
+      const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
+
+      function rememberedLandingEmail() {
+        try {
+          const storedUser = JSON.parse(localStorage.getItem(REMEMBERED_USER_KEY) || "null");
+          if (storedUser?.email) return String(storedUser.email).trim();
+        } catch {
+          localStorage.removeItem(REMEMBERED_USER_KEY);
+        }
+        return String(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail") || "").trim();
+      }
 
       function syncLandingEmailPlaceholder() {
         if (!landingEmail) return;
@@ -1191,7 +1203,7 @@
             landingEmail.focus();
             return;
           }
-          localStorage.setItem("coffeemeet.loginEmail", email);
+          localStorage.setItem(REMEMBERED_LOGIN_EMAIL_KEY, email);
           window.location.href = `app.html?email=${encodeURIComponent(email)}`;
         });
       }
@@ -1208,12 +1220,17 @@
         item.addEventListener("click", () => {
           const email = item.dataset.demo;
           localStorage.setItem("loginEmail", email);
-          localStorage.setItem("coffeemeet.loginEmail", email);
+          localStorage.setItem(REMEMBERED_LOGIN_EMAIL_KEY, email);
           window.location.href = `app.html?email=${encodeURIComponent(email)}`;
         });
       });
 
-      loadPeople();
+      const rememberedEmail = rememberedLandingEmail();
+      if (rememberedEmail) {
+        window.location.href = `app.html?email=${encodeURIComponent(rememberedEmail)}`;
+      } else {
+        loadPeople();
+      }
     </script>
   </body>
 </html>

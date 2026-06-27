@@ -2901,6 +2901,10 @@
 
       const DAILY_SENT_INVITE_LIMIT = 3;
       const DAILY_RECEIVED_INVITE_LIMIT = 3;
+      const MAX_AVAILABILITY_CHOICES = 3;
+      const MAX_INVITE_TIME_CHOICES = 3;
+      const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
+      const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
       const feedbackQuestions = [
         {
           id: "comfort",
@@ -3759,6 +3763,25 @@
         safeLocalStorageSet(photoStorageKey(email), JSON.stringify(state.photos.slice(0, 3)));
       }
 
+      function rememberCurrentUser() {
+        if (!state.currentUser?.email) return;
+        safeLocalStorageSet(REMEMBERED_LOGIN_EMAIL_KEY, state.currentUser.email);
+        safeLocalStorageSet("loginEmail", state.currentUser.email);
+        safeLocalStorageSet(REMEMBERED_USER_KEY, JSON.stringify(state.currentUser));
+      }
+
+      function rememberedLoginEmail() {
+        const emailFromUrl = new URLSearchParams(window.location.search).get("email");
+        if (emailFromUrl?.trim()) return emailFromUrl.trim();
+        try {
+          const storedUser = JSON.parse(localStorage.getItem(REMEMBERED_USER_KEY) || "null");
+          if (storedUser?.email) return String(storedUser.email).trim();
+        } catch {
+          localStorage.removeItem(REMEMBERED_USER_KEY);
+        }
+        return String(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail") || "").trim();
+      }
+
       function profileDraftKey(email) {
         const key = String(email || document.getElementById("email")?.value || "anonymous").trim().toLowerCase();
         return `coffeemeet.profileDraft.${key || "anonymous"}`;
@@ -3898,7 +3921,8 @@
         state.currentUser = null;
         state.profile = {};
         state.profileDirty = false;
-        localStorage.removeItem("coffeemeet.loginEmail");
+        localStorage.removeItem(REMEMBERED_LOGIN_EMAIL_KEY);
+        localStorage.removeItem(REMEMBERED_USER_KEY);
         localStorage.removeItem("loginEmail");
         resetProfileFormForNewUser();
         renderLoginPanel();
@@ -3950,6 +3974,7 @@
             reviewStatus: "新會員",
           };
           resetProfileFormForNewUser(email.trim());
+          rememberCurrentUser();
           renderLoginPanel();
           updateAdminVisibility();
           renderCandidates();
@@ -3965,6 +3990,7 @@
           reviewStatus: user.reviewStatus || "已登入",
         };
         populateProfileForm(user);
+        rememberCurrentUser();
         renderLoginPanel();
         updateAdminVisibility();
         renderCandidates();
@@ -4214,7 +4240,8 @@
       function selectedInviteTimes() {
         return Array.from(document.querySelectorAll("#quickTimeChoices .quick-time-button.is-selected"))
           .map((button) => button.dataset.timeValue)
-          .filter(Boolean);
+          .filter(Boolean)
+          .slice(0, MAX_INVITE_TIME_CHOICES);
       }
 
       function selectedInviteTimeLabels() {
@@ -4405,7 +4432,9 @@
       }
 
       function updateAvailabilityNoteFromChoices() {
-        const values = Array.from(document.querySelectorAll("[data-time-choice].active")).map(
+        const activeChoices = Array.from(document.querySelectorAll("[data-time-choice].active"));
+        activeChoices.slice(MAX_AVAILABILITY_CHOICES).forEach((button) => button.classList.remove("active"));
+        const values = activeChoices.slice(0, MAX_AVAILABILITY_CHOICES).map(
           (button) => button.dataset.timeChoice,
         );
         document.getElementById("availabilityNote").value = values.join("、");
@@ -4424,6 +4453,9 @@
             Array.from(expanded).some((value) => button.dataset.timeChoice.startsWith(value)),
           );
         });
+        Array.from(document.querySelectorAll("[data-time-choice].active"))
+          .slice(MAX_AVAILABILITY_CHOICES)
+          .forEach((button) => button.classList.remove("active"));
         updateAvailabilityNoteFromChoices();
       }
 
@@ -5608,7 +5640,7 @@
         const button = event.target.closest("[data-time-choice]");
         if (!button) return;
         const selectedCount = document.querySelectorAll("[data-time-choice].active").length;
-        if (!button.classList.contains("active") && selectedCount >= 3) {
+        if (!button.classList.contains("active") && selectedCount >= MAX_AVAILABILITY_CHOICES) {
           showToast("通常方便時段最多選 3 個");
           return;
         }
@@ -5666,6 +5698,7 @@
             gender: state.profile.gender,
             reviewStatus: data.created ? "已建立資料" : "已登入",
           };
+          rememberCurrentUser();
           renderLoginPanel();
           updateAdminVisibility();
           await loadSheetAppData();
@@ -5682,6 +5715,7 @@
             gender: state.profile.gender,
             reviewStatus: "本機暫存",
           };
+          rememberCurrentUser();
           renderLoginPanel();
           updateAdminVisibility();
         } finally {
@@ -5882,7 +5916,7 @@
       document.getElementById("quickTimeChoices").addEventListener("click", (event) => {
         const button = event.target.closest(".time-grid-slot.is-available") || event.target.closest(".quick-time-button");
         if (!button) return;
-        if (!button.classList.contains("is-selected") && selectedInviteTimes().length >= 3) {
+        if (!button.classList.contains("is-selected") && selectedInviteTimes().length >= MAX_INVITE_TIME_CHOICES) {
           showToast("最多選 3 個邀約時段");
           return;
         }
@@ -6005,16 +6039,12 @@
       );
 
       async function autoLoginFromLanding() {
-        const params = new URLSearchParams(window.location.search);
-        const emailFromUrl = params.get("email");
-        const emailFromStorage = localStorage.getItem("coffeemeet.loginEmail");
-        const email = (emailFromUrl || emailFromStorage || "").trim();
+        const email = rememberedLoginEmail();
         if (!email) {
           openInviteFromUrl();
           return;
         }
 
-        localStorage.setItem("coffeemeet.loginEmail", email);
         await loginWithEmail(email);
       }
 
