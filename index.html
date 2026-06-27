@@ -153,6 +153,32 @@
         border-color: var(--coffee);
       }
 
+      .landing-email-input.is-highlighted {
+        animation: emailInputHighlight 1s ease;
+      }
+
+      @keyframes emailInputHighlight {
+        0%,
+        100% {
+          border-color: var(--line);
+          box-shadow: 0 12px 28px rgba(91, 62, 33, 0.08);
+        }
+        24%,
+        76% {
+          border-color: var(--coffee);
+          box-shadow:
+            0 0 0 4px rgba(217, 119, 6, 0.2),
+            0 18px 36px rgba(217, 119, 6, 0.22);
+        }
+      }
+
+      .email-start-hint {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
       .phone-wrap {
         justify-self: center;
         position: relative;
@@ -211,7 +237,7 @@
         background:
           linear-gradient(180deg, rgba(255, 248, 243, 0.28), rgba(154, 79, 5, 0.36)),
           url("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=900&q=82") center 36%/cover;
-        filter: blur(8px);
+        filter: blur(4px);
         transform: scale(1.08);
       }
 
@@ -830,10 +856,11 @@
 
           <div class="cta-row">
             <form class="email-start-form" id="landingEmailForm">
-              <input class="landing-email-input" id="landingEmail" name="email" type="email" autocomplete="email" placeholder="輸入 Email 開始" required />
+              <input class="landing-email-input" id="landingEmail" name="email" type="email" autocomplete="email" placeholder="輸入 Email，開始認識附近的人" required />
               <button class="primary-cta" type="submit" aria-label="開始認識附近的人">開始認識附近的人</button>
             </form>
             <div class="cta-note">用一杯咖啡的時間，認識附近的人。</div>
+            <div class="email-start-hint">輸入 Email，即可查看完整資料並開始邀約。</div>
           </div>
         </div>
 
@@ -853,7 +880,7 @@
               </div>
               <div class="preview-body">
                 <p class="preview-interest">興趣：散步、咖啡、電影</p>
-                <a class="coffee-chip" href="app.html">☕ 想喝咖啡</a>
+                <a class="coffee-chip" href="#landingEmail" data-landing-cta>☕ 想喝咖啡</a>
               </div>
             </div>
           </div>
@@ -921,7 +948,7 @@
               <h2 class="section-title" id="people-title">附近的人</h2>
               <p class="people-subtitle">先看距離，再看感覺。想認識，就從一杯咖啡開始。</p>
             </div>
-            <a class="see-more" href="app.html">查看更多</a>
+            <a class="see-more" href="#landingEmail" data-landing-cta>查看更多</a>
           </div>
           <div class="people-rail" id="peopleRail" aria-live="polite"></div>
         </div>
@@ -1022,7 +1049,7 @@
         rail.innerHTML = people
           .map(
             (person) => `
-              <a class="person-card" href="app.html" aria-label="前往 Coffee Meet 認識 ${escapeHtml(person.name)}">
+              <a class="person-card" href="#landingEmail" data-landing-cta aria-label="前往 Coffee Meet 認識 ${escapeHtml(person.name)}">
                 <div class="person-photo" style="background-image:url('${escapeHtml(person.photo)}')"></div>
                 <div class="person-body">
                   <div class="person-top">
@@ -1064,6 +1091,17 @@
 
       const landingEmailForm = document.getElementById("landingEmailForm");
       const landingEmail = document.getElementById("landingEmail");
+
+      function focusLandingEmail() {
+        landingEmail?.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(() => {
+          landingEmail?.focus({ preventScroll: true });
+          landingEmail?.classList.remove("is-highlighted");
+          void landingEmail?.offsetWidth;
+          landingEmail?.classList.add("is-highlighted");
+        }, 360);
+      }
+
       if (landingEmailForm && landingEmail) {
         landingEmailForm.addEventListener("submit", (event) => {
           event.preventDefault();
@@ -1076,6 +1114,13 @@
           window.location.href = `app.html?email=${encodeURIComponent(email)}`;
         });
       }
+
+      document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-landing-cta]");
+        if (!trigger) return;
+        event.preventDefault();
+        focusLandingEmail();
+      });
 
 
       document.querySelectorAll("[data-demo]").forEach((item) => {
