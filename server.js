@@ -327,10 +327,10 @@ async function createInvite(invite) {
   let existingIndex = suppliedInviteId
     ? rows.findIndex((row) => String(row.invite_id || "").trim() === suppliedInviteId)
     : -1;
-  if (existingIndex < 0 && !suppliedInviteId) {
+  if (existingIndex < 0) {
     existingIndex = rows.findIndex((row) =>
-      row.sender_user_id === senderUserId &&
-      row.receiver_user_id === receiverUserId &&
+      ((row.sender_user_id === senderUserId && row.receiver_user_id === receiverUserId) ||
+        (row.sender_user_id === receiverUserId && row.receiver_user_id === senderUserId)) &&
       ["sent", "pending", "incoming", "confirmed"].includes(statusToInviteStatus(row.status)),
     );
   }

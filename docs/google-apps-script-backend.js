@@ -285,11 +285,11 @@ function saveInvite(invite) {
         return String(row.invite_id || "").trim() === suppliedInviteId;
       })
     : -1;
-  if (existingIndex < 0 && !suppliedInviteId) {
+  if (existingIndex < 0) {
     existingIndex = rows.findIndex(function(row) {
       var status = statusToInviteStatus(row.status);
-      return row.sender_user_id === senderUserId &&
-        row.receiver_user_id === receiverUserId &&
+      return ((row.sender_user_id === senderUserId && row.receiver_user_id === receiverUserId) ||
+          (row.sender_user_id === receiverUserId && row.receiver_user_id === senderUserId)) &&
         ["sent", "pending", "incoming", "confirmed"].indexOf(status) >= 0;
     });
   }
