@@ -1527,20 +1527,25 @@
       .invite-modal-backdrop {
         position: fixed;
         inset: 0;
-        z-index: 30;
+        z-index: 80;
         display: grid;
         place-items: center;
         padding: 18px;
         background: rgba(37, 33, 28, 0.42);
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
 
       .invite-modal {
         width: min(760px, 100%);
+        max-height: calc(100dvh - 36px);
+        overflow-y: auto;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
         box-shadow: var(--shadow);
         padding: 22px;
+        overscroll-behavior: contain;
       }
 
       .invite-modal h3 {
@@ -1814,6 +1819,14 @@
         gap: 10px;
         margin-top: 18px;
         flex-wrap: wrap;
+        position: sticky;
+        bottom: -22px;
+        z-index: 1;
+        margin-inline: -22px;
+        margin-bottom: -22px;
+        padding: 12px 22px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--line);
+        background: rgba(255, 251, 243, 0.96);
       }
 
       .toast {
