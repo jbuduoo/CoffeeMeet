@@ -2733,7 +2733,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySM3odECWUJTxs5XwLkMK1sfmKgx4ZcOrtVZlvcNPqhI5AFYin-L_e68-3GXW09aPZvg/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_VDDpzqxg60bgheU9MI5-fyc1AZzu4VsFz2uM8mpm7WiDElg84LdbnVPBIIlHerM8xg/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3814,6 +3814,7 @@
         updateAdminVisibility();
         renderCandidates();
         go("digest");
+        openInviteFromUrl();
         showToast("登入成功");
       
         } finally {
@@ -5848,10 +5849,34 @@
         const emailFromUrl = params.get("email");
         const emailFromStorage = localStorage.getItem("coffeemeet.loginEmail");
         const email = (emailFromUrl || emailFromStorage || "").trim();
-        if (!email) return;
+        if (!email) {
+          openInviteFromUrl();
+          return;
+        }
 
         localStorage.setItem("coffeemeet.loginEmail", email);
         await loginWithEmail(email);
+      }
+
+      function openInviteFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const requestedInviteId = (params.get("inviteId") || params.get("invite") || "").trim();
+        if (!requestedInviteId || !state.currentUser) return;
+
+        const invite = invites.find((item) => {
+          return [item.id, item.inviteId, item.invite_id].some((value) => String(value || "") === requestedInviteId);
+        });
+        if (!invite || !inviteForCurrentUser(invite)) return;
+
+        go("digest");
+        renderInvites();
+        window.setTimeout(() => {
+          const inviteId = invite.id || invite.inviteId || requestedInviteId;
+          const escapedInviteId = window.CSS && CSS.escape ? CSS.escape(inviteId) : String(inviteId).replace(/"/g, '\\"');
+          const card = document.querySelector(`[data-invite-card="${escapedInviteId}"]`);
+          renderInviteDetail(inviteId, card);
+          document.getElementById("inviteDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 0);
       }
 
       bootstrapApp().then(autoLoginFromLanding);

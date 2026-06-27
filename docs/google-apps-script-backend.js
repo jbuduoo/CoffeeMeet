@@ -1,6 +1,8 @@
 const SPREADSHEET_ID = "1JzQwlNWQphrHfUCcpQl3pC6jHLXN6ykwvJKSs5Uaxsg";
 const BOY_FOLDER_ID = "12M91XLYJ7seBNhrsGL2JZNJZlSGlL9ri";
 const GIRL_FOLDER_ID = "1r_6bPvf-R5lHM92g379al71G8zzmj-of";
+const APP_URL = "https://jbuduoo.github.io/CoffeeMeet/app.html";
+const EMAIL_FALLBACK_TO = "jbuduoo@gmail.com";
 
 function doGet(event) {
   const params = (event && event.parameter) || {};
@@ -307,6 +309,9 @@ function saveInvite(invite) {
       return updated[header] !== undefined ? updated[header] : "";
     })]);
     SpreadsheetApp.flush();
+    if (requestedStatus === "confirmed" && statusToInviteStatus(existing.status) !== "confirmed") {
+      sendInviteConfirmedEmails(updated);
+    }
     return {
       ok: true,
       inviteId: rows[existingIndex].invite_id || inviteId,
@@ -348,7 +353,152 @@ function saveInvite(invite) {
   sheet.appendRow(headers.map(function(header) {
     return values[header] !== undefined ? values[header] : "";
   }));
+  SpreadsheetApp.flush();
+  sendInviteCreatedEmail(values);
   return { ok: true, inviteId: inviteId };
+}
+
+function sendInviteCreatedEmail(invite) {
+  try {
+    var usersById = usersByUserId();
+    var sender = usersById[invite.sender_user_id] || {};
+    var receiver = usersById[invite.receiver_user_id] || {};
+    if (!receiver.email) return;
+
+    var senderName = displayUserName(sender, "對方");
+    var viewUrl = inviteViewUrl(invite.invite_id, receiver.email);
+    var htmlBody = emailLayout(
+      "有人邀請你喝咖啡 ☕",
+      [
+        detailRow("對方姓名", senderName),
+        detailRow("咖啡店", invite.place_name || "尚未填寫"),
+        detailRow("對方提供的可約時間", invite.selected_times || "尚未填寫"),
+      ].join(""),
+      emailButton("查看邀約", viewUrl)
+    );
+
+    sendCoffeeMeetEmail({
+      to: receiver.email,
+      subject: "有人邀請你喝咖啡 ☕",
+      htmlBody: htmlBody,
+      body: senderName + " 邀請你喝咖啡。\n咖啡店：" + (invite.place_name || "尚未填寫") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
+    });
+  } catch (error) {
+    console.warn("sendInviteCreatedEmail failed", error);
+  }
+}
+
+function sendInviteConfirmedEmails(invite) {
+  try {
+    var usersById = usersByUserId();
+    var sender = usersById[invite.sender_user_id] || {};
+    var receiver = usersById[invite.receiver_user_id] || {};
+    sendInviteConfirmedEmailTo(sender, receiver, invite);
+    sendInviteConfirmedEmailTo(receiver, sender, invite);
+  } catch (error) {
+    console.warn("sendInviteConfirmedEmails failed", error);
+  }
+}
+
+function sendInviteConfirmedEmailTo(recipient, counterpart, invite) {
+  if (!recipient.email) return;
+  var counterpartName = displayUserName(counterpart, "對方");
+  var viewUrl = inviteViewUrl(invite.invite_id, recipient.email);
+  var notes = [
+    "第一次請約公開咖啡店",
+    "若需取消請提早通知",
+    "見面完成後請記得填寫回饋",
+  ];
+  var htmlBody = emailLayout(
+    "咖啡邀約已成立 ☕",
+    [
+      detailRow("對方姓名", counterpartName),
+      detailRow("見面地點", invite.place_name || "尚未填寫"),
+      detailRow("見面時間", invite.accepted_at || invite.selected_times || "尚未填寫"),
+      '<div style="margin-top:18px;font-weight:700;color:#312820;">注意事項</div>',
+      '<ul style="margin:8px 0 0 20px;padding:0;color:#4f463d;line-height:1.8;">' +
+        notes.map(function(note) { return "<li>" + escapeHtml(note) + "</li>"; }).join("") +
+      "</ul>",
+    ].join(""),
+    emailButton("查看邀約", viewUrl)
+  );
+
+  sendCoffeeMeetEmail({
+    to: recipient.email,
+    subject: "咖啡邀約已成立 ☕",
+    htmlBody: htmlBody,
+    body: "你和 " + counterpartName + " 的咖啡邀約已成立。\n見面地點：" + (invite.place_name || "尚未填寫") + "\n見面時間：" + (invite.accepted_at || invite.selected_times || "尚未填寫") + "\n注意事項：\n- " + notes.join("\n- ") + "\n查看邀約：" + viewUrl,
+  });
+}
+
+function sendCoffeeMeetEmail(message) {
+  try {
+    MailApp.sendEmail(message);
+  } catch (error) {
+    console.warn("MailApp.sendEmail failed; sending fallback email", error);
+    MailApp.sendEmail({
+      to: EMAIL_FALLBACK_TO,
+      subject: "[CoffeeMeet 寄信失敗] " + (message.subject || ""),
+      htmlBody: '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;">' +
+        '<p><strong>原收件者：</strong>' + escapeHtml(message.to || "") + '</p>' +
+        '<p><strong>錯誤：</strong>' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
+        '<hr />' +
+        (message.htmlBody || "").replace(/<script[\s\S]*?<\/script>/gi, "") +
+      '</div>',
+      body: "原收件者：" + (message.to || "") +
+        "\n錯誤：" + (error && error.message ? error.message : String(error)) +
+        "\n\n--- 原信內容 ---\n" + (message.body || ""),
+    });
+  }
+}
+
+function usersByUserId() {
+  return sheetRows("users").reduce(function(map, user) {
+    if (user.user_id) map[user.user_id] = user;
+    return map;
+  }, {});
+}
+
+function displayUserName(user, fallback) {
+  return user.nickname || user.name || user.email || fallback;
+}
+
+function inviteViewUrl(inviteId, email) {
+  var query = [
+    "inviteId=" + encodeURIComponent(inviteId || ""),
+    email ? "email=" + encodeURIComponent(email) : "",
+  ].filter(Boolean).join("&");
+  return APP_URL + (query ? "?" + query : "");
+}
+
+function emailLayout(title, contentHtml, actionHtml) {
+  return '<div style="margin:0;padding:28px;background:#f7f2ec;font-family:Arial,Helvetica,sans-serif;color:#312820;">' +
+    '<div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #eadfd3;border-radius:8px;padding:28px;">' +
+      '<h1 style="margin:0 0 20px;font-size:24px;line-height:1.35;color:#2f241b;">' + escapeHtml(title) + '</h1>' +
+      '<div style="font-size:15px;line-height:1.7;">' + contentHtml + '</div>' +
+      '<div style="margin-top:24px;">' + actionHtml + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function detailRow(label, value) {
+  return '<div style="margin:0 0 12px;">' +
+    '<div style="font-size:13px;color:#8a7562;">' + escapeHtml(label) + '</div>' +
+    '<div style="font-size:16px;font-weight:700;color:#312820;">' + escapeHtml(value || "尚未填寫") + '</div>' +
+  '</div>';
+}
+
+function emailButton(label, url) {
+  return '<a href="' + escapeHtml(url) + '" style="display:inline-block;background:#5b3f2f;color:#fff;text-decoration:none;border-radius:6px;padding:12px 18px;font-weight:700;">' + escapeHtml(label) + '</a>';
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function statusToInviteStatus(status) {
