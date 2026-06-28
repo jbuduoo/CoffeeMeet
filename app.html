@@ -1012,6 +1012,27 @@
         padding: 8px 12px;
       }
 
+      .invite-guidance {
+        border: 1px solid #e5d8c6;
+        border-radius: 8px;
+        background: #fffaf2;
+        color: #51483d;
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .invite-guidance p {
+        margin: 0 0 6px;
+        font-weight: 900;
+        color: var(--ink);
+      }
+
+      .invite-guidance ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
       .tabs {
         display: flex;
         flex-wrap: wrap;
@@ -1516,9 +1537,12 @@
 
       .status-label {
         padding: 0;
+        display: inline-block;
         font-size: 12px;
         font-weight: 800;
-        white-space: nowrap;
+        line-height: 1.25;
+        white-space: normal;
+        vertical-align: middle;
       }
 
       .status-sent {
@@ -4841,7 +4865,7 @@
       function inviteStatusLabel(invite) {
         const meta = inviteStatusMeta[invite.status] || inviteStatusMeta.sent;
         const score = feedbackScoreFromInvite(invite);
-        if (invite.status === "done" && score) return `${score} ${meta.label}`;
+        if (invite.status === "done" && score) return `問卷調查 ${score}分<br />${meta.label}`;
         if (invite.status === "done") return "待完成";
         return meta.label;
       }
@@ -5001,7 +5025,7 @@
           sent: "已送出邀約，等待對方回覆。對方接受前先不討論時間地點。",
           incoming: "對方邀請你喝咖啡。你可以同意，也可以婉拒；這 24 小時內其他人不能再邀約你。",
           confirmed: "對方已經答應，時間地點都已確認；見面前仍可取消。",
-          done: score ? `${score} 已完成` : "對方已完成見面紀錄，請按完成填寫你的分數。",
+          done: score ? `問卷調查 ${score}分<br />已完成` : "對方已完成見面紀錄，請按完成填寫你的分數。",
           cancelled: "這次邀約已取消，保留紀錄方便回顧。",
         };
         return messages[invite.status] || "";
@@ -5212,6 +5236,19 @@
             ? `<button class="btn primary" type="button" data-accept-invite="${relatedInvite.id}">同意</button>
                <button class="btn secondary" type="button" data-cancel-invite="${relatedInvite.id}">拒絕</button>`
             : "";
+        const inviteButton =
+          relatedInvite?.status === "done"
+            ? ""
+            : `<div class="invite-guidance">
+                <p>一起喝杯咖啡前的小提醒</p>
+                <ul>
+                  <li>一杯咖啡約 30 分鐘到 1 小時。</li>
+                  <li>第一次見面，以女生方便的公開咖啡店為主。</li>
+                  <li>付款方式自行決定，臨時有事可取消。</li>
+                  <li>48 小時未回應，邀約自動取消。</li>
+                </ul>
+              </div>
+              <button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}">${inviteLabel}</button>`;
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -5262,7 +5299,7 @@
               ${doneNote}
               ${cancelledNote}
               <div class="email-actions">
-                ${sentActions || incomingActions || confirmedActions || (relatedInvite?.status === "done" ? "" : `<button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}">${inviteLabel}</button>`)}
+                ${sentActions || incomingActions || confirmedActions || inviteButton}
               </div>
             </div>
           </div>
