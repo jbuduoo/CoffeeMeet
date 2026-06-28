@@ -445,11 +445,11 @@ function saveInvite(invite) {
     return values[header] !== undefined ? values[header] : "";
   }));
   SpreadsheetApp.flush();
-  sendInviteCreatedEmail(values);
+  sendInviteCreatedEmails(values);
   return { ok: true, inviteId: inviteId };
 }
 
-function sendInviteCreatedEmail(invite) {
+function sendInviteCreatedEmails(invite) {
   try {
     var usersById = usersByUserId();
     var sender = usersById[invite.sender_user_id] || {};
@@ -461,35 +461,43 @@ function sendInviteCreatedEmail(invite) {
       senderEmail: sender.email || "",
       receiverEmail: receiver.email || "",
     });
-    if (!receiver.email) return;
-
-    var senderName = displayUserName(sender, "對方");
-    var subject = "有人邀請你喝咖啡 ☕";
-    var viewUrl = inviteViewUrl(invite.invite_id, receiver.email);
-    var htmlBody = emailLayout(
-      subject,
-      [
-        detailRow("對方姓名", senderName),
-        detailRow("咖啡店", invite.place_name || "尚未填寫"),
-        detailRow("對方提供的可約時間", invite.selected_times || "尚未填寫"),
-      ].join(""),
-      emailButton("查看邀約", viewUrl)
-    );
-
-    sendCoffeeMeetEmail({
-      inviteId: invite.invite_id || "",
-      to: receiver.email,
-      subject: subject,
-      htmlBody: htmlBody,
-      body: senderName + " 邀請你喝咖啡。\n咖啡店：" + (invite.place_name || "尚未填寫") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
-    });
+    sendInviteCreatedEmailTo(receiver, sender, invite, "received");
+    sendInviteCreatedEmailTo(sender, receiver, invite, "sent");
   } catch (error) {
-    console.error("sendInviteCreatedEmail failed", {
+    console.error("sendInviteCreatedEmails failed", {
       inviteId: invite && invite.invite_id ? invite.invite_id : "",
       message: error && error.message ? error.message : String(error),
       stack: error && error.stack ? error.stack : "",
     });
   }
+}
+
+function sendInviteCreatedEmailTo(recipient, counterpart, invite, role) {
+  if (!recipient.email) return;
+  var counterpartName = displayUserName(counterpart, "對方");
+  var subject = "有人邀請你喝咖啡 ☕";
+  var viewUrl = inviteViewUrl(invite.invite_id, recipient.email);
+  var intro = role === "sent"
+    ? "你已邀請 " + counterpartName + " 喝咖啡。"
+    : counterpartName + " 邀請你喝咖啡。";
+  var timeLabel = role === "sent" ? "你提供的可約時間" : "對方提供的可約時間";
+  var htmlBody = emailLayout(
+    subject,
+    [
+      detailRow("對方姓名", counterpartName),
+      detailRow("咖啡店", invite.place_name || "尚未填寫"),
+      detailRow(timeLabel, invite.selected_times || "尚未填寫"),
+    ].join(""),
+    emailButton("查看邀約", viewUrl)
+  );
+
+  sendCoffeeMeetEmail({
+    inviteId: invite.invite_id || "",
+    to: recipient.email,
+    subject: subject,
+    htmlBody: htmlBody,
+    body: intro + "\n咖啡店：" + (invite.place_name || "尚未填寫") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
+  });
 }
 
 function sendInviteConfirmedEmails(invite) {

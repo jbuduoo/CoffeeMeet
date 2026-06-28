@@ -2850,7 +2850,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoBzExzgdsUxNUXOKmtVzN_86vBbkzw5LZYKKfLtIa2g5OHcO8yDZQ--G7btLmRpWpPg/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxv5_Pn2BLkrKfrrqnJz1QFM2ttzaqb3jiapxMyfjgC_xMTsPz3JqVo0ck4hyxiADzPfw/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -6211,16 +6211,16 @@
         const invite = invites.find((item) => {
           return [item.id, item.inviteId, item.invite_id].some((value) => String(value || "") === requestedInviteId);
         });
-        if (!invite || !inviteForCurrentUser(invite)) return;
+        const displayInvite = invite ? inviteForCurrentUser(invite) : null;
+        if (!invite || !displayInvite) return;
 
         go("digest");
-        renderInvites();
         window.setTimeout(() => {
-          const inviteId = invite.id || invite.inviteId || requestedInviteId;
-          const escapedInviteId = window.CSS && CSS.escape ? CSS.escape(inviteId) : String(inviteId).replace(/"/g, '\\"');
-          const card = document.querySelector(`[data-invite-card="${escapedInviteId}"]`);
-          renderInviteDetail(inviteId, card);
-          document.getElementById("inviteDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const candidateId = displayInvite.candidateId;
+          const escapedCandidateId = window.CSS && CSS.escape ? CSS.escape(candidateId) : String(candidateId).replace(/"/g, '\\"');
+          const card = document.querySelector(`[data-candidate-card="${escapedCandidateId}"]`);
+          renderCandidateDetail(candidateId, card || null);
+          document.getElementById("candidateDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 0);
       }
 
