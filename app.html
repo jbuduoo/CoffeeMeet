@@ -1012,27 +1012,6 @@
         padding: 8px 12px;
       }
 
-      .invite-guidance {
-        border: 1px solid #e5d8c6;
-        border-radius: 8px;
-        background: #fffaf2;
-        color: #51483d;
-        padding: 10px 12px;
-        font-size: 13px;
-        line-height: 1.55;
-      }
-
-      .invite-guidance p {
-        margin: 0 0 6px;
-        font-weight: 900;
-        color: var(--ink);
-      }
-
-      .invite-guidance ul {
-        margin: 0;
-        padding-left: 18px;
-      }
-
       .tabs {
         display: flex;
         flex-wrap: wrap;
@@ -1277,6 +1256,10 @@
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
+      }
+
+      .email-actions .email-note {
+        flex: 0 0 100%;
       }
 
       .email-note {
@@ -5239,14 +5222,9 @@
         const inviteButton =
           relatedInvite?.status === "done"
             ? ""
-            : `<div class="invite-guidance">
-                <p>一起喝杯咖啡前的小提醒</p>
-                <ul>
-                  <li>一杯咖啡約 30 分鐘到 1 小時。</li>
-                  <li>第一次見面，以女生方便的公開咖啡店為主。</li>
-                  <li>付款方式自行決定，臨時有事可取消。</li>
-                  <li>48 小時未回應，邀約自動取消。</li>
-                </ul>
+            : `<div class="email-note">
+                <strong>一起喝杯咖啡</strong><br />
+                一杯咖啡約 30 分鐘到 1 小時；第一次見面，以女生方便的公開咖啡店為主。付款方式自行決定，臨時有事可取消。48 小時未回應，邀約自動取消。
               </div>
               <button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}">${inviteLabel}</button>`;
         const panel = document.getElementById("candidateDetail");
