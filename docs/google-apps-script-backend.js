@@ -692,7 +692,7 @@ function saveUserProfile(profile) {
     ? existing.meeting_place_id
     : `place-${email.replace(/@.*/, "").replace(/[^a-z0-9]+/gi, "-")}`;
   const today = new Date().toISOString().slice(0, 10);
-  const age = calculateAge(profile.birthYear, profile.birthMonth, profile.birthDay);
+  const age = calculateAge(profile.birthYear);
 
   const values = {
     user_id: userId,
@@ -700,8 +700,8 @@ function saveUserProfile(profile) {
     gender: profile.gender || "",
     age,
     birth_year: profile.birthYear || "",
-    birth_month: profile.birthMonth || "",
-    birth_day: profile.birthDay || "",
+    birth_month: "",
+    birth_day: "",
     city: profile.city || "",
     district: profile.district || "",
     email,
@@ -754,18 +754,11 @@ function saveUserProfile(profile) {
   return { ok: true, created: !existing, userId, photoCount, photoError };
 }
 
-function calculateAge(birthYear, birthMonth, birthDay) {
+function calculateAge(birthYear) {
   const year = Number(birthYear);
   if (!year) return "";
   const today = new Date();
-  let age = today.getFullYear() - year;
-  const month = Number(birthMonth);
-  const day = Number(birthDay);
-  if (month && day) {
-    const birthdayThisYear = new Date(today.getFullYear(), month - 1, day);
-    if (today < birthdayThisYear) age -= 1;
-  }
-  return String(age);
+  return String(today.getFullYear() - year);
 }
 
 function saveUserPhotos({ userId, profile, today }) {

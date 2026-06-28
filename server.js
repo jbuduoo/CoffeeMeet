@@ -188,17 +188,10 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function calculateAge(birthYear, birthMonth, birthDay, today = new Date()) {
+function calculateAge(birthYear, today = new Date()) {
   const year = Number(birthYear);
   if (!year) return "";
-  let age = today.getFullYear() - year;
-  const month = Number(birthMonth);
-  const day = Number(birthDay);
-  if (month && day) {
-    const birthdayThisYear = new Date(today.getFullYear(), month - 1, day);
-    if (today < birthdayThisYear) age -= 1;
-  }
-  return String(age);
+  return String(today.getFullYear() - year);
 }
 
 function slugFromEmail(email) {
@@ -225,7 +218,7 @@ async function createUserFromProfile(profile) {
   const userId = existing?.user_id || `${profile.gender === "女性" ? "girl" : "user"}-${slugFromEmail(email)}-${stamp}`;
   const placeId = existing?.meeting_place_id || `place-${slugFromEmail(email)}-${stamp}`;
   const today = todayString();
-  const age = calculateAge(profile.birthYear, profile.birthMonth, profile.birthDay);
+  const age = calculateAge(profile.birthYear);
 
   await saveMeetingPlace({
     placeId,
@@ -241,8 +234,8 @@ async function createUserFromProfile(profile) {
     gender: profile.gender || "",
     age,
     birth_year: profile.birthYear || "",
-    birth_month: profile.birthMonth || "",
-    birth_day: profile.birthDay || "",
+    birth_month: "",
+    birth_day: "",
     city: profile.city || "",
     district: profile.district || "",
     email,

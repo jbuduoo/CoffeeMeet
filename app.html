@@ -2379,11 +2379,9 @@
                     </select>
                   </div>
                   <div class="field">
-                    <label for="birthYear">出生年月日</label>
+                    <label for="birthYear">出生年</label>
                     <div class="inline-selects">
                       <select id="birthYear" name="birthYear" aria-label="出生年"></select>
-                      <select id="birthMonth" name="birthMonth" aria-label="出生月"></select>
-                      <select id="birthDay" name="birthDay" aria-label="出生日"></select>
                     </div>
                   </div>
                   <div class="field">
@@ -2857,7 +2855,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxv5_Pn2BLkrKfrrqnJz1QFM2ttzaqb3jiapxMyfjgC_xMTsPz3JqVo0ck4hyxiADzPfw/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwV6Y_NNoY2SvwAde23yT5ar2sD2m_VW5-Es17HXz2IfNaS4XYNTBBnMEA1to223QNSfw/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3705,7 +3703,6 @@
         const field = document.getElementById(id);
         if (!field || !value) return;
         let normalizedValue = String(value);
-        if (id === "birthMonth" || id === "birthDay") normalizedValue = normalizedValue.padStart(2, "0");
         const hasOption = Array.from(field.options).some((option) => option.value === normalizedValue);
         if (hasOption) field.value = normalizedValue;
       }
@@ -4473,11 +4470,7 @@
       function initBirthdayOptions() {
         const currentYear = new Date().getFullYear();
         const years = Array.from({ length: 43 }, (_, index) => String(currentYear - 18 - index));
-        const months = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0"));
-        const days = Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, "0"));
         fillSelect(document.getElementById("birthYear"), years, "年");
-        fillSelect(document.getElementById("birthMonth"), months, "月");
-        fillSelect(document.getElementById("birthDay"), days, "日");
       }
 
       function updateMapLinks() {
@@ -4523,8 +4516,6 @@
         setSelectValue("gender", user.gender || "");
         const inferredBirthYear = user.birthYear || (user.age ? String(new Date().getFullYear() - Number(user.age)) : "");
         setSelectValue("birthYear", inferredBirthYear);
-        setSelectValue("birthMonth", user.birthMonth || "");
-        setSelectValue("birthDay", user.birthDay || "");
 
         const city = normalizeCityName(user.city) || cityFromArea(user.area);
         const district = districtWithSuffix(user.district) || districtFromArea(user.area);
@@ -5223,8 +5214,8 @@
           relatedInvite?.status === "done"
             ? ""
             : `<div class="email-note">
-                <strong>一起喝杯咖啡</strong><br />
-                一杯咖啡約 30 分鐘到 1 小時；第一次見面，以女生方便的公開咖啡店為主。付款方式自行決定，臨時有事可取消。48 小時未回應，邀約自動取消。
+                <strong>邀約注意事項</strong><br />
+                1. 一杯咖啡約 30 分鐘到 1 小時；2. 第一次見面，以女生方便的公開咖啡店為主。3. 付款方式自行決定。4. 臨時有事可系統取消，但不要不到；15 分鐘內沒到，算沒到。5. 48 小時未回應，邀約自動取消。
               </div>
               <button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}">${inviteLabel}</button>`;
         const panel = document.getElementById("candidateDetail");
