@@ -2839,7 +2839,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEFopfc7w2zhRSDq6Eptl1rflpLJsOozN47wzb3i1e0b9GiZ9RR-g-ayFhBCqryNZytw/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcu-mfMSj0Tcyo-LSsTJ8k-d0jOMIXaVF8hmViWbvN92TUudg80Eifu-LtrwE6Z7yf_A/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3776,6 +3776,26 @@
         return String(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail") || "").trim();
       }
 
+      async function recordVisit(source = "login") {
+        if (!hasRemoteApi() || !state.currentUser) return;
+        try {
+          const response = await fetch(apiEndpoint("visits"), {
+            method: "POST",
+            headers: { "content-type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              userId: state.currentUser.userId || "",
+              email: state.currentUser.email || "",
+              name: state.currentUser.name || "",
+              source,
+            }),
+          });
+          const data = await response.json().catch(() => null);
+          if (!response.ok || !data?.ok) throw new Error(data?.error || "visit record failed");
+        } catch (error) {
+          console.warn("Visit record failed", error);
+        }
+      }
+
       function profileDraftKey(email) {
         const key = String(email || document.getElementById("email")?.value || "anonymous").trim().toLowerCase();
         return `coffeemeet.profileDraft.${key || "anonymous"}`;
@@ -4010,6 +4030,7 @@
           };
           resetProfileFormForNewUser(email.trim());
           rememberCurrentUser();
+          await recordVisit("login-new-user");
           renderLoginPanel();
           updateAdminVisibility();
           renderCandidates();
@@ -4029,6 +4050,7 @@
         state.profile = user;
         populateProfileForm(user);
         rememberCurrentUser();
+        await recordVisit("login");
         renderLoginPanel();
         updateAdminVisibility();
         renderCandidates();
@@ -5845,6 +5867,7 @@
             reviewStatus: data.created ? "已建立資料" : "已登入",
           };
           rememberCurrentUser();
+          await recordVisit("profile-save");
           renderLoginPanel();
           updateAdminVisibility();
           await loadSheetAppData();
@@ -5864,6 +5887,7 @@
             reviewStatus: "本機暫存",
           };
           rememberCurrentUser();
+          await recordVisit("profile-save-local");
           renderLoginPanel();
           updateAdminVisibility();
         } finally {

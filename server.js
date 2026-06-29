@@ -1,10 +1,28 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { appendSheetValues, getSpreadsheetMeta, getSheetValues, updateSheetValues } = require("./sheets-client");
+const { appendSheetValues, batchUpdateSpreadsheet, getSpreadsheetMeta, getSheetValues, updateSheetValues } = require("./sheets-client");
 
 const port = Number(process.env.PORT || 3000);
 const rootDir = __dirname;
+const visitSheetName = "上來紀錄";
+const visitHeaders = ["上來時間", "user_id", "姓名/暱稱", "email", "來源/活動", "備註"];
+const visitStatsSheetName = "人員統計";
+const visitStatsHeaders = [
+  "user_id",
+  "姓名/暱稱",
+  "email",
+  "狀態",
+  "會員建立日",
+  "會員更新日",
+  "上來次數",
+  "最近上來",
+  "首次上來",
+  "近7天",
+  "近30天",
+  "活躍狀態",
+  "備註",
+];
 
 function extractGoogleMapsUrl(input = "") {
   const verifiedUrlMatch = String(input || "").match(/Google Maps：(\S+)/);
@@ -381,6 +399,91 @@ async function createInvite(invite) {
   return { inviteId };
 }
 
+async function ensureVisitSheet() {
+  const meta = await getSpreadsheetMeta();
+  const missingSheets = [visitSheetName, visitStatsSheetName].filter((sheetName) => !meta.sheets.includes(sheetName));
+  if (missingSheets.length) {
+    await batchUpdateSpreadsheet(missingSheets.map((sheetName) => ({
+      addSheet: {
+        properties: {
+          title: sheetName,
+          gridProperties: {
+            rowCount: sheetName === visitSheetName ? 1000 : 500,
+            columnCount: sheetName === visitSheetName ? visitHeaders.length : visitStatsHeaders.length,
+            frozenRowCount: 1,
+          },
+        },
+      },
+    })));
+  }
+  await updateSheetValues(`${visitSheetName}!A1:${columnName(visitHeaders.length)}1`, [visitHeaders]);
+  await updateSheetValues(`${visitStatsSheetName}!A1:${columnName(visitStatsHeaders.length)}1`, [visitStatsHeaders]);
+}
+
+function visitStatsRow(payload, rowNumber) {
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  const name = String(payload.name || payload.nickname || email || userId).trim();
+  const logSheet = `'${visitSheetName.replace(/'/g, "''")}'`;
+  return [
+    userId,
+    name,
+    email,
+    String(payload.status || "").trim(),
+    String(payload.createdAt || payload.created_at || "").trim(),
+    String(payload.updatedAt || payload.updated_at || "").trim(),
+    `=COUNTIF(${logSheet}!B:B,A${rowNumber})`,
+    `=IF(G${rowNumber}=0,"",MAXIFS(${logSheet}!A:A,${logSheet}!B:B,A${rowNumber}))`,
+    `=IF(G${rowNumber}=0,"",MINIFS(${logSheet}!A:A,${logSheet}!B:B,A${rowNumber}))`,
+    `=COUNTIFS(${logSheet}!B:B,A${rowNumber},${logSheet}!A:A,">="&TODAY()-7)`,
+    `=COUNTIFS(${logSheet}!B:B,A${rowNumber},${logSheet}!A:A,">="&TODAY()-30)`,
+    `=IF(G${rowNumber}=0,"未記錄",IF(H${rowNumber}>=TODAY()-7,"活躍",IF(H${rowNumber}>=TODAY()-30,"普通","沉寂")))`,
+    "",
+  ];
+}
+
+async function upsertVisitStatsRow(payload = {}) {
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  if (!userId && !email) return;
+
+  const current = await getSheetValues(`${visitStatsSheetName}!A1:M2000`);
+  const rows = current.values || [];
+  const bodyRows = rows.slice(1);
+  const existingIndex = bodyRows.findIndex((row) =>
+    (userId && String(row[0] || "").trim() === userId) ||
+    (email && String(row[2] || "").trim().toLowerCase() === email),
+  );
+  const rowNumber = existingIndex >= 0 ? existingIndex + 2 : bodyRows.length + 2;
+  const row = visitStatsRow(payload, rowNumber);
+
+  if (existingIndex >= 0) {
+    await updateSheetValues(`${visitStatsSheetName}!A${rowNumber}:M${rowNumber}`, [row]);
+    return;
+  }
+  await appendSheetValues(`${visitStatsSheetName}!A:M`, [row]);
+}
+
+async function recordVisit(payload = {}) {
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  const name = String(payload.name || payload.nickname || "").trim();
+  if (!userId && !email) throw new Error("userId or email is required");
+
+  await ensureVisitSheet();
+  await appendSheetValues(`${visitSheetName}!A:${columnName(visitHeaders.length)}`, [[
+    new Date().toISOString(),
+    userId,
+    name,
+    email,
+    String(payload.source || "login").trim() || "login",
+    String(payload.note || "").trim(),
+  ]]);
+  await upsertVisitStatsRow(payload);
+
+  return { recorded: true };
+}
+
 function detailFromNote(note, label) {
   const match = String(note || "").match(new RegExp(`${label}：([^；]+)`));
   return match ? match[1].trim() : "";
@@ -709,6 +812,13 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (url.pathname === "/api/visits" && req.method === "POST") {
+      const payload = await readRequestBody(req);
+      const result = await recordVisit(payload);
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    }
+
     sendJson(res, 404, {
       ok: false,
       error: "API not found",
@@ -716,7 +826,7 @@ async function handleApi(req, res, url) {
         method: req.method,
         pathname: url.pathname,
         search: url.search,
-        availablePaths: ["/api/app-data", "/api/sheets", "/api/sheets/values", "/api/places-verify", "/api/users", "/api/invites"],
+        availablePaths: ["/api/app-data", "/api/sheets", "/api/sheets/values", "/api/places-verify", "/api/users", "/api/invites", "/api/visits"],
       },
     });
   } catch (error) {

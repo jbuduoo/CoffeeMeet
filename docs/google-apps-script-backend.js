@@ -24,6 +24,7 @@ function doPost(event) {
     if (action === "places-verify" || action === "places/verify") return jsonResponse(verifyGoogleMapsPlace(body));
     if (action === "users") return jsonResponse(saveUserProfile(body));
     if (action === "invites") return jsonResponse(saveInvite(body));
+    if (action === "visits") return jsonResponse(recordVisit(body));
     return jsonResponse(debugError("Unknown action", action, "POST", body));
   } catch (error) {
     return jsonResponse({
@@ -197,7 +198,7 @@ function debugError(message, action, method, body) {
       method: method,
       receivedAction: action,
       body: body || null,
-      availableActions: ["app-data", "sheets", "version", "photo-storage", "publish-seed-photos", "clear-photo-urls", "places-verify", "users", "invites"],
+      availableActions: ["app-data", "sheets", "version", "photo-storage", "publish-seed-photos", "clear-photo-urls", "places-verify", "users", "invites", "visits"],
       deployedAtHint: "If places-verify is missing here, redeploy the latest Apps Script code.",
     },
   };
@@ -674,6 +675,117 @@ function statusToInviteStatus(status) {
   if (["pending", "sent", "\u5df2\u9080\u7d04"].indexOf(normalized) >= 0) return "sent";
   if (["\u88ab\u9080\u7d04"].indexOf(normalized) >= 0) return "incoming";
   return normalized || "sent";
+}
+
+function ensureVisitSheet() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheetName = "\u4e0a\u4f86\u7d00\u9304";
+  const headers = ["\u4e0a\u4f86\u6642\u9593", "user_id", "\u59d3\u540d/\u66b1\u7a31", "email", "\u4f86\u6e90/\u6d3b\u52d5", "\u5099\u8a3b"];
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+    sheet.setFrozenRows(1);
+  }
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  return sheet;
+}
+
+function ensureVisitStatsSheet() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheetName = "\u4eba\u54e1\u7d71\u8a08";
+  const headers = [
+    "user_id",
+    "\u59d3\u540d/\u66b1\u7a31",
+    "email",
+    "\u72c0\u614b",
+    "\u6703\u54e1\u5efa\u7acb\u65e5",
+    "\u6703\u54e1\u66f4\u65b0\u65e5",
+    "\u4e0a\u4f86\u6b21\u6578",
+    "\u6700\u8fd1\u4e0a\u4f86",
+    "\u9996\u6b21\u4e0a\u4f86",
+    "\u8fd17\u5929",
+    "\u8fd130\u5929",
+    "\u6d3b\u8e8d\u72c0\u614b",
+    "\u5099\u8a3b",
+  ];
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+    sheet.setFrozenRows(1);
+  }
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  return sheet;
+}
+
+function visitStatsRow(payload, rowNumber) {
+  payload = payload || {};
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  const name = String(payload.name || payload.nickname || email || userId).trim();
+  const logSheet = "'\u4e0a\u4f86\u7d00\u9304'";
+  return [
+    userId,
+    name,
+    email,
+    String(payload.status || "").trim(),
+    String(payload.createdAt || payload.created_at || "").trim(),
+    String(payload.updatedAt || payload.updated_at || "").trim(),
+    "=COUNTIF(" + logSheet + "!B:B,A" + rowNumber + ")",
+    '=IF(G' + rowNumber + '=0,"",MAXIFS(' + logSheet + '!A:A,' + logSheet + '!B:B,A' + rowNumber + '))',
+    '=IF(G' + rowNumber + '=0,"",MINIFS(' + logSheet + '!A:A,' + logSheet + '!B:B,A' + rowNumber + '))',
+    '=COUNTIFS(' + logSheet + '!B:B,A' + rowNumber + ',' + logSheet + '!A:A,">="&TODAY()-7)',
+    '=COUNTIFS(' + logSheet + '!B:B,A' + rowNumber + ',' + logSheet + '!A:A,">="&TODAY()-30)',
+    '=IF(G' + rowNumber + '=0,"\u672a\u8a18\u9304",IF(H' + rowNumber + '>=TODAY()-7,"\u6d3b\u8e8d",IF(H' + rowNumber + '>=TODAY()-30,"\u666e\u901a","\u6c89\u5bc2")))',
+    "",
+  ];
+}
+
+function upsertVisitStatsRow(payload) {
+  payload = payload || {};
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  if (!userId && !email) return;
+
+  const sheet = ensureVisitStatsSheet();
+  const values = sheet.getDataRange().getValues();
+  const rows = values.slice(1);
+  let existingIndex = -1;
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    if ((userId && String(row[0] || "").trim() === userId) ||
+        (email && String(row[2] || "").trim().toLowerCase() === email)) {
+      existingIndex = index;
+      break;
+    }
+  }
+  const rowNumber = existingIndex >= 0 ? existingIndex + 2 : rows.length + 2;
+  const row = visitStatsRow(payload, rowNumber);
+  if (existingIndex >= 0) {
+    sheet.getRange(rowNumber, 1, 1, row.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+}
+
+function recordVisit(payload) {
+  payload = payload || {};
+  const userId = String(payload.userId || payload.user_id || "").trim();
+  const email = String(payload.email || "").trim().toLowerCase();
+  const name = String(payload.name || payload.nickname || "").trim();
+  if (!userId && !email) return { ok: false, error: "userId or email is required" };
+
+  const sheet = ensureVisitSheet();
+  sheet.appendRow([
+    new Date(),
+    userId,
+    name,
+    email,
+    String(payload.source || "login").trim() || "login",
+    String(payload.note || "").trim(),
+  ]);
+  upsertVisitStatsRow(payload);
+  SpreadsheetApp.flush();
+  return { ok: true, recorded: true };
 }
 
 function detailFromNote(note, label) {
