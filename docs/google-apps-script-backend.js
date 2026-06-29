@@ -572,25 +572,30 @@ function sendCoffeeMeetEmail(message) {
       to: to,
     });
   } catch (error) {
+    var errorMessage = error && error.message ? error.message : String(error);
+    var sanitizedHtmlBody = htmlBody.replace(/<script[\s\S]*?<\/script>/gi, "");
     console.error("[Email] send failed", {
       inviteId: inviteId,
       to: to,
-      message: error && error.message ? error.message : String(error),
+      message: errorMessage,
       stack: error && error.stack ? error.stack : "",
     });
     console.warn("GmailApp.sendEmail failed; sending fallback email", error);
     GmailApp.sendEmail(
       EMAIL_FALLBACK_TO,
-      "[CoffeeMeet 寄信失敗] " + subject,
-      "原收件者：" + to +
-        "\n錯誤：" + (error && error.message ? error.message : String(error)) +
-        "\n\n--- 原信內容 ---\n" + plainText,
+      "[CoffeeMeet 寄信失敗通知] " + subject,
+      "原收件人：" + to +
+        "\nInvite ID：" + (inviteId || "未提供") +
+        "\n失敗原因：" + errorMessage +
+        "\n\n--- 原始信件內容 ---\n" + plainText,
       {
         htmlBody: '<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;">' +
-          '<p><strong>原收件者：</strong>' + escapeHtml(to) + '</p>' +
-          '<p><strong>錯誤：</strong>' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
+          '<p><strong>原收件人：</strong>' + escapeHtml(to) + '</p>' +
+          '<p><strong>Invite ID：</strong>' + escapeHtml(inviteId || "未提供") + '</p>' +
+          '<p><strong>失敗原因：</strong>' + escapeHtml(errorMessage) + '</p>' +
           '<hr />' +
-          htmlBody.replace(/<script[\s\S]*?<\/script>/gi, "") +
+          '<p><strong>原始信件內容：</strong></p>' +
+          sanitizedHtmlBody +
         '</div>',
       }
     );

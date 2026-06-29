@@ -1393,34 +1393,6 @@
         font-size: 18px;
       }
 
-      .attention-card {
-        border: 1px solid #b8ddd7;
-        border-radius: 8px;
-        background: #f1faf8;
-        padding: 16px;
-        margin-bottom: 14px;
-        display: grid;
-        gap: 10px;
-      }
-
-      .attention-card h4 {
-        margin: 0;
-        font-size: 17px;
-      }
-
-      .attention-card p {
-        margin: 0;
-        color: #46615c;
-      }
-
-      .attention-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
       .invite-card {
         border: 1px solid var(--line);
         border-radius: 8px;
@@ -2700,7 +2672,6 @@
               </div>
               <div class="tabs" id="emailTabs">
                 <button class="tab-button active" type="button" data-email-filter="daily">每日媒合</button>
-                <button class="tab-button" type="button" data-email-filter="attention">注意提示</button>
                 <button class="tab-button" type="button" data-email-filter="incoming">有人邀約</button>
                 <button class="tab-button" type="button" data-email-filter="confirm">確認時間地點</button>
                 <button class="tab-button" type="button" data-email-filter="reminder">見面提醒</button>
@@ -2716,29 +2687,12 @@
                   <div class="email-body">
                     <p>Hi Kai，今天系統幫你整理了 3 位新的推薦對象。</p>
                     <p>這些對象都符合你設定的年齡範圍，也都有填寫方便見面的咖啡店與時間。照片會先以柔焦呈現，讓你先看生活感與自我介紹。</p>
-                    <p>你可以進入交友清單，選擇是否請對方喝杯咖啡；女性也可以先用「讓他注意我」釋出低壓力訊號。</p>
+                    <p>你可以進入交友清單，選擇是否請對方喝杯咖啡。</p>
                     <div class="email-actions">
                       <button class="btn primary" type="button">查看今日交友清單</button>
                       <button class="btn secondary" type="button">調整年齡條件</button>
                     </div>
                     <div class="email-note">重點：這封信不要每天硬寄。沒有新對象就不寄，避免變成打擾。</div>
-                  </div>
-                </article>
-
-                <article class="email-card hidden" data-email-template="attention">
-                  <div class="email-head">
-                    <div class="email-subject">有人想讓你注意她</div>
-                    <div class="email-meta">寄送時機：女生使用「讓他注意我」後寄出，每人每天最多 1 次。</div>
-                  </div>
-                  <div class="email-body">
-                    <p>Hi Kai，有一位女生想讓你注意她。</p>
-                    <p>她沒有直接發出邀約，只是希望你先看看她的資料。如果你也有興趣，可以請她喝杯咖啡。</p>
-                    <p>這不是正式邀約，不會鎖定你，也不會消耗你的每日邀約額度。只有當你按下「請她喝杯咖啡」時，才會進入邀約流程。</p>
-                    <div class="email-actions">
-                      <button class="btn primary" type="button">查看她的資料</button>
-                      <button class="btn secondary" type="button">先略過</button>
-                    </div>
-                    <div class="email-note">重點：男生不需要回覆或拒絕；女生也不會看到已讀或被略過，避免造成壓力。</div>
                   </div>
                 </article>
 
@@ -2822,7 +2776,7 @@
                 </article>
               </div>
               <div class="empty-state" style="margin-top: 14px">
-                Email 原則：除「注意提示」只寄給男生外，其餘信件男女共用，避免 MVP 文案和流程過度複雜。
+                Email 原則：信件男女共用，避免 MVP 文案和流程過度複雜。
               </div>
             </section>
           </div>
