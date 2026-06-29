@@ -1009,10 +1009,6 @@
         color: #be123c;
       }
 
-      .candidate-mobile-status {
-        display: none;
-      }
-
       .candidate-actions .btn {
         min-height: 40px;
         padding: 8px 12px;
@@ -2135,7 +2131,7 @@
         }
 
         .candidate-card {
-          grid-template-columns: 56px minmax(0, 1fr) auto;
+          grid-template-columns: 56px minmax(0, 1fr) auto auto;
           min-height: 68px;
           align-items: center;
           gap: 0;
@@ -2162,32 +2158,6 @@
 
         .candidate-distance span {
           display: none;
-        }
-
-        .candidate-distance .candidate-mobile-status {
-          display: block;
-          max-width: 64px;
-          color: var(--muted);
-          font-size: 11px;
-          font-weight: 800;
-          line-height: 1.25;
-          overflow: hidden;
-          text-align: right;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .candidate-distance .candidate-mobile-status.status-active {
-          color: #0f766e;
-        }
-
-        .candidate-distance .candidate-mobile-status.status-done {
-          color: #6d28d9;
-        }
-
-        .candidate-distance .candidate-mobile-status.status-incoming {
-          color: #b45309;
-          font-weight: 950;
         }
 
         .candidate-photo {
@@ -2218,7 +2188,35 @@
         }
 
         .candidate-actions {
-          display: none;
+          display: flex;
+          grid-column: 4;
+          grid-row: 1;
+          justify-content: flex-end;
+          padding: 0 12px 0 4px;
+        }
+
+        .candidate-actions .candidate-status-badge {
+          border: 0;
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          line-height: 1.2;
+          max-width: 64px;
+          padding: 0;
+          white-space: nowrap;
+        }
+
+        .candidate-actions .candidate-status-badge.status-active {
+          color: #0f766e;
+        }
+
+        .candidate-actions .candidate-status-badge.status-done {
+          color: #6d28d9;
+        }
+
+        .candidate-actions .candidate-status-badge.status-incoming {
+          color: #b45309;
+          font-weight: 950;
         }
 
         .candidate-card:hover {
@@ -4821,7 +4819,6 @@
                 </div>
                 <div class="candidate-distance">
                   <strong>${formatDistance(distance)}</strong>
-                  ${candidateStatus ? `<small class="candidate-mobile-status ${candidateStatus.className}">${candidateStatus.label}</small>` : ""}
                   <span>咖啡店距離</span>
                 </div>
                 <div class="candidate-body">
