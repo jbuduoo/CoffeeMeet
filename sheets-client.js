@@ -77,11 +77,25 @@ async function requestSheetsApi(path, accessToken, options = {}) {
   return JSON.parse(text);
 }
 
+async function batchUpdateSpreadsheet(requests, options = {}) {
+  const credential = loadCredential(options.credentialPath);
+  const accessToken = await getAccessToken(credential);
+  const spreadsheetId = options.spreadsheetId || defaultSpreadsheetId;
+  return requestSheetsApi(
+    `spreadsheets/${spreadsheetId}:batchUpdate`,
+    accessToken,
+    {
+      method: "POST",
+      body: { requests },
+    },
+  );
+}
+
 async function getSpreadsheetMeta(options = {}) {
   const credential = loadCredential(options.credentialPath);
   const accessToken = await getAccessToken(credential);
   const spreadsheetId = options.spreadsheetId || defaultSpreadsheetId;
-  const fields = "spreadsheetId,properties.title,sheets.properties.title";
+  const fields = "spreadsheetId,properties.title,sheets.properties(sheetId,title)";
   const spreadsheet = await requestSheetsApi(`spreadsheets/${spreadsheetId}?fields=${fields}`, accessToken);
 
   return {
@@ -89,6 +103,7 @@ async function getSpreadsheetMeta(options = {}) {
     spreadsheetId: spreadsheet.spreadsheetId,
     title: spreadsheet.properties && spreadsheet.properties.title,
     sheets: (spreadsheet.sheets || []).map((sheet) => sheet.properties.title),
+    sheetProperties: (spreadsheet.sheets || []).map((sheet) => sheet.properties),
   };
 }
 
@@ -130,10 +145,26 @@ async function updateSheetValues(range, values, options = {}) {
   );
 }
 
+async function clearSheetValues(range, options = {}) {
+  const credential = loadCredential(options.credentialPath);
+  const accessToken = await getAccessToken(credential);
+  const spreadsheetId = options.spreadsheetId || defaultSpreadsheetId;
+  return requestSheetsApi(
+    `spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:clear`,
+    accessToken,
+    {
+      method: "POST",
+      body: {},
+    },
+  );
+}
+
 module.exports = {
   defaultCredentialPath,
   defaultSpreadsheetId,
   appendSheetValues,
+  batchUpdateSpreadsheet,
+  clearSheetValues,
   getSpreadsheetMeta,
   getSheetValues,
   updateSheetValues,
