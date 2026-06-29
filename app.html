@@ -899,7 +899,7 @@
         height: 100%;
         object-fit: cover;
         object-position: center;
-        filter: blur(3px);
+        filter: blur(0px);
       }
 
       .candidate-body {
@@ -1007,6 +1007,10 @@
         border-color: #f2b8c5;
         background: #fff1f4;
         color: #be123c;
+      }
+
+      .candidate-mobile-status {
+        display: none;
       }
 
       .candidate-actions .btn {
@@ -2158,6 +2162,32 @@
 
         .candidate-distance span {
           display: none;
+        }
+
+        .candidate-distance .candidate-mobile-status {
+          display: block;
+          max-width: 64px;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 800;
+          line-height: 1.25;
+          overflow: hidden;
+          text-align: right;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .candidate-distance .candidate-mobile-status.status-active {
+          color: #0f766e;
+        }
+
+        .candidate-distance .candidate-mobile-status.status-done {
+          color: #6d28d9;
+        }
+
+        .candidate-distance .candidate-mobile-status.status-incoming {
+          color: #b45309;
+          font-weight: 950;
         }
 
         .candidate-photo {
@@ -4706,19 +4736,18 @@
 
       function candidateInviteStatus(candidateId) {
         const related = candidateInviteForCurrentUser(candidateId);
-        if (!related) return null;
+        if (!related || related.status === "cancelled") return null;
         const labels = {
           sent: "已邀約",
-          incoming: "被邀約",
+          incoming: "待你回覆",
           confirmed: "待見面",
-          done: inviteStatusLabel(related),
-          cancelled: "已取消",
+          done: "已完成",
         };
         const meta = inviteStatusMeta[related.status] || inviteStatusMeta.sent;
         const className = related.status === "done" && !feedbackScoreFromInvite(related) ? "status-active" : meta.className;
         return {
           label: labels[related.status] || meta.label,
-          className: className || "status-sent",
+          className: `${className || "status-sent"}${related.status === "incoming" ? " status-incoming" : ""}`,
         };
       }
 
@@ -4792,6 +4821,7 @@
                 </div>
                 <div class="candidate-distance">
                   <strong>${formatDistance(distance)}</strong>
+                  ${candidateStatus ? `<small class="candidate-mobile-status ${candidateStatus.className}">${candidateStatus.label}</small>` : ""}
                   <span>咖啡店距離</span>
                 </div>
                 <div class="candidate-body">
