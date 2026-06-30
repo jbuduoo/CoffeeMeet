@@ -271,6 +271,31 @@ function isValidEmail(value) {
   return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
 }
 
+function hasValidCoords(place = {}) {
+  const lat = Number(place.lat);
+  const lng = Number(place.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+
+function isInviteReadyUser(user = {}, photos = [], place = {}) {
+  const basicFields = [
+    user.nickname,
+    user.gender,
+    user.age || user.birth_year,
+    user.city,
+    user.district,
+    user.coffee_goal,
+    user.intro,
+  ];
+  return (
+    basicFields.every((value) => String(value || "").trim()) &&
+    photos.some((photo) => String(photo.status || "active") !== "deleted" && (photo.file_id || photo.photo_url)) &&
+    Boolean(String(user.available_times || "").trim()) &&
+    Boolean(String(place.place_name || user.meeting_place_id || "").trim()) &&
+    hasValidCoords(place)
+  );
+}
+
 function slugFromEmail(email) {
   return String(email || "")
     .trim()
@@ -381,6 +406,32 @@ async function createInvite(invite) {
   const senderUserId = String(invite.senderUserId || invite.sender_user_id || "").trim();
   const receiverUserId = String(invite.receiverUserId || invite.receiver_user_id || "").trim();
   if (!senderUserId || !receiverUserId) throw new Error("senderUserId and receiverUserId are required");
+
+  const [userValues, photoValues, placeValues] = await Promise.all([
+    getSheetValues("users!A1:AZ1000"),
+    getSheetValues("user_photos!A1:AZ1000"),
+    getSheetValues("meeting_places!A1:AZ1000"),
+  ]);
+  const users = rowsToObjects(userValues.values);
+  const photos = rowsToObjects(photoValues.values);
+  const places = rowsToObjects(placeValues.values);
+  const placesById = Object.fromEntries(places.map((place) => [place.place_id, place]));
+  const placesByOwnerUserId = Object.fromEntries(places.map((place) => [place.owner_user_id, place]));
+  const photosByUserId = photos.reduce((groups, photo) => {
+    groups[photo.user_id] ||= [];
+    groups[photo.user_id].push(photo);
+    return groups;
+  }, {});
+  const sender = users.find((user) => user.user_id === senderUserId);
+  const receiver = users.find((user) => user.user_id === receiverUserId);
+  const senderPlace = placesById[sender?.meeting_place_id] || placesByOwnerUserId[senderUserId] || {};
+  const receiverPlace = placesById[receiver?.meeting_place_id] || placesByOwnerUserId[receiverUserId] || {};
+  if (!isInviteReadyUser(sender, photosByUserId[senderUserId] || [], senderPlace)) {
+    throw new Error("完成名片與咖啡地點定位後，才能開始邀約。");
+  }
+  if (!isInviteReadyUser(receiver, photosByUserId[receiverUserId] || [], receiverPlace)) {
+    throw new Error("對方名片尚未完成，暫時不能接受邀約。");
+  }
 
   const current = await getSheetValues("invites!A1:AZ1000");
   const headers = await ensureInviteHeaders(current.values?.[0] || []);

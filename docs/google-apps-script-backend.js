@@ -354,6 +354,33 @@ function saveInvite(invite) {
   var receiverUserId = String(invite.receiverUserId || invite.receiver_user_id || "").trim();
   if (!senderUserId || !receiverUserId) return { ok: false, error: "senderUserId and receiverUserId are required" };
 
+  var users = sheetRows("users");
+  var photos = sheetRows("user_photos");
+  var places = sheetRows("meeting_places");
+  var placesById = places.reduce(function(map, place) {
+    map[place.place_id] = place;
+    return map;
+  }, {});
+  var placesByOwnerUserId = places.reduce(function(map, place) {
+    map[place.owner_user_id] = place;
+    return map;
+  }, {});
+  var photosByUserId = photos.reduce(function(groups, photo) {
+    groups[photo.user_id] = groups[photo.user_id] || [];
+    groups[photo.user_id].push(photo);
+    return groups;
+  }, {});
+  var sender = users.find(function(user) { return user.user_id === senderUserId; });
+  var receiver = users.find(function(user) { return user.user_id === receiverUserId; });
+  var senderPlace = placesById[(sender && sender.meeting_place_id) || ""] || placesByOwnerUserId[senderUserId] || {};
+  var receiverPlace = placesById[(receiver && receiver.meeting_place_id) || ""] || placesByOwnerUserId[receiverUserId] || {};
+  if (!isInviteReadyUser(sender, photosByUserId[senderUserId] || [], senderPlace)) {
+    return { ok: false, error: "完成名片與咖啡地點定位後，才能開始邀約。" };
+  }
+  if (!isInviteReadyUser(receiver, photosByUserId[receiverUserId] || [], receiverPlace)) {
+    return { ok: false, error: "對方名片尚未完成，暫時不能接受邀約。" };
+  }
+
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("invites");
   if (!sheet) return { ok: false, error: "invites sheet not found" };
   var headers = ensureInviteHeaders(sheet);
@@ -803,6 +830,32 @@ function normalizeEmail(value) {
 
 function isValidEmail(value) {
   return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
+}
+
+function hasValidCoords(place) {
+  const lat = Number(place && place.lat);
+  const lng = Number(place && place.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+
+function isInviteReadyUser(user, photos, place) {
+  user = user || {};
+  photos = photos || [];
+  place = place || {};
+  const basicFields = [
+    user.nickname,
+    user.gender,
+    user.age || user.birth_year,
+    user.city,
+    user.district,
+    user.coffee_goal,
+    user.intro,
+  ];
+  return basicFields.every(function(value) { return String(value || "").trim(); }) &&
+    photos.some(function(photo) { return String(photo.status || "active") !== "deleted" && (photo.file_id || photo.photo_url); }) &&
+    Boolean(String(user.available_times || "").trim()) &&
+    Boolean(String(place.place_name || user.meeting_place_id || "").trim()) &&
+    hasValidCoords(place);
 }
 
 function saveUserProfile(profile) {

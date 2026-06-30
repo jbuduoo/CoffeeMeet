@@ -779,6 +779,37 @@
         color: #8a8074;
       }
 
+      .profile-status-alert {
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--amber);
+        background: #fff8e8;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        color: #3a2d21;
+      }
+
+      .profile-status-alert.complete {
+        border-left-color: var(--accent);
+        background: #eefaf6;
+      }
+
+      .profile-status-alert h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      .profile-status-alert p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .profile-status-alert .missing-items {
+        margin-top: 8px;
+        font-weight: 700;
+        color: #7c4a03;
+      }
+
       .photo-zone {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
@@ -2423,13 +2454,14 @@
         <div class="layout">
           <div>
             <section class="section page hidden" id="profilePage">
+              <div id="profileStatusAlert"></div>
               <div class="my-card-view hidden" id="myCardView">
                 <div class="detail-panel my-card-panel" id="myCardPanel"></div>
                 <div class="actions my-card-actions">
                   <button class="btn primary" type="button" id="editProfileButton">編輯資料</button>
                 </div>
               </div>
-              <form id="profileForm">
+              <form id="profileForm" novalidate>
                 <div class="form-grid">
                   <div class="form-section-title">基本資料</div>
                   <div class="field">
@@ -2907,7 +2939,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcu-mfMSj0Tcyo-LSsTJ8k-d0jOMIXaVF8hmViWbvN92TUudg80Eifu-LtrwE6Z7yf_A/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwoFYdK_2Xhy6DL_QGx-NoARpAU4X2MY2jrJrYhBeTJAm-g0DKRyvWUlg_eULfapG1sNA/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -2982,11 +3014,11 @@
       ];
 
       function isInviteBlockedUser() {
-        return INVITE_BLOCKED_EMAILS.has(normalizeEmail(state.currentUser?.email));
+        return INVITE_BLOCKED_EMAILS.has(normalizeEmail(state.currentUser?.email)) || !profileReadiness(currentUserProfile()).canInvite;
       }
 
       function showInviteBlockedMessage() {
-        showToast("訪客體驗帳號不能送出正式邀約，請使用自己的 Email 登入後再邀約。", 3200);
+        showToast("完成名片與咖啡地點定位後，才能開始邀約。", 3200);
       }
 
       const feedbackQuestions = [
@@ -3584,6 +3616,14 @@
         return Object.fromEntries(new FormData(form).entries());
       }
 
+      function formProfileWithPhotos() {
+        const form = document.getElementById("profileForm");
+        return {
+          ...(form ? formToObject(form) : {}),
+          photos: state.photos.slice(0, 3),
+        };
+      }
+
       function setFieldValue(id, value) {
         const field = document.getElementById(id);
         if (field && value !== undefined && value !== null) field.value = value;
@@ -4016,33 +4056,94 @@
 
       function validateProfileBeforeSave() {
         clearProfileValidationState();
-        const missingFields = PROFILE_REQUIRED_FIELDS.filter(({ id, isMissing }) => {
-          if (isMissing) return isMissing();
-          const field = document.getElementById(id);
-          return !String(field?.value || "").trim();
-        });
         const email = document.getElementById("email");
-        if (email?.value.trim() && !email.validity.valid && !missingFields.some((field) => field.id === "email")) {
-          missingFields.unshift({ id: "email", label: "Email 格式" });
+        if (!email?.value.trim()) {
+          email?.classList.add("is-invalid");
+          email?.setAttribute("aria-invalid", "true");
+          email?.focus();
+          showToast("請先填 Email，才能儲存草稿", 2600);
+          return false;
         }
-        if (!missingFields.length) return true;
+        if (!email.validity.valid) {
+          email.classList.add("is-invalid");
+          email.setAttribute("aria-invalid", "true");
+          email.focus();
+          showToast("請確認 Email 格式", 2600);
+          return false;
+        }
+        return true;
+      }
 
-        missingFields.forEach(({ id, highlightId }) => {
-          const field = document.getElementById(id);
-          const target = document.getElementById(highlightId || id);
-          target?.classList.add("is-invalid");
-          field?.setAttribute("aria-invalid", "true");
-        });
+      function hasValidCoords(profile) {
+        return Boolean(profileCoords(profile));
+      }
 
-        const first = missingFields[0];
-        const firstTarget = document.getElementById(first.highlightId || first.id);
-        firstTarget?.scrollIntoView({ behavior: "smooth", block: "center" });
-        if (!first.highlightId) document.getElementById(first.id)?.focus();
+      function profileReadiness(profile) {
+        const publicProfile = publicProfileForDetail(profile || {});
+        const missing = [];
+        const basicFields = [
+          publicProfile.name,
+          publicProfile.gender,
+          publicProfile.age,
+          publicProfile.area,
+          publicProfile.looking,
+          publicProfile.intro,
+        ];
+        const basicComplete = basicFields.every((value) => String(value || "").trim());
+        const hasPhoto = candidatePhotos(publicProfile).filter(Boolean).length > 0;
+        const hasPlace = Boolean(String(publicProfile.place || "").trim());
+        const hasCoords = hasValidCoords(profile) || hasValidCoords(publicProfile);
+        const hasAvailability = splitProfileList(publicProfile.time).length > 0;
 
-        const labels = missingFields.map(({ label }) => label).join("、");
-        window.alert(`還有資料沒有填寫：\n${labels}\n\n請補齊後再按儲存。`);
-        showToast("請補齊必填資料", 2600);
-        return false;
+        if (!basicComplete) missing.push("基本資料");
+        if (!hasPhoto) missing.push("照片");
+        if (!hasPlace) missing.push("咖啡地點");
+        if (!hasCoords) missing.push("咖啡地點定位");
+        if (!hasAvailability) missing.push("可被邀約時段");
+
+        return {
+          basicComplete,
+          hasPhoto,
+          hasPlace,
+          hasCoords,
+          hasAvailability,
+          missing,
+          canInvite: missing.length === 0,
+          onlyMissingCoords: basicComplete && hasPhoto && hasPlace && hasAvailability && !hasCoords,
+        };
+      }
+
+      function renderProfileStatusAlert(profile) {
+        const target = document.getElementById("profileStatusAlert");
+        if (!target) return;
+        const readiness = profileReadiness(profile || profileForMyCard());
+        const missingText = readiness.missing.length ? `<div class="missing-items">尚未完成：${readiness.missing.join("、")}</div>` : "";
+        if (readiness.canInvite) {
+          target.innerHTML = `
+            <div class="profile-status-alert complete">
+              <h3>名片已完成，可開始邀約</h3>
+              <p>你的名片會出現在附近的人列表中，也可以邀約附近的人。</p>
+            </div>
+          `;
+          return;
+        }
+        if (readiness.onlyMissingCoords) {
+          target.innerHTML = `
+            <div class="profile-status-alert">
+              <h3>已存檔，尚未開放邀約</h3>
+              <p>你的名片已儲存，但咖啡地點尚未完成正確定位。完成咖啡地點定位後，才能出現在附近的人列表，並開始邀約或接受邀約。</p>
+              ${missingText}
+            </div>
+          `;
+          return;
+        }
+        target.innerHTML = `
+          <div class="profile-status-alert">
+            <h3>名片尚未完成</h3>
+            <p>你可以先儲存資料，完成照片、基本資料、咖啡地點與可約時段後，才會開放邀約。</p>
+            ${missingText}
+          </div>
+        `;
       }
 
       function setSaving(isSaving, title = "儲存中", copy = "正在把資料寫入試算表與雲端硬碟，請稍候。") {
@@ -4080,6 +4181,7 @@
       }
 
       function showProfileForm() {
+        renderProfileStatusAlert(profileForMyCard());
         document.getElementById("myCardView")?.classList.add("hidden");
         document.getElementById("profileForm")?.classList.remove("hidden");
       }
@@ -4087,6 +4189,7 @@
       function showMyCard() {
         const card = document.getElementById("myCardPanel");
         const profile = profileForMyCard();
+        renderProfileStatusAlert(profile);
         const detail = {
           occupation: profile.occupation || "",
           education: profile.education || "",
@@ -4102,6 +4205,7 @@
 
       function renderProfilePage() {
         const profile = profileForMyCard();
+        renderProfileStatusAlert(profile);
         if (state.currentUser && isProfileComplete(profile)) {
           showMyCard();
         } else {
@@ -4825,7 +4929,7 @@
         if (!state.currentUser) return [];
         const targetGender = oppositeGender(normalizeGender(state.currentUser.gender));
         if (!targetGender) return [];
-        return candidates.filter((candidate) => candidateGender(candidate) === targetGender);
+        return candidates.filter((candidate) => candidateGender(candidate) === targetGender && profileReadiness(candidate).canInvite);
       }
 
       function profileDetail(candidate, index) {
@@ -4944,7 +5048,8 @@
           return;
         }
         const currentCoords = profileCoords(currentUserProfile());
-        const filteredCandidates = currentCoords
+        const currentReadiness = profileReadiness(currentUserProfile());
+        const filteredCandidates = currentCoords && currentReadiness.canInvite
           ? visibleCandidates()
               .filter((candidate) => candidate.email?.toLowerCase() !== state.currentUser.email?.toLowerCase())
               .map((candidate) => {
@@ -4956,12 +5061,15 @@
           : [];
         if (!filteredCandidates.length) {
           closeCandidateDetail();
-          grid.innerHTML = `<div class="empty-state">目前沒有符合條件的交友清單。</div>`;
+          grid.innerHTML = `<div class="empty-state">${currentReadiness.canInvite ? "目前沒有符合條件的交友清單。" : "完成名片與咖啡地點定位後，才能查看附近的人並開始邀約。"}</div>`;
           return;
         }
         grid.innerHTML = filteredCandidates
           .map(({ candidate, distance }) => {
             const candidateStatus = candidateInviteStatus(candidate.id);
+            const relatedInvite = candidateInviteForCurrentUser(candidate.id);
+            const inviteDisabled = !currentReadiness.canInvite || ["sent", "incoming", "confirmed", "done"].includes(relatedInvite?.status);
+            const inviteLabel = inviteDisabled && relatedInvite ? "已進入邀約流程" : "一起喝杯咖啡";
             const timeChips = compactAvailabilityLabels(candidate)
               .map((label) => `<span class="chip time-chip" title="${label}">${label}</span>`)
               .join("");
@@ -4985,7 +5093,10 @@
                     <span class="chip">${candidate.place}</span>
                   </div>
                 </div>
-                ${candidateStatus ? `<div class="candidate-actions"><span class="candidate-status-badge ${candidateStatus.className}">${candidateStatus.label}</span></div>` : ""}
+                <div class="candidate-actions">
+                  ${candidateStatus ? `<span class="candidate-status-badge ${candidateStatus.className}">${candidateStatus.label}</span>` : ""}
+                  <button class="btn primary" type="button" data-invite="${candidate.id}" ${inviteDisabled ? `disabled title="完成名片與咖啡地點定位後，才能開始邀約。"` : ""}>${inviteLabel}</button>
+                </div>
               </article>
             `;
           })
@@ -5079,17 +5190,7 @@
       }
 
       function isProfileComplete(profile) {
-        const publicProfile = publicProfileForDetail(profile || {});
-        return [
-          publicProfile.name,
-          publicProfile.gender,
-          publicProfile.age,
-          publicProfile.area,
-          publicProfile.looking,
-          publicProfile.intro,
-          publicProfile.time,
-          publicProfile.place,
-        ].every((value) => String(value || "").trim());
+        return profileReadiness(profile).canInvite;
       }
 
       function profileDetailHtml(profile, detail, options = {}) {
@@ -5324,8 +5425,9 @@
         const photos = candidatePhotos(candidate);
         const activePhotoIndex = ((photoIndex % photos.length) + photos.length) % photos.length;
         const relatedInvite = candidateInviteForCurrentUser(candidate.id);
-        const inviteDisabled = ["sent", "incoming", "confirmed", "done"].includes(relatedInvite?.status);
-        const inviteLabel = inviteDisabled ? "已進入邀約流程" : "一起喝杯咖啡";
+        const currentReadiness = profileReadiness(currentUserProfile());
+        const inviteDisabled = !currentReadiness.canInvite || ["sent", "incoming", "confirmed", "done"].includes(relatedInvite?.status);
+        const inviteLabel = ["sent", "incoming", "confirmed", "done"].includes(relatedInvite?.status) ? "已進入邀約流程" : "一起喝杯咖啡";
         const currentUserFeedbackScore = relatedInvite ? feedbackScoreFromInvite(relatedInvite) : "";
         const canCompleteFeedback = relatedInvite && ["confirmed", "done"].includes(relatedInvite.status) && !currentUserFeedbackScore;
         const doneNote =
@@ -5403,7 +5505,7 @@
                 4. 臨時有事可系統取消，但不要不到，15 分鐘內沒到，算沒到<br />
                 5. 48 小時未回應，邀約自動取消
               </div>
-              <button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}">${inviteLabel}</button>`;
+              <button class="btn primary" type="button" data-invite="${candidate.id}" data-invite-disabled="${inviteDisabled ? "true" : "false"}" ${inviteDisabled ? `disabled title="完成名片與咖啡地點定位後，才能開始邀約。"` : ""}>${inviteLabel}</button>`;
         const panel = document.getElementById("candidateDetail");
         panel.innerHTML = `
           <div class="detail-head">
@@ -5994,9 +6096,11 @@
       document.getElementById("profileForm").addEventListener("input", () => {
         updateMapLinks();
         clearProfileValidationState();
+        renderProfileStatusAlert(formProfileWithPhotos());
       });
       document.getElementById("profileForm").addEventListener("change", () => {
         clearProfileValidationState();
+        renderProfileStatusAlert(formProfileWithPhotos());
         scheduleProfileDraftSave();
       });
       document.getElementById("profileForm").addEventListener("click", (event) => {
@@ -6036,9 +6140,10 @@
         syncInterestKeywords();
         updateAvailabilityNoteFromChoices();
         if (!validateProfileBeforeSave()) return;
-        if (!(await verifyMeetingPlace())) return;
+        if (document.getElementById("meetingArea").value.trim()) await verifyMeetingPlace();
         state.profile = formToObject(event.currentTarget);
         state.profile.photos = state.photos.slice(0, 3);
+        renderProfileStatusAlert(state.profile);
         saveStoredPhotos(state.profile.email);
         saveProfileDraft();
         let savedToCloud = false;
@@ -6175,6 +6280,7 @@
         state.photos = state.photos.concat(urls).slice(0, 3);
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
+        renderProfileStatusAlert(formProfileWithPhotos());
         clearProfileValidationState();
         updateSummary();
         scheduleProfileDraftSave();
@@ -6191,6 +6297,7 @@
         state.photos.splice(Number(button.dataset.removePhoto), 1);
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
+        renderProfileStatusAlert(formProfileWithPhotos());
         clearProfileValidationState();
         updateSummary();
         scheduleProfileDraftSave();
