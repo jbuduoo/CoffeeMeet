@@ -29,6 +29,12 @@ https://jbuduoo.github.io/CoffeeMeet/
 docs/google-apps-script-backend.js
 ```
 
+目前 Web App URL：
+
+```text
+https://script.google.com/macros/s/AKfycbzMQ43-vk2l4ngrdut0V9jYncaVIgTGXlqVV-9KvIiwELaXBwwPV1f7XHbtt4R_r97M5g/exec
+```
+
 部署成 Web App 後，把部署網址填到 `index.html`：
 
 ```js

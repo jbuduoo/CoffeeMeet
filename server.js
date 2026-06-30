@@ -47,6 +47,31 @@ function parseGoogleMapsPlaceUrl(source, originalInput = "") {
   };
 }
 
+function hasPublicMeetupKeyword(placeName) {
+  const normalized = String(placeName || "").toLowerCase();
+  return [
+    "全家",
+    "7-11",
+    "7－11",
+    "711",
+    "seven",
+    "星巴克",
+    "starbucks",
+    "路易莎",
+    "louisa",
+    "咖啡",
+    "coffee",
+    "cafe",
+    "café",
+  ].some((keyword) => normalized.includes(keyword));
+}
+
+function assertPublicMeetupPlace(place) {
+  if (!hasPublicMeetupKeyword(place && place.name)) {
+    throw new Error("請選擇店名含有全家、7-11、星巴克、路易莎或咖啡字樣的公開店點。");
+  }
+}
+
 async function expandGoogleMapsShortUrl(input) {
   const source = extractGoogleMapsUrl(input);
   const urlParts = parseUrlParts(source);
@@ -84,6 +109,7 @@ async function verifyGoogleMapsPlace(payload) {
   const expandedUrl = await expandGoogleMapsShortUrl(input);
   const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
   if (!place) throw new Error("請貼上有效的 Google Maps 地點網址");
+  assertPublicMeetupPlace(place);
   return { place };
 }
 
@@ -666,6 +692,9 @@ async function saveMeetingPlace({ placeId, userId, profile, today, existingPlace
   const sanitizedMeetingArea = stripAddressLines(profile.meetingArea);
   const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
   const mapUrl = profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "";
+  if (placeName && (profile.meetingLat || firstLineCoords(profile.meetingArea)?.lat || existing?.lat)) {
+    assertPublicMeetupPlace({ name: placeName });
+  }
   const valuesByHeader = {
     place_id: placeId,
     place_name: placeName,

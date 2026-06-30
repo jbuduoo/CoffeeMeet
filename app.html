@@ -794,6 +794,11 @@
         background: #eefaf6;
       }
 
+      .profile-status-alert.warning {
+        border-left-color: var(--danger);
+        background: #fff3f1;
+      }
+
       .profile-status-alert h3 {
         margin: 0 0 6px;
         font-size: 16px;
@@ -808,6 +813,24 @@
         margin-top: 8px;
         font-weight: 700;
         color: #7c4a03;
+      }
+
+      .location-warning {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        border: 1px solid #f0b0a6;
+        background: #fff3f1;
+        color: #9d2f21;
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .candidate-location-warning {
+        margin-top: 8px;
       }
 
       .photo-zone {
@@ -2939,7 +2962,7 @@
 </div>
 
     <script>
-      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwoFYdK_2Xhy6DL_QGx-NoARpAU4X2MY2jrJrYhBeTJAm-g0DKRyvWUlg_eULfapG1sNA/exec";
+      const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMQ43-vk2l4ngrdut0V9jYncaVIgTGXlqVV-9KvIiwELaXBwwPV1f7XHbtt4R_r97M5g/exec";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3686,6 +3709,40 @@
         };
       }
 
+      function hasPublicMeetupKeyword(placeName) {
+        const normalized = String(placeName || "").toLowerCase();
+        return [
+          "全家",
+          "7-11",
+          "7－11",
+          "711",
+          "seven",
+          "星巴克",
+          "starbucks",
+          "路易莎",
+          "louisa",
+          "咖啡",
+          "coffee",
+          "cafe",
+          "café",
+        ].some((keyword) => normalized.includes(keyword));
+      }
+
+      function placeKeywordRequirementText() {
+        return "請選擇店名含有全家、7-11、星巴克、路易莎或咖啡字樣的公開店點。";
+      }
+
+      function placeNeedsKeywordReminder(profile) {
+        const place = candidatePlaceText(publicProfileForDetail(profile || {}));
+        return Boolean(place && place !== "尚未確認" && !hasPublicMeetupKeyword(place));
+      }
+
+      function locationReminderHtml(profile, className = "") {
+        return placeNeedsKeywordReminder(profile)
+          ? `<span class="location-warning ${className}">定位可能不正確，請改選公開店點</span>`
+          : "";
+      }
+
       async function verifyGoogleMapsPlaceRemotely(value) {
         if (!hasRemoteApi()) return null;
         const keyword = String(value || "").trim();
@@ -3709,7 +3766,11 @@
           const message = data?.error || responseText || "地點驗證失敗";
           throw new Error(message);
         }
-        return data.place || null;
+        const place = data.place || null;
+        if (place && !hasPublicMeetupKeyword(place.name)) {
+          throw new Error(placeKeywordRequirementText());
+        }
+        return place;
       }
 
       function isGoogleMapsInput(value) {
@@ -3737,6 +3798,13 @@
           document.getElementById("meetingLat").value &&
           document.getElementById("meetingLng").value
         ) {
+          if (!hasPublicMeetupKeyword(document.getElementById("meetingPlaceName").value)) {
+            clearMeetingPlaceFields();
+            setMeetingPlaceButtonInvalid(true);
+            setPlaceStatus(placeKeywordRequirementText(), "error");
+            showToast("請改選公開店點");
+            return false;
+          }
           setFieldValue("meetingArea", formatVerifiedMeetingPlace({
             name: document.getElementById("meetingPlaceName").value,
             url: document.getElementById("meetingPlaceUrl").value,
@@ -3772,14 +3840,21 @@
           if (!isGoogleMapsInput(input) && input) {
             clearMeetingPlaceFields();
             setMeetingPlaceButtonInvalid(false);
-            setPlaceStatus("找不到精確地點，仍可先儲存文字描述。");
-            showToast("可先儲存文字地點");
-            return true;
+            setPlaceStatus(placeKeywordRequirementText(), "error");
+            showToast("請選擇公開店點");
+            return false;
           }
           clearMeetingPlaceFields();
           setMeetingPlaceButtonInvalid(true);
           setPlaceStatus("請貼上 Google Maps 地點網址後按「驗證」。", "error");
           showToast("請貼上 Google Maps 地點網址");
+          return false;
+        }
+        if (!hasPublicMeetupKeyword(parsed.name)) {
+          clearMeetingPlaceFields();
+          setMeetingPlaceButtonInvalid(true);
+          setPlaceStatus(placeKeywordRequirementText(), "error");
+          showToast("請改選公開店點");
           return false;
         }
         setFieldValue("meetingPlaceName", parsed.name);
@@ -3796,6 +3871,11 @@
 
       function setVerifiedMeetingPlace(place) {
         if (!place?.lat || !place?.lng || !place?.url) return false;
+        if (!hasPublicMeetupKeyword(place.name)) {
+          setPlaceStatus(placeKeywordRequirementText(), "error");
+          setMeetingPlaceButtonInvalid(true);
+          return false;
+        }
         const verifiedPlace = {
           name: place.name || "Google Maps 地點",
           url: place.url,
@@ -4117,6 +4197,16 @@
         if (!target) return;
         const readiness = profileReadiness(profile || profileForMyCard());
         const missingText = readiness.missing.length ? `<div class="missing-items">尚未完成：${readiness.missing.join("、")}</div>` : "";
+        if (readiness.canInvite && placeNeedsKeywordReminder(profile || profileForMyCard())) {
+          target.innerHTML = `
+            <div class="profile-status-alert warning">
+              <h3>咖啡地點可能不正確</h3>
+              <p>${placeKeywordRequirementText()}目前名片仍已儲存，建議盡快重新定位，避免對方不知道實際要去哪裡。</p>
+              <div class="missing-items">需確認：咖啡地點定位</div>
+            </div>
+          `;
+          return;
+        }
         if (readiness.canInvite) {
           target.innerHTML = `
             <div class="profile-status-alert complete">
@@ -5072,6 +5162,7 @@
             const timeChips = compactAvailabilityLabels(candidate)
               .map((label) => `<span class="chip time-chip" title="${label}">${label}</span>`)
               .join("");
+            const locationReminder = locationReminderHtml(candidate, "candidate-location-warning");
             return `
               <article class="candidate-card" data-candidate-card="${candidate.id}">
                 <div class="candidate-photo">
@@ -5091,6 +5182,7 @@
                     ${timeChips}
                     <span class="chip">${candidate.place}</span>
                   </div>
+                  ${locationReminder}
                 </div>
                 <div class="candidate-actions">
                   ${candidateStatus ? `<span class="candidate-status-badge ${candidateStatus.className}">${candidateStatus.label}</span>` : ""}
@@ -5198,6 +5290,7 @@
         const activePhotoIndex = ((Number(options.photoIndex || 0) % safePhotos.length) + safePhotos.length) % safePhotos.length;
         const showPhotoControls = options.showPhotoControls !== false && safePhotos.filter(Boolean).length > 1;
         const mapQuery = profile.place || profile.meetingPlaceName || "";
+        const locationReminder = locationReminderHtml(profile);
         return `
           <div class="detail-head">
             <div>
@@ -5232,7 +5325,7 @@
                 ${detail.interestKeywords ? `<div class="detail-item"><span>興趣與話題</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                 <div class="detail-item">
                   <span>咖啡地點</span>
-                  <strong>${candidatePlaceText(profile)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(mapQuery)}" target="_blank" rel="noreferrer">定位</a></strong>
+                  <strong>${candidatePlaceText(profile)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(mapQuery)}" target="_blank" rel="noreferrer">定位</a>${locationReminder}</strong>
                 </div>
                 <div class="detail-item full">
                   <span>方便的見面時間</span>
@@ -5540,7 +5633,7 @@
                 ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                 <div class="detail-item">
                   <span>咖啡店</span>
-                  <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || "")}" target="_blank" rel="noreferrer">定位</a></strong>
+                  <strong>${candidatePlaceText(candidate)}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place || candidate.meetingPlaceName || "")}" target="_blank" rel="noreferrer">定位</a>${locationReminderHtml(candidate)}</strong>
                 </div>
                 <div class="detail-item full">
                   <span>通常方便時段</span>
@@ -5905,7 +5998,7 @@
                      ${detail.interestKeywords ? `<div class="detail-item"><span>興趣關鍵字</span><strong>${detail.interestKeywords}</strong></div>` : ""}
                      <div class="detail-item">
                        <span>咖啡店</span>
-                       <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a></strong>
+                       <strong>${candidate.place}<a class="detail-map-link" href="https://www.google.com/maps/search/${encodeURIComponent(candidate.place)}" target="_blank" rel="noreferrer">定位</a>${locationReminderHtml(candidate)}</strong>
                      </div>
                      ${
                        invite.status === "incoming"

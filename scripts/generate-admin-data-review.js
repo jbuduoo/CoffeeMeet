@@ -101,6 +101,8 @@ function hasPublicMeetupKeyword(placeName) {
     "seven",
     "星巴克",
     "starbucks",
+    "路易莎",
+    "louisa",
     "咖啡",
     "coffee",
     "cafe",

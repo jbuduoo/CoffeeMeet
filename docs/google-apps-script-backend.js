@@ -62,7 +62,11 @@ function verifyGoogleMapsPlace(payload) {
     const places = searchGooglePlacesByText(query || input);
     debug.searchResultsCount = places.length;
     debug.searchMode = "text";
-    if (!places.length) {
+    const allowedPlaces = places.filter(function(place) {
+      return hasPublicMeetupKeyword(place.name);
+    });
+    debug.allowedResultsCount = allowedPlaces.length;
+    if (!allowedPlaces.length) {
       return {
         ok: true,
         place: null,
@@ -72,8 +76,8 @@ function verifyGoogleMapsPlace(payload) {
     }
     return {
       ok: true,
-      place: places[0],
-      results: places,
+      place: allowedPlaces[0],
+      results: allowedPlaces,
       debug: debug,
     };
   }
@@ -86,7 +90,35 @@ function verifyGoogleMapsPlace(payload) {
     error.debug = debug;
     throw error;
   }
+  assertPublicMeetupPlace(place);
   return { ok: true, place, debug: debug };
+}
+
+function hasPublicMeetupKeyword(placeName) {
+  const normalized = String(placeName || "").toLowerCase();
+  return [
+    "全家",
+    "7-11",
+    "7－11",
+    "711",
+    "seven",
+    "星巴克",
+    "starbucks",
+    "路易莎",
+    "louisa",
+    "咖啡",
+    "coffee",
+    "cafe",
+    "café",
+  ].some(function(keyword) {
+    return normalized.indexOf(keyword) >= 0;
+  });
+}
+
+function assertPublicMeetupPlace(place) {
+  if (!hasPublicMeetupKeyword(place && place.name)) {
+    throw new Error("請選擇店名含有全家、7-11、星巴克、路易莎或咖啡字樣的公開店點。");
+  }
 }
 
 function isGoogleMapsInput(input) {
@@ -1134,9 +1166,13 @@ function saveMeetingPlace({ placeId, userId, profile, today }) {
   const existing = existingIndex >= 0 ? places[existingIndex] : null;
   const coords = firstLineCoords(profile.meetingArea);
   const sanitizedMeetingArea = stripAddressLines(profile.meetingArea);
+  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
+  if (placeName && (profile.meetingLat || (coords && coords.lat) || (existing && existing.lat))) {
+    assertPublicMeetupPlace({ name: placeName });
+  }
   const values = {
     place_id: placeId,
-    place_name: profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "",
+    place_name: placeName,
     city: profile.city || "",
     district: profile.district || "",
     map_url: profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "",
