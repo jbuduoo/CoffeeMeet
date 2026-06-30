@@ -141,6 +141,45 @@
         font-weight: 700;
       }
 
+      .guest-entry {
+        margin-top: 22px;
+        display: grid;
+        gap: 12px;
+        max-width: 620px;
+      }
+
+      .guest-entry-title {
+        color: var(--muted);
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .guest-entry-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .guest-cta {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 18px;
+        border: 1px solid rgba(217, 119, 6, 0.35);
+        border-radius: 8px;
+        background: #fffaf2;
+        color: var(--coffee-dark);
+        font-size: 16px;
+        font-weight: 800;
+        box-shadow: 0 10px 22px rgba(91, 62, 33, 0.08);
+      }
+
+      .guest-cta:hover {
+        border-color: var(--coffee);
+        background: #fff3e4;
+      }
+
       .email-start-form {
         display: grid;
         grid-template-columns: minmax(260px, 1fr) auto;
@@ -993,6 +1032,13 @@
               <button class="primary-cta" type="submit" aria-label="GO"><span class="desktop-cta-text">GO</span><span class="mobile-cta-text">GO</span></button>
             </form>
             <div class="cta-note">僅需 Email、照片、出生年與附近咖啡店位置。</div>
+            <div class="guest-entry" aria-label="訪客體驗入口">
+              <div class="guest-entry-title">只是想先看看？</div>
+              <div class="guest-entry-actions">
+                <a class="guest-cta" href="index.html?guest=male">我是男生，先看看</a>
+                <a class="guest-cta" href="index.html?guest=female">我是女生，先看看</a>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1090,6 +1136,15 @@
 
     <script>
       const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcu-mfMSj0Tcyo-LSsTJ8k-d0jOMIXaVF8hmViWbvN92TUudg80Eifu-LtrwE6Z7yf_A/exec";
+      const landingParams = new URLSearchParams(window.location.search);
+      const requestedGuest = landingParams.get("guest");
+      const guestEmails = {
+        male: "guest-male@example.com",
+        female: "guest-female@example.com",
+      };
+      if (guestEmails[requestedGuest]) {
+        window.location.replace(`app.html?email=${encodeURIComponent(guestEmails[requestedGuest])}`);
+      }
 
       const fallbackPeople = [
         {

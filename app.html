@@ -2899,6 +2899,16 @@
       const MAX_INVITE_TIME_CHOICES = 3;
       const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
       const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
+      const INVITE_BLOCKED_EMAILS = new Set(["guest-male@example.com", "guest-female@example.com"]);
+
+      function isInviteBlockedUser() {
+        return INVITE_BLOCKED_EMAILS.has(String(state.currentUser?.email || "").trim().toLowerCase());
+      }
+
+      function showInviteBlockedMessage() {
+        showToast("訪客體驗帳號不能送出正式邀約，請使用自己的 Email 登入後再邀約。", 3200);
+      }
+
       const feedbackQuestions = [
         {
           id: "comfort",
@@ -4335,6 +4345,10 @@
       }
 
       function openInviteModal(candidateId) {
+        if (isInviteBlockedUser()) {
+          showInviteBlockedMessage();
+          return;
+        }
         const candidate = candidates.find((item) => item.id === candidateId);
         if (!candidate) {
           logInviteDebug("invite modal blocked", { candidateId, reason: "candidate not found" });
@@ -4397,6 +4411,11 @@
 
       async function confirmInvite() {
         if (state.isSaving) return;
+        if (isInviteBlockedUser()) {
+          showInviteBlockedMessage();
+          closeInviteModal();
+          return;
+        }
         const candidateId = state.pendingInviteId;
         if (!candidateId) return;
         const times = selectedInviteTimeLabels();
