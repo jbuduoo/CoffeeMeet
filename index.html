@@ -1265,14 +1265,27 @@
       const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
       const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
 
+      function normalizeEmail(value) {
+        return String(value || "")
+          .trim()
+          .split(/[?#]/)[0]
+          .trim()
+          .toLowerCase();
+      }
+
+      function isValidEmail(value) {
+        return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
+      }
+
       function rememberedLandingEmail() {
         try {
           const storedUser = JSON.parse(localStorage.getItem(REMEMBERED_USER_KEY) || "null");
-          if (storedUser?.email) return String(storedUser.email).trim();
+          const normalizedStoredEmail = normalizeEmail(storedUser?.email);
+          if (normalizedStoredEmail) return normalizedStoredEmail;
         } catch {
           localStorage.removeItem(REMEMBERED_USER_KEY);
         }
-        return String(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail") || "").trim();
+        return normalizeEmail(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail"));
       }
 
       function syncLandingEmailPlaceholder() {
@@ -1296,11 +1309,12 @@
 
         landingEmailForm.addEventListener("submit", (event) => {
           event.preventDefault();
-          const email = landingEmail.value.trim();
-          if (!email) {
+          const email = normalizeEmail(landingEmail.value);
+          if (!isValidEmail(email)) {
             landingEmail.focus();
             return;
           }
+          landingEmail.value = email;
           localStorage.setItem(REMEMBERED_LOGIN_EMAIL_KEY, email);
           window.location.href = `app.html?email=${encodeURIComponent(email)}`;
         });
@@ -1316,7 +1330,7 @@
 
       document.querySelectorAll("[data-demo]").forEach((item) => {
         item.addEventListener("click", () => {
-          const email = item.dataset.demo;
+          const email = normalizeEmail(item.dataset.demo);
           localStorage.setItem("loginEmail", email);
           localStorage.setItem(REMEMBERED_LOGIN_EMAIL_KEY, email);
           window.location.href = `app.html?email=${encodeURIComponent(email)}`;

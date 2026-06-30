@@ -202,6 +202,53 @@ async function getAppData() {
   return { candidates, invites };
 }
 
+const appDataCacheTtlMs = 30 * 1000;
+let appDataCache = {
+  data: null,
+  expiresAt: 0,
+};
+let appDataCachePromise = null;
+
+function clearAppDataCache() {
+  appDataCache = {
+    data: null,
+    expiresAt: 0,
+  };
+  appDataCachePromise = null;
+}
+
+async function getCachedAppData() {
+  const now = Date.now();
+  if (appDataCache.data && now < appDataCache.expiresAt) {
+    return {
+      ...appDataCache.data,
+      cached: true,
+      cacheExpiresAt: new Date(appDataCache.expiresAt).toISOString(),
+    };
+  }
+
+  if (!appDataCachePromise) {
+    appDataCachePromise = getAppData()
+      .then((freshData) => {
+        appDataCache = {
+          data: freshData,
+          expiresAt: Date.now() + appDataCacheTtlMs,
+        };
+        return freshData;
+      })
+      .finally(() => {
+        appDataCachePromise = null;
+      });
+  }
+
+  const freshData = await appDataCachePromise;
+  return {
+    ...freshData,
+    cached: false,
+    cacheExpiresAt: new Date(appDataCache.expiresAt).toISOString(),
+  };
+}
+
 function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -210,6 +257,18 @@ function calculateAge(birthYear, today = new Date()) {
   const year = Number(birthYear);
   if (!year) return "";
   return String(today.getFullYear() - year);
+}
+
+function normalizeEmail(value) {
+  return String(value || "")
+    .trim()
+    .split(/[?#&]/)[0]
+    .trim()
+    .toLowerCase();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
 }
 
 function slugFromEmail(email) {
@@ -223,13 +282,14 @@ function slugFromEmail(email) {
 }
 
 async function createUserFromProfile(profile) {
-  const email = String(profile.email || "").trim().toLowerCase();
+  const email = normalizeEmail(profile.email);
   if (!email) throw new Error("Email is required");
+  if (!isValidEmail(email)) throw new Error("Invalid email format");
 
   const current = await getSheetValues("users!A1:AZ1000");
   const headers = await ensureUserHeaders(current.values?.[0] || []);
   const users = rowsToObjects(current.values);
-  const existingIndex = users.findIndex((user) => String(user.email || "").toLowerCase() === email);
+  const existingIndex = users.findIndex((user) => normalizeEmail(user.email) === email);
   const existing = existingIndex >= 0 ? users[existingIndex] : null;
 
   const stamp = Date.now().toString(36);
@@ -422,7 +482,7 @@ async function ensureVisitSheet() {
 
 function visitStatsRow(payload, rowNumber) {
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   const name = String(payload.name || payload.nickname || email || userId).trim();
   const logSheet = `'${visitSheetName.replace(/'/g, "''")}'`;
   return [
@@ -444,7 +504,7 @@ function visitStatsRow(payload, rowNumber) {
 
 async function upsertVisitStatsRow(payload = {}) {
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   if (!userId && !email) return;
 
   const current = await getSheetValues(`${visitStatsSheetName}!A1:M2000`);
@@ -452,7 +512,7 @@ async function upsertVisitStatsRow(payload = {}) {
   const bodyRows = rows.slice(1);
   const existingIndex = bodyRows.findIndex((row) =>
     (userId && String(row[0] || "").trim() === userId) ||
-    (email && String(row[2] || "").trim().toLowerCase() === email),
+    (email && normalizeEmail(row[2]) === email),
   );
   const rowNumber = existingIndex >= 0 ? existingIndex + 2 : bodyRows.length + 2;
   const row = visitStatsRow(payload, rowNumber);
@@ -466,7 +526,7 @@ async function upsertVisitStatsRow(payload = {}) {
 
 async function recordVisit(payload = {}) {
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   const name = String(payload.name || payload.nickname || "").trim();
   if (!userId && !email) throw new Error("userId or email is required");
 
@@ -786,7 +846,7 @@ async function handleApi(req, res, url) {
     }
 
     if (url.pathname === "/api/app-data") {
-      const data = await getAppData();
+      const data = await getCachedAppData();
       sendJson(res, 200, { ok: true, ...data });
       return;
     }
@@ -801,6 +861,7 @@ async function handleApi(req, res, url) {
     if (url.pathname === "/api/users" && req.method === "POST") {
       const profile = await readRequestBody(req);
       const result = await createUserFromProfile(profile);
+      clearAppDataCache();
       sendJson(res, 200, { ok: true, ...result });
       return;
     }
@@ -808,6 +869,7 @@ async function handleApi(req, res, url) {
     if (url.pathname === "/api/invites" && req.method === "POST") {
       const invite = await readRequestBody(req);
       const result = await createInvite(invite);
+      clearAppDataCache();
       sendJson(res, 200, { ok: true, ...result });
       return;
     }

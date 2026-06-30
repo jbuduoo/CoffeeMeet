@@ -2891,6 +2891,8 @@
         profileDirty: false,
         draftTimer: null,
         isSaving: false,
+        appDataLoaded: false,
+        appDataLoadPromise: null,
       };
 
       const DAILY_SENT_INVITE_LIMIT = 3;
@@ -2900,9 +2902,19 @@
       const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
       const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
       const INVITE_BLOCKED_EMAILS = new Set(["guest-male@example.com", "guest-female@example.com"]);
+      const LOGIN_LOADING_TIPS = [
+        "\u5148\u7d04 30 \u5206\u9418\u5230 1 \u5c0f\u6642\u5c31\u597d\uff0c\u804a\u5f97\u4f86\u518d\u7d04\u4e0b\u4e00\u6b21\u3002",
+        "\u5076\u723e\u66f4\u65b0\u53ef\u88ab\u9080\u7d04\u7684\u6642\u9593\uff0c\u6703\u589e\u52a0\u88ab\u9080\u7d04\u7684\u6a5f\u6703\u3002",
+        "\u5148\u804a\u804a\u5929\uff0c\u4e0d\u6025\u8457\u627e\u5c0d\u8c61\uff0c\u591a\u804a\u5e7e\u6b21\u624d\u77e5\u9053\u9069\u4e0d\u9069\u5408\u3002",
+        "\u591a\u8a8d\u8b58\u4e0d\u540c\u7684\u4eba\uff0c\u4e5f\u662f\u5728\u6162\u6162\u770b\u6e05\u81ea\u5df1\u559c\u6b61\u7684\u76f8\u8655\u65b9\u5f0f\u3002",
+        "\u5e38\u53bb\u5730\u9ede\u8a2d\u5b9a\u6e05\u695a\uff0c\u5225\u4eba\u624d\u77e5\u9053\u53ef\u4ee5\u53bb\u54ea\u88e1\u627e\u4f60\u559d\u5496\u5561\u3002",
+        "\u8cc7\u6599\u9084\u6c92\u586b\u5b8c\u6574\u6642\uff0c\u7cfb\u7d71\u4e0d\u6703\u958b\u653e\u6b63\u5f0f\u9080\u7d04\u3002",
+        "\u7b2c\u4e00\u6b21\u898b\u9762\u53ef\u4ee5\u5148\u78ba\u8a8d\u5c0d\u65b9\u672c\u4eba\u8207\u57fa\u672c\u8cc7\u8a0a\u3002",
+        "\u5973\u751f\u8a2d\u5b9a\u5e38\u53bb\u5730\u9ede\u6642\uff0c\u53ef\u4ee5\u7565\u5fae\u5f80\u5916\u79fb\u4e00\u9ede\uff0c\u6703\u66f4\u5b89\u5168\u3002",
+      ];
 
       function isInviteBlockedUser() {
-        return INVITE_BLOCKED_EMAILS.has(String(state.currentUser?.email || "").trim().toLowerCase());
+        return INVITE_BLOCKED_EMAILS.has(normalizeEmail(state.currentUser?.email));
       }
 
       function showInviteBlockedMessage() {
@@ -3740,7 +3752,19 @@
       }
 
       function photoStorageKey(email) {
-        return `coffeemeet.photos.${String(email || "").trim().toLowerCase()}`;
+        return `coffeemeet.photos.${normalizeEmail(email) || "anonymous"}`;
+      }
+
+      function normalizeEmail(value) {
+        return String(value || "")
+          .trim()
+          .split(/[?#]/)[0]
+          .trim()
+          .toLowerCase();
+      }
+
+      function isValidEmail(value) {
+        return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
       }
 
       function safeLocalStorageSet(key, value) {
@@ -3776,14 +3800,16 @@
 
       function rememberedLoginEmail() {
         const emailFromUrl = new URLSearchParams(window.location.search).get("email");
-        if (emailFromUrl?.trim()) return emailFromUrl.trim();
+        const normalizedUrlEmail = normalizeEmail(emailFromUrl);
+        if (normalizedUrlEmail) return normalizedUrlEmail;
         try {
           const storedUser = JSON.parse(localStorage.getItem(REMEMBERED_USER_KEY) || "null");
-          if (storedUser?.email) return String(storedUser.email).trim();
+          const normalizedStoredEmail = normalizeEmail(storedUser?.email);
+          if (normalizedStoredEmail) return normalizedStoredEmail;
         } catch {
           localStorage.removeItem(REMEMBERED_USER_KEY);
         }
-        return String(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail") || "").trim();
+        return normalizeEmail(localStorage.getItem(REMEMBERED_LOGIN_EMAIL_KEY) || localStorage.getItem("loginEmail"));
       }
 
       async function recordVisit(source = "login") {
@@ -3807,7 +3833,7 @@
       }
 
       function profileDraftKey(email) {
-        const key = String(email || document.getElementById("email")?.value || "anonymous").trim().toLowerCase();
+        const key = normalizeEmail(email || document.getElementById("email")?.value) || "anonymous";
         return `coffeemeet.profileDraft.${key || "anonymous"}`;
       }
 
@@ -3901,7 +3927,12 @@
       function setSaving(isSaving, title = "儲存中", copy = "正在把資料寫入試算表與雲端硬碟，請稍候。") {
         state.isSaving = isSaving;
         document.getElementById("savingTitle").textContent = title;
-        document.getElementById("savingCopy").textContent = copy;
+        const savingCopy = document.getElementById("savingCopy");
+        if (Array.isArray(copy) && copy.length) {
+          savingCopy.textContent = copy[Math.floor(Math.random() * copy.length)];
+        } else {
+          savingCopy.textContent = copy;
+        }
         document.getElementById("savingOverlay").classList.toggle("hidden", !isSaving);
         const submitButton = document.querySelector('#profileForm button[type="submit"]');
         if (submitButton) submitButton.disabled = isSaving;
@@ -4001,7 +4032,7 @@
       const adminEmails = new Set([]);
 
       function isAdminEmail(email) {
-        return adminEmails.has(String(email || "").trim().toLowerCase());
+        return adminEmails.has(normalizeEmail(email));
       }
 
       function isAdminUser() {
@@ -4024,23 +4055,29 @@
 
       async function loginWithEmail(email, password) {
         if (state.isSaving) return;
-        setSaving(true, "\u8f09\u5165\u8cc7\u6599\u4e2d", "\u6b63\u5728\u4e0b\u8f09\u6703\u54e1\u8cc7\u6599\u8207\u9080\u7d04\u7d00\u9304\uff0c\u8acb\u7a0d\u5019\u3002");
+        const normalizedEmail = normalizeEmail(email);
+        if (!isValidEmail(normalizedEmail)) {
+          showToast("請輸入有效的 Email");
+          resetProfileFormForNewUser("");
+          openInviteFromUrl();
+          return;
+        }
+        setSaving(true, "\u4e0b\u8f09\u4e2d", LOGIN_LOADING_TIPS);
         try {
-        const normalizedEmail = email.trim().toLowerCase();
         if (hasRemoteApi()) await loadSheetAppData(true);
         const user =
-          candidates.find((item) => item.email && item.email.toLowerCase() === normalizedEmail) ||
-          (!hasRemoteApi() ? mockUsers.find((item) => item.email.toLowerCase() === normalizedEmail) : null);
+          candidates.find((item) => normalizeEmail(item.email) === normalizedEmail) ||
+          (!hasRemoteApi() ? mockUsers.find((item) => normalizeEmail(item.email) === normalizedEmail) : null);
         if (!user) {
           state.currentUser = {
             userId: normalizedEmail,
-            email: email.trim(),
-            name: email.trim(),
+            email: normalizedEmail,
+            name: normalizedEmail,
             reviewStatus: "新會員",
           };
-          resetProfileFormForNewUser(email.trim());
+          resetProfileFormForNewUser(normalizedEmail);
           rememberCurrentUser();
-          await recordVisit("login-new-user");
+          recordVisit("login-new-user");
           renderLoginPanel();
           updateAdminVisibility();
           renderCandidates();
@@ -4060,7 +4097,7 @@
         state.profile = user;
         populateProfileForm(user);
         rememberCurrentUser();
-        await recordVisit("login");
+        recordVisit("login");
         renderLoginPanel();
         updateAdminVisibility();
         renderCandidates();
@@ -4454,7 +4491,7 @@
         if (savedInvite?.duplicate) {
           confirmButton.disabled = false;
           closeInviteModal();
-          await loadSheetAppData(true);
+          await loadSheetAppData(true, true);
           renderCandidates();
           renderInvites();
           setSaving(false);
@@ -4469,7 +4506,7 @@
         }
         closeInviteModal();
         confirmButton.disabled = false;
-        await loadSheetAppData(true);
+        await loadSheetAppData(true, true);
         renderCandidates();
         renderInvites();
         setSaving(false);
@@ -5390,7 +5427,7 @@
         sourceInvite.status = "cancelled";
         sourceInvite.note = note;
         state.invited.delete(candidateId);
-        await loadSheetAppData(true);
+        await loadSheetAppData(true, true);
         logInviteDebug("cancel after reload", {
           candidateId,
           relatedInvite: inviteDebugPayload(candidateInviteForCurrentUser(candidateId)),
@@ -5515,7 +5552,7 @@
         setSaving(false);
         showToast(`已完成，分數 ${score} 分`);
         try {
-          await loadSheetAppData(true);
+          await loadSheetAppData(true, true);
           refreshInviteViews(inviteId, invite.candidateId);
         } catch (error) {
           console.warn("問卷送出後重新整理失敗", error);
@@ -5582,7 +5619,7 @@
         sourceInvite.status = "confirmed";
         sourceInvite.note = note;
         delete state.selectedIncomingTimes[inviteId];
-        await loadSheetAppData(true);
+        await loadSheetAppData(true, true);
         refreshInviteViews(inviteId, candidateId);
         setSaving(false);
         showToast("已同意邀約，已進入待見面");
@@ -5748,8 +5785,11 @@
           .slice(0, 3);
       }
 
-      async function loadSheetAppData(silent = false) {
+      async function loadSheetAppData(silent = false, force = false) {
         if (!hasRemoteApi()) return;
+        if (!force && state.appDataLoaded) return;
+        if (!force && state.appDataLoadPromise) return state.appDataLoadPromise;
+        state.appDataLoadPromise = (async () => {
         try {
           const response = await fetch(apiEndpoint("app-data"));
           const data = await response.json();
@@ -5775,17 +5815,19 @@
                 .filter(Boolean),
             );
           }
+          state.appDataLoaded = true;
           if (!silent) showToast("已載入試算表資料");
         } catch (error) {
           console.warn("使用內建示範資料：", error);
         }
+        })().finally(() => {
+          state.appDataLoadPromise = null;
+        });
+        return state.appDataLoadPromise;
       }
 
       async function bootstrapApp() {
         logInviteDebug("debug ready", { endpoint: apiEndpoint("app-data"), version: "invite-debug-2026-06-25" });
-        await loadSheetAppData();
-        renderCandidates();
-        renderInvites();
         renderLoginPanel();
         updateAdminVisibility();
         renderPhotoGrid();
@@ -5794,7 +5836,18 @@
         updateDistrictOptions();
         updateMapLinks();
         updateSummary();
+
+        const email = rememberedLoginEmail();
+        if (email) {
+          await loginWithEmail(email);
+          return;
+        }
+
+        await loadSheetAppData();
+        renderCandidates();
+        renderInvites();
         go("digest");
+        openInviteFromUrl();
       }
 
       document.querySelectorAll("[data-step]").forEach((button) => {
@@ -5889,7 +5942,7 @@
           await recordVisit("profile-save");
           renderLoginPanel();
           updateAdminVisibility();
-          await loadSheetAppData();
+          await loadSheetAppData(true, true);
           renderCandidates();
           renderInvites();
           clearProfileDraft(state.profile.email);
@@ -6229,16 +6282,6 @@
         true,
       );
 
-      async function autoLoginFromLanding() {
-        const email = rememberedLoginEmail();
-        if (!email) {
-          openInviteFromUrl();
-          return;
-        }
-
-        await loginWithEmail(email);
-      }
-
       function openInviteFromUrl() {
         const params = new URLSearchParams(window.location.search);
         const requestedInviteId = (params.get("inviteId") || params.get("invite") || "").trim();
@@ -6260,7 +6303,7 @@
         }, 0);
       }
 
-      bootstrapApp().then(autoLoginFromLanding);
+      bootstrapApp();
     </script>
   </body>
 </html>

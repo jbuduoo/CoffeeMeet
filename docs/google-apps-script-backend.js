@@ -720,7 +720,7 @@ function ensureVisitStatsSheet() {
 function visitStatsRow(payload, rowNumber) {
   payload = payload || {};
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   const name = String(payload.name || payload.nickname || email || userId).trim();
   const logSheet = "'\u4e0a\u4f86\u7d00\u9304'";
   return [
@@ -743,7 +743,7 @@ function visitStatsRow(payload, rowNumber) {
 function upsertVisitStatsRow(payload) {
   payload = payload || {};
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   if (!userId && !email) return;
 
   const sheet = ensureVisitStatsSheet();
@@ -753,7 +753,7 @@ function upsertVisitStatsRow(payload) {
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
     if ((userId && String(row[0] || "").trim() === userId) ||
-        (email && String(row[2] || "").trim().toLowerCase() === email)) {
+        (email && normalizeEmail(row[2]) === email)) {
       existingIndex = index;
       break;
     }
@@ -770,7 +770,7 @@ function upsertVisitStatsRow(payload) {
 function recordVisit(payload) {
   payload = payload || {};
   const userId = String(payload.userId || payload.user_id || "").trim();
-  const email = String(payload.email || "").trim().toLowerCase();
+  const email = normalizeEmail(payload.email);
   const name = String(payload.name || payload.nickname || "").trim();
   if (!userId && !email) return { ok: false, error: "userId or email is required" };
 
@@ -793,14 +793,27 @@ function detailFromNote(note, label) {
   return match ? match[1].trim() : "";
 }
 
+function normalizeEmail(value) {
+  return String(value || "")
+    .trim()
+    .split(/[?#]/)[0]
+    .trim()
+    .toLowerCase();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@?&=]+@[^\s@?&=]+\.[^\s@?&=]+$/.test(value);
+}
+
 function saveUserProfile(profile) {
-  const email = String(profile.email || "").trim().toLowerCase();
+  const email = normalizeEmail(profile.email);
   if (!email) return { ok: false, error: "Email is required" };
+  if (!isValidEmail(email)) return { ok: false, error: "Invalid email format" };
 
   const usersSheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("users");
   const headers = ensureUserHeaders(usersSheet);
   const users = sheetRows("users");
-  const existingIndex = users.findIndex((user) => String(user.email || "").toLowerCase() === email);
+  const existingIndex = users.findIndex((user) => normalizeEmail(user.email) === email);
   const existing = existingIndex >= 0 ? users[existingIndex] : null;
   const userId = existing
     ? existing.user_id
