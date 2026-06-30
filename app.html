@@ -690,6 +690,12 @@
         font-size: 14px;
       }
 
+      .required-mark {
+        color: #dc2626;
+        font-weight: 900;
+        margin-right: 4px;
+      }
+
       input,
       select,
       textarea {
@@ -712,6 +718,15 @@
       textarea:focus {
         outline: 3px solid rgba(15, 118, 110, 0.16);
         border-color: var(--accent);
+      }
+
+      input.is-invalid,
+      select.is-invalid,
+      textarea.is-invalid,
+      .photo-grid.is-invalid,
+      .availability-grid.is-invalid {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
       }
 
       .actions {
@@ -817,6 +832,44 @@
         height: 30px;
         font-size: 18px;
         line-height: 1;
+        cursor: pointer;
+      }
+
+      #photoInput {
+        width: 100%;
+        min-height: 48px;
+        padding: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffaf2;
+        color: var(--ink);
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      #photoInput::file-selector-button {
+        min-height: 42px;
+        margin-right: 10px;
+        padding: 0 16px;
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      #photoInput::-webkit-file-upload-button {
+        min-height: 42px;
+        margin-right: 10px;
+        padding: 0 16px;
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
         cursor: pointer;
       }
 
@@ -1926,6 +1979,21 @@
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
+        #photoInput {
+          min-height: 56px;
+          font-size: 16px;
+        }
+
+        #photoInput::file-selector-button {
+          min-height: 48px;
+          padding-inline: 18px;
+        }
+
+        #photoInput::-webkit-file-upload-button {
+          min-height: 48px;
+          padding-inline: 18px;
+        }
+
         .home-hero {
           grid-template-columns: 1fr;
         }
@@ -2365,15 +2433,15 @@
                 <div class="form-grid">
                   <div class="form-section-title">基本資料</div>
                   <div class="field">
-                    <label for="email">Email</label>
+                    <label for="email"><span class="required-mark" aria-hidden="true">*</span>Email</label>
                     <input id="email" name="email" type="email" placeholder="you@example.com" />
                   </div>
                   <div class="field">
-                    <label for="nickname">暱稱</label>
+                    <label for="nickname"><span class="required-mark" aria-hidden="true">*</span>暱稱</label>
                     <input id="nickname" name="nickname" autocomplete="nickname" placeholder="例如：Kai" />
                   </div>
                   <div class="field">
-                    <label for="gender">性別</label>
+                    <label for="gender"><span class="required-mark" aria-hidden="true">*</span>性別</label>
                     <select id="gender" name="gender">
                       <option value="">請選擇</option>
                       <option>女性</option>
@@ -2381,19 +2449,19 @@
                     </select>
                   </div>
                   <div class="field">
-                    <label for="birthYear">出生年</label>
+                    <label for="birthYear"><span class="required-mark" aria-hidden="true">*</span>出生年</label>
                     <div class="inline-selects">
                       <select id="birthYear" name="birthYear" aria-label="出生年"></select>
                     </div>
                   </div>
                   <div class="field">
-                    <label for="city">城市</label>
+                    <label for="city"><span class="required-mark" aria-hidden="true">*</span>城市</label>
                     <select id="city" name="city">
                       <option value="">請選擇</option>
                     </select>
                   </div>
                   <div class="field">
-                    <label for="district">行政區</label>
+                    <label for="district"><span class="required-mark" aria-hidden="true">*</span>行政區</label>
                     <select id="district" name="district"></select>
                   </div>
 
@@ -2434,7 +2502,7 @@
                     </select>
                   </div>
                   <div class="field">
-                    <label for="coffeeGoal">交友目的</label>
+                    <label for="coffeeGoal"><span class="required-mark" aria-hidden="true">*</span>交友目的</label>
                     <select id="coffeeGoal" name="coffeeGoal">
                       <option value="">請選擇</option>
                       <option>以結婚為前提</option>
@@ -2445,12 +2513,12 @@
                       <option>開放看看</option>
                     </select>
                   </div>
-                  <div class="form-section-title">自我介紹</div>
+                  <div class="form-section-title"><span class="required-mark" aria-hidden="true">*</span>自我介紹</div>
                   <div class="field full">
                     <textarea id="intro" name="intro" maxlength="300" placeholder="最多 300 字，簡單說明你的生活感、想認識的人與第一次見面的期待。"></textarea>
                   </div>
 
-                  <div class="form-section-title">照片</div>
+                  <div class="form-section-title"><span class="required-mark" aria-hidden="true">*</span>照片</div>
                   <div class="field full">
                     <div class="photo-zone">
                       <div class="photo-grid" id="photoGrid">
@@ -2475,7 +2543,7 @@
                   </div>
 
                   <div class="field full">
-                    <label for="availabilityNote">通常方便時段：（邀約發起人選可配合時段，被邀請的人再決定精確時間。）</label>
+                    <label for="availabilityNote"><span class="required-mark" aria-hidden="true">*</span>通常方便時段：（邀約發起人選可配合時段，被邀請的人再決定精確時間。）</label>
                     <div class="availability-grid" id="availableTimeChoices">
                       <div class="availability-cell availability-head">星期</div>
                       <div class="availability-cell availability-head">上午<br />09:00-12:00</div>
@@ -2521,7 +2589,7 @@
                     <input id="availabilityNote" name="availabilityNote" type="hidden" />
                   </div>
                   <div class="field full">
-                    <label for="meetingArea">方便見面地點</label>
+                    <label for="meetingArea"><span class="required-mark" aria-hidden="true">*</span>方便見面地點</label>
                     <div class="place-picker">
                       <div class="place-verify-row">
                         <input id="meetingArea" name="meetingArea" placeholder="請點選底下藍色按鈕，然後選擇該咖啡店，按分享，點選複製連結後貼到對話框" required />
@@ -2897,8 +2965,8 @@
 
       const DAILY_SENT_INVITE_LIMIT = 3;
       const DAILY_RECEIVED_INVITE_LIMIT = 3;
-      const MAX_AVAILABILITY_CHOICES = 3;
-      const MAX_INVITE_TIME_CHOICES = 3;
+      const MAX_AVAILABILITY_CHOICES = 4;
+      const MAX_INVITE_TIME_CHOICES = 4;
       const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
       const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
       const INVITE_BLOCKED_EMAILS = new Set(["guest-male@example.com", "guest-female@example.com"]);
@@ -3924,6 +3992,59 @@
         showToast.hideTimer = window.setTimeout(() => toast.classList.remove("show"), duration);
       }
 
+      const PROFILE_REQUIRED_FIELDS = [
+        { id: "email", label: "Email" },
+        { id: "nickname", label: "暱稱" },
+        { id: "gender", label: "性別" },
+        { id: "birthYear", label: "出生年" },
+        { id: "city", label: "城市" },
+        { id: "district", label: "行政區" },
+        { id: "coffeeGoal", label: "交友目的" },
+        { id: "intro", label: "自我介紹" },
+        { id: "photoInput", label: "照片", highlightId: "photoGrid", isMissing: () => !state.photos.length },
+        { id: "availabilityNote", label: "通常方便時段", highlightId: "availableTimeChoices" },
+        { id: "meetingArea", label: "方便見面地點" },
+      ];
+
+      function clearProfileValidationState() {
+        PROFILE_REQUIRED_FIELDS.forEach(({ id, highlightId }) => {
+          document.getElementById(id)?.classList.remove("is-invalid");
+          document.getElementById(highlightId)?.classList.remove("is-invalid");
+          document.getElementById(id)?.removeAttribute("aria-invalid");
+        });
+      }
+
+      function validateProfileBeforeSave() {
+        clearProfileValidationState();
+        const missingFields = PROFILE_REQUIRED_FIELDS.filter(({ id, isMissing }) => {
+          if (isMissing) return isMissing();
+          const field = document.getElementById(id);
+          return !String(field?.value || "").trim();
+        });
+        const email = document.getElementById("email");
+        if (email?.value.trim() && !email.validity.valid && !missingFields.some((field) => field.id === "email")) {
+          missingFields.unshift({ id: "email", label: "Email 格式" });
+        }
+        if (!missingFields.length) return true;
+
+        missingFields.forEach(({ id, highlightId }) => {
+          const field = document.getElementById(id);
+          const target = document.getElementById(highlightId || id);
+          target?.classList.add("is-invalid");
+          field?.setAttribute("aria-invalid", "true");
+        });
+
+        const first = missingFields[0];
+        const firstTarget = document.getElementById(first.highlightId || first.id);
+        firstTarget?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (!first.highlightId) document.getElementById(first.id)?.focus();
+
+        const labels = missingFields.map(({ label }) => label).join("、");
+        window.alert(`還有資料沒有填寫：\n${labels}\n\n請補齊後再按儲存。`);
+        showToast("請補齊必填資料", 2600);
+        return false;
+      }
+
       function setSaving(isSaving, title = "儲存中", copy = "正在把資料寫入試算表與雲端硬碟，請稍候。") {
         state.isSaving = isSaving;
         document.getElementById("savingTitle").textContent = title;
@@ -4378,7 +4499,7 @@
         const times = selectedInviteTimeLabels();
         summary.textContent = times.length
           ? `你邀約的時段為：${times.join("、")}`
-          : "請選擇 1 到 3 個邀約時段";
+          : "請選擇 1 到 4 個邀約時段";
       }
 
       function openInviteModal(candidateId) {
@@ -4408,7 +4529,7 @@
         });
         state.pendingInviteId = candidateId;
         document.getElementById("inviteModalTitle").textContent = `邀請 ${candidate.name} 喝咖啡`;
-        document.getElementById("inviteModalSummary").textContent = "請從對方方便的大時段中選擇最多 3 個 1 小時時段。";
+        document.getElementById("inviteModalSummary").textContent = "請從對方方便的大時段中選擇最多 4 個 1 小時時段。";
         renderInviteTimeChoices(candidate);
         updateSelectedInviteTimeSummary();
         const candidateAvailableTime = document.getElementById("candidateAvailableTime");
@@ -5872,18 +5993,23 @@
       document.getElementById("verifyMeetingPlace").addEventListener("click", verifyMeetingPlace);
       document.getElementById("profileForm").addEventListener("input", () => {
         updateMapLinks();
+        clearProfileValidationState();
       });
-      document.getElementById("profileForm").addEventListener("change", scheduleProfileDraftSave);
+      document.getElementById("profileForm").addEventListener("change", () => {
+        clearProfileValidationState();
+        scheduleProfileDraftSave();
+      });
       document.getElementById("profileForm").addEventListener("click", (event) => {
         const button = event.target.closest("[data-time-choice]");
         if (!button) return;
         const selectedCount = document.querySelectorAll("[data-time-choice].active").length;
         if (!button.classList.contains("active") && selectedCount >= MAX_AVAILABILITY_CHOICES) {
-          showToast("通常方便時段最多選 3 個");
+          showToast("通常方便時段最多選 4 個");
           return;
         }
         button.classList.toggle("active");
         updateAvailabilityNoteFromChoices();
+        clearProfileValidationState();
         scheduleProfileDraftSave();
       });
 
@@ -5906,9 +6032,11 @@
       document.getElementById("profileForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         if (state.isSaving) return;
-        if (!(await verifyMeetingPlace())) return;
         syncSocialStyleKeywords();
         syncInterestKeywords();
+        updateAvailabilityNoteFromChoices();
+        if (!validateProfileBeforeSave()) return;
+        if (!(await verifyMeetingPlace())) return;
         state.profile = formToObject(event.currentTarget);
         state.profile.photos = state.photos.slice(0, 3);
         saveStoredPhotos(state.profile.email);
@@ -6047,6 +6175,7 @@
         state.photos = state.photos.concat(urls).slice(0, 3);
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
+        clearProfileValidationState();
         updateSummary();
         scheduleProfileDraftSave();
         showToast(files.length > selected.length ? "已匯入前 3 張照片" : "照片已匯入");
@@ -6062,6 +6191,7 @@
         state.photos.splice(Number(button.dataset.removePhoto), 1);
         saveStoredPhotos(state.currentUser?.email || document.getElementById("email").value);
         renderPhotoGrid();
+        clearProfileValidationState();
         updateSummary();
         scheduleProfileDraftSave();
         showToast("照片已刪除");
@@ -6161,7 +6291,7 @@
         const button = event.target.closest(".time-grid-slot.is-available") || event.target.closest(".quick-time-button");
         if (!button) return;
         if (!button.classList.contains("is-selected") && selectedInviteTimes().length >= MAX_INVITE_TIME_CHOICES) {
-          showToast("最多選 3 個邀約時段");
+          showToast("最多選 4 個邀約時段");
           return;
         }
         button.classList.toggle("is-selected");
