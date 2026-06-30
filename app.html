@@ -3001,7 +3001,6 @@
       const MAX_INVITE_TIME_CHOICES = 4;
       const REMEMBERED_LOGIN_EMAIL_KEY = "coffeemeet.loginEmail";
       const REMEMBERED_USER_KEY = "coffeemeet.currentUser";
-      const INVITE_BLOCKED_EMAILS = new Set(["guest-male@example.com", "guest-female@example.com"]);
       const LOGIN_LOADING_TIPS = [
         "\u5148\u7d04 30 \u5206\u9418\u5230 1 \u5c0f\u6642\u5c31\u597d\uff0c\u804a\u5f97\u4f86\u518d\u7d04\u4e0b\u4e00\u6b21\u3002",
         "\u5076\u723e\u66f4\u65b0\u53ef\u88ab\u9080\u7d04\u7684\u6642\u9593\uff0c\u6703\u589e\u52a0\u88ab\u9080\u7d04\u7684\u6a5f\u6703\u3002",
@@ -3014,7 +3013,7 @@
       ];
 
       function isInviteBlockedUser() {
-        return INVITE_BLOCKED_EMAILS.has(normalizeEmail(state.currentUser?.email)) || !profileReadiness(currentUserProfile()).canInvite;
+        return !profileReadiness(currentUserProfile()).canInvite;
       }
 
       function showInviteBlockedMessage() {
