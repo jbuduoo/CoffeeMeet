@@ -158,6 +158,10 @@
         color: white;
       }
 
+      .mobile-step-label {
+        display: none;
+      }
+
       .main {
         padding: 32px;
         display: grid;
@@ -1142,6 +1146,94 @@
         background: var(--accent);
         border-color: var(--accent);
         color: white;
+      }
+
+      .matchmaker-page {
+        display: grid;
+        gap: 18px;
+      }
+
+      .matchmaker-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 22px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fffdf8;
+        padding: 28px;
+      }
+
+      .matchmaker-kicker {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .matchmaker-title {
+        margin: 0;
+        font-size: 32px;
+        line-height: 1.22;
+      }
+
+      .matchmaker-copy {
+        max-width: 680px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.8;
+      }
+
+      .matchmaker-mark {
+        width: 104px;
+        height: 104px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: #f1e6d4;
+        color: #7c4a12;
+        font-size: 42px;
+        font-weight: 900;
+        box-shadow: 0 16px 34px rgba(43, 36, 27, 0.1);
+      }
+
+      .matchmaker-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .matchmaker-note {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .matchmaker-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .matchmaker-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        padding: 18px;
+      }
+
+      .matchmaker-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 16px;
+      }
+
+      .matchmaker-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
       }
 
       .invite-list {
@@ -2176,7 +2268,7 @@
           right: 0;
           bottom: 0;
           z-index: 50;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 6px;
           padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
           background: rgba(43, 37, 31, 0.96);
@@ -2185,7 +2277,7 @@
         }
 
         .step-list.has-admin-step {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .form-grid {
@@ -2353,6 +2445,31 @@
           font-weight: 800;
           line-height: 1.2;
         }
+
+        .desktop-step-label {
+          display: none;
+        }
+
+        .mobile-step-label {
+          display: inline;
+        }
+
+        .matchmaker-hero,
+        .matchmaker-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .matchmaker-hero {
+          padding: 22px;
+        }
+
+        .matchmaker-title {
+          font-size: 25px;
+        }
+
+        .matchmaker-mark {
+          display: none;
+        }
       }
 
       @media (max-width: 380px) {
@@ -2458,8 +2575,13 @@
             <span class="step-icon">2</span>
             <span class="step-label">我的名片</span>
           </button>
-          <button class="step-button hidden" data-step="emails" type="button">
+          <button class="step-button" data-step="matchmaker" type="button">
             <span class="step-icon">3</span>
+            <span class="step-label desktop-step-label">聯絡月老</span>
+            <span class="step-label mobile-step-label">月老</span>
+          </button>
+          <button class="step-button hidden" data-step="emails" type="button">
+            <span class="step-icon">4</span>
             <span class="step-label">Email 範本（Admin）</span>
           </button>
         </nav>
@@ -2767,6 +2889,23 @@
               </div>
             </section>
 
+            <section class="section page hidden matchmaker-page" id="matchmakerPage">
+              <div class="matchmaker-hero">
+                <div>
+                  <h3 class="matchmaker-title">卡住了嗎？</h3>
+                  <p class="matchmaker-copy">
+                    不會填資料、邀約流程不清楚，<br />
+                    或遇到配對問題，都可以加入 LINE 詢問。
+                  </p>
+                </div>
+              </div>
+
+              <div class="matchmaker-actions">
+                <a class="btn primary" id="matchmakerGroupLink" href="#" target="_blank" rel="noreferrer">加入 LINE 諮詢</a>
+              </div>
+
+            </section>
+
             <section class="section page hidden" id="invitesPage">
               <div class="candidate-toolbar">
                 <span class="candidate-count" id="inviteCount">0 筆邀約</span>
@@ -2963,6 +3102,7 @@
 
     <script>
       const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMQ43-vk2l4ngrdut0V9jYncaVIgTGXlqVV-9KvIiwELaXBwwPV1f7XHbtt4R_r97M5g/exec";
+      const MATCHMAKER_GROUP_URL = "https://lin.ee/wM1ZQ1J";
 
       function apiEndpoint(action) {
         if (GOOGLE_APPS_SCRIPT_URL) {
@@ -3594,6 +3734,11 @@
           title: "從最近的人開始認識",
           subtitle: "",
           el: document.getElementById("digestPage"),
+        },
+        matchmaker: {
+          title: "聯絡月老",
+          subtitle: "",
+          el: document.getElementById("matchmakerPage"),
         },
         invites: {
           title: "我的邀約",
@@ -4841,6 +4986,24 @@
 
       function initCityOptions() {
         fillSelect(document.getElementById("city"), Object.keys(districtsByCity), "請選擇");
+      }
+
+      function initMatchmakerGroupLink() {
+        const link = document.getElementById("matchmakerGroupLink");
+        if (!link) return;
+        const groupUrl = MATCHMAKER_GROUP_URL.trim();
+        if (groupUrl) {
+          link.href = groupUrl;
+          link.classList.remove("secondary");
+          return;
+        }
+        link.removeAttribute("target");
+        link.removeAttribute("rel");
+        link.classList.add("secondary");
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          showToast("月老群組連結準備中");
+        });
       }
 
       function initBirthdayOptions() {
@@ -6148,6 +6311,7 @@
         renderPhotoGrid();
         initBirthdayOptions();
         initCityOptions();
+        initMatchmakerGroupLink();
         updateDistrictOptions();
         updateMapLinks();
         updateSummary();
