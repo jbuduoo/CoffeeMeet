@@ -2288,7 +2288,7 @@
           right: 0;
           bottom: 0;
           z-index: 50;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
           gap: 6px;
           padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
           background: rgba(43, 37, 31, 0.96);
@@ -2296,8 +2296,24 @@
           box-shadow: 0 -12px 28px rgba(43, 36, 27, 0.18);
         }
 
+        .step-button[data-step="digest"] {
+          grid-column: 1;
+        }
+
+        .step-button[data-step="profile"] {
+          grid-column: 2;
+        }
+
+        .step-button[data-step="matchmaker"] {
+          grid-column: 3;
+        }
+
         .step-list.has-admin-step {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+
+        .step-button[data-step="emails"] {
+          grid-column: 4;
         }
 
         .form-grid {
@@ -3909,9 +3925,7 @@
       }
 
       function locationReminderHtml(profile, className = "") {
-        return placeNeedsKeywordReminder(profile)
-          ? `<span class="location-warning ${className}">定位可能不正確，請改選公開店點</span>`
-          : "";
+        return "";
       }
 
       async function verifyGoogleMapsPlaceRemotely(value) {
