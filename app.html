@@ -162,6 +162,22 @@
         display: none;
       }
 
+      .step-button[data-step="digest"] {
+        order: 1;
+      }
+
+      .step-button[data-step="profile"] {
+        order: 2;
+      }
+
+      .step-button[data-step="matchmaker"] {
+        order: 3;
+      }
+
+      .step-button[data-step="emails"] {
+        order: 4;
+      }
+
       .main {
         padding: 32px;
         display: grid;
@@ -2106,7 +2122,11 @@
         }
 
         .step-list {
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .step-list.has-admin-step {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .step-button {
@@ -2439,6 +2459,10 @@
           text-align: center;
         }
 
+        .step-icon {
+          display: none;
+        }
+
         .step-label {
           display: inline;
           font-size: 12px;
@@ -2569,11 +2593,13 @@
         <nav class="step-list" aria-label="MVP steps">
           <button class="step-button active" data-step="digest" type="button">
             <span class="step-icon">1</span>
-            <span class="step-label">附近的人</span>
+            <span class="step-label desktop-step-label">附近的人</span>
+            <span class="step-label mobile-step-label">附近</span>
           </button>
           <button class="step-button" data-step="profile" type="button">
             <span class="step-icon">2</span>
-            <span class="step-label">我的名片</span>
+            <span class="step-label desktop-step-label">我的名片</span>
+            <span class="step-label mobile-step-label">名片</span>
           </button>
           <button class="step-button" data-step="matchmaker" type="button">
             <span class="step-icon">3</span>
