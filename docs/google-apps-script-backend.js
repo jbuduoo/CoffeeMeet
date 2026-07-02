@@ -535,17 +535,20 @@ function sendInviteCreatedEmails(invite) {
 function sendInviteCreatedEmailTo(recipient, counterpart, invite, role) {
   if (!recipient.email) return;
   var counterpartName = displayUserName(counterpart, "對方");
-  var subject = "有人邀請你喝咖啡 ☕";
+  var subject = role === "sent" ? "你已邀請 " + counterpartName + " 喝咖啡 ☕" : counterpartName + " 邀請你喝咖啡 ☕";
   var viewUrl = inviteViewUrl(invite.invite_id, recipient.email);
   var intro = role === "sent"
     ? "你已邀請 " + counterpartName + " 喝咖啡。"
     : counterpartName + " 邀請你喝咖啡。";
   var timeLabel = role === "sent" ? "你提供的可約時間" : "對方提供的可約時間";
+  var distanceLabel = inviteDistanceLabel(recipient, counterpart);
+  var placeHtml = detailRow("咖啡店", invite.place_name || "尚未填寫");
+  if (distanceLabel) placeHtml += detailSubtext("距離你約 " + distanceLabel);
   var htmlBody = emailLayout(
     subject,
     [
       detailRow("對方姓名", counterpartName),
-      detailRow("咖啡店", invite.place_name || "尚未填寫"),
+      placeHtml,
       detailRow(timeLabel, invite.selected_times || "尚未填寫"),
     ].join(""),
     emailButton("查看邀約", viewUrl)
@@ -556,7 +559,7 @@ function sendInviteCreatedEmailTo(recipient, counterpart, invite, role) {
     to: recipient.email,
     subject: subject,
     htmlBody: htmlBody,
-    body: intro + "\n咖啡店：" + (invite.place_name || "尚未填寫") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
+    body: intro + "\n咖啡店：" + (invite.place_name || "尚未填寫") + (distanceLabel ? "\n距離你約 " + distanceLabel : "") + "\n可約時間：" + (invite.selected_times || "尚未填寫") + "\n查看邀約：" + viewUrl,
   });
 }
 
@@ -683,6 +686,43 @@ function usersByUserId() {
   }, {});
 }
 
+function placesByOwnerUserId() {
+  return sheetRows("meeting_places").reduce(function(map, place) {
+    if (place.owner_user_id) map[place.owner_user_id] = place;
+    return map;
+  }, {});
+}
+
+function userMeetingCoords(user, placesByOwner) {
+  var place = placesByOwner[user.user_id] || {};
+  var lat = Number(place.lat || user.meetingLat || user.lat);
+  var lng = Number(place.lng || user.meetingLng || user.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat: lat, lng: lng };
+}
+
+function distanceKm(a, b) {
+  var toRad = function(value) { return value * Math.PI / 180; };
+  var earthKm = 6371;
+  var dLat = toRad(b.lat - a.lat);
+  var dLng = toRad(b.lng - a.lng);
+  var lat1 = toRad(a.lat);
+  var lat2 = toRad(b.lat);
+  var haversine =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return earthKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
+function inviteDistanceLabel(recipient, counterpart) {
+  var placesByOwner = placesByOwnerUserId();
+  var recipientCoords = userMeetingCoords(recipient, placesByOwner);
+  var counterpartCoords = userMeetingCoords(counterpart, placesByOwner);
+  if (!recipientCoords || !counterpartCoords) return "";
+  return distanceKm(recipientCoords, counterpartCoords).toFixed(1) + " km";
+}
+
 function displayUserName(user, fallback) {
   return user.nickname || user.name || user.email || fallback;
 }
@@ -710,6 +750,10 @@ function detailRow(label, value) {
     '<div style="font-size:13px;color:#8a7562;">' + escapeHtml(label) + '</div>' +
     '<div style="font-size:16px;font-weight:700;color:#312820;">' + escapeHtml(value || "尚未填寫") + '</div>' +
   '</div>';
+}
+
+function detailSubtext(value) {
+  return '<div style="margin:-8px 0 12px;font-size:13px;color:#8a7562;">' + escapeHtml(value) + '</div>';
 }
 
 function emailButton(label, url) {
