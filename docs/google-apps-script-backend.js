@@ -46,11 +46,13 @@ function verifyGoogleMapsPlace(payload) {
   const input = String((payload && (payload.url || payload.input || payload.keyword || payload.query)) || "").trim();
   const city = String((payload && payload.city) || "").trim();
   const district = String((payload && payload.district) || "").trim();
+  const mode = String((payload && payload.mode) || "").trim();
   const query = String((payload && payload.query) || [input, city, district].filter(Boolean).join(" ")).trim();
   const debug = {
     action: "places-verify",
     input: input,
     query: query,
+    mode: mode,
     startedAt: new Date().toISOString(),
   };
   if (!input) {
@@ -62,6 +64,14 @@ function verifyGoogleMapsPlace(payload) {
     const places = searchGooglePlacesByText(query || input);
     debug.searchResultsCount = places.length;
     debug.searchMode = "text";
+    if (mode === "road-geocode") {
+      return {
+        ok: true,
+        place: places[0] || null,
+        results: places,
+        debug: debug,
+      };
+    }
     const allowedPlaces = places.filter(function(place) {
       return hasPublicMeetupKeyword(place.name);
     });
@@ -90,7 +100,7 @@ function verifyGoogleMapsPlace(payload) {
     error.debug = debug;
     throw error;
   }
-  assertPublicMeetupPlace(place);
+  if (mode !== "road-geocode") assertPublicMeetupPlace(place);
   return { ok: true, place, debug: debug };
 }
 
@@ -1210,10 +1220,7 @@ function saveMeetingPlace({ placeId, userId, profile, today }) {
   const existing = existingIndex >= 0 ? places[existingIndex] : null;
   const coords = firstLineCoords(profile.meetingArea);
   const sanitizedMeetingArea = stripAddressLines(profile.meetingArea);
-  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
-  if (placeName && (profile.meetingLat || (coords && coords.lat) || (existing && existing.lat))) {
-    assertPublicMeetupPlace({ name: placeName });
-  }
+  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "路段") || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
   const values = {
     place_id: placeId,
     place_name: placeName,

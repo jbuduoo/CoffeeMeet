@@ -109,7 +109,6 @@ async function verifyGoogleMapsPlace(payload) {
   const expandedUrl = await expandGoogleMapsShortUrl(input);
   const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
   if (!place) throw new Error("請貼上有效的 Google Maps 地點網址");
-  assertPublicMeetupPlace(place);
   return { place };
 }
 
@@ -690,11 +689,8 @@ async function saveMeetingPlace({ placeId, userId, profile, today, existingPlace
   );
   const existing = existingIndex >= 0 ? places[existingIndex] : null;
   const sanitizedMeetingArea = stripAddressLines(profile.meetingArea);
-  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
+  const placeName = profile.meetingPlaceName || firstLineValue(sanitizedMeetingArea, "路段") || firstLineValue(sanitizedMeetingArea, "地點") || sanitizedMeetingArea || "";
   const mapUrl = profile.meetingPlaceUrl || firstLineValue(profile.meetingArea, "Google Maps") || "";
-  if (placeName && (profile.meetingLat || firstLineCoords(profile.meetingArea)?.lat || existing?.lat)) {
-    assertPublicMeetupPlace({ name: placeName });
-  }
   const valuesByHeader = {
     place_id: placeId,
     place_name: placeName,
