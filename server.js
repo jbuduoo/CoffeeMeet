@@ -104,8 +104,59 @@ function parseUrlParts(value) {
   };
 }
 
+function isGoogleMapsInput(input) {
+  const source = extractGoogleMapsUrl(input);
+  const urlParts = parseUrlParts(source);
+  return Boolean(urlParts && /google\.[^/]+\/maps|maps\.app\.goo\.gl/.test(urlParts.hostname + urlParts.pathname));
+}
+
+async function searchGooglePlacesByText(query) {
+  const normalizedQuery = String(query || "").trim();
+  if (!normalizedQuery) return [];
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error("Missing GOOGLE_MAPS_API_KEY for road lookup");
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri",
+    },
+    body: JSON.stringify({
+      textQuery: normalizedQuery,
+      languageCode: "zh-TW",
+      regionCode: "TW",
+      maxResultCount: 3,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) throw new Error(data?.error?.message || "Google Places lookup failed");
+  return (data.places || []).slice(0, 3).map((place) => {
+    const location = place.location || {};
+    return {
+      name: place.displayName?.text || place.formattedAddress || "road",
+      url: place.googleMapsUri || "",
+      lat: location.latitude || "",
+      lng: location.longitude || "",
+      placeId: place.id || "",
+      address: place.formattedAddress || "",
+    };
+  });
+}
+
 async function verifyGoogleMapsPlace(payload) {
-  const input = String(payload?.url || "").trim();
+  const input = String(payload?.url || payload?.input || payload?.keyword || payload?.query || "").trim();
+  const city = String(payload?.city || "").trim();
+  const district = String(payload?.district || "").trim();
+  const mode = String(payload?.mode || "").trim();
+  const query = String(payload?.query || [input, city, district].filter(Boolean).join(" ")).trim();
+  if (!input) throw new Error("Missing place input");
+  if (!isGoogleMapsInput(input)) {
+    const places = await searchGooglePlacesByText(query || input);
+    if (mode === "road-geocode") return { ok: true, place: places[0] || null, results: places };
+    const allowedPlaces = places.filter((place) => hasPublicMeetupKeyword(place.name));
+    return { ok: true, place: allowedPlaces[0] || null, results: allowedPlaces };
+  }
   const expandedUrl = await expandGoogleMapsShortUrl(input);
   const place = parseGoogleMapsPlaceUrl(expandedUrl, input);
   if (!place) throw new Error("請貼上有效的 Google Maps 地點網址");
